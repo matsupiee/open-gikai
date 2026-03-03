@@ -1,0 +1,3 @@
+{
+  "extends": "@open-gikai/config/tsconfig.base.json"
+}

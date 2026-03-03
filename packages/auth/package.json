@@ -1,0 +1,24 @@
+{
+  "name": "@open-gikai/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@open-gikai/db": "workspace:*",
+    "@open-gikai/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@open-gikai/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}
