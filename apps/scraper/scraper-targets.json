@@ -1,0 +1,12 @@
+[
+  {
+    "prefecture": "東京都",
+    "municipality": "千代田区",
+    "assemblyLevel": "municipal",
+    "baseUrl": "https://www.city.chiyoda.lg.jp/koho/kuse/gikai/kaigiroku/index.html",
+    "listSelector": "ul.list-kaigiroku li a",
+    "contentSelector": "div.article-body",
+    "dateSelector": "span.date",
+    "titleSelector": "h1.article-title"
+  }
+]

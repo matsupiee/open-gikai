@@ -5,12 +5,14 @@
   "scripts": {
     "build": "vite build",
     "serve": "vite preview",
+    "dev": "vite dev",
     "dev:bare": "vite dev"
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
     "@open-gikai/api": "workspace:*",
     "@open-gikai/auth": "workspace:*",
+    "@open-gikai/db": "workspace:*",
     "@open-gikai/env": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",

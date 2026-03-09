@@ -14,6 +14,7 @@ export const web = await TanStackStart("web", {
     CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
     BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
+    INGEST_API_KEY: alchemy.secret.env.INGEST_API_KEY!,
   },
 });
 

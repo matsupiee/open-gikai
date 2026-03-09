@@ -8,7 +8,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/shared/_components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 
 import { Button } from "./ui/button";

@@ -6,9 +6,9 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 import type { orpc } from "@/utils/orpc";
 
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/shared/_components/ui/sonner";
 
-import Header from "../components/header";
+import Header from "@/shared/_components/header";
 import appCss from "../index.css?url";
 export interface RouterAppContext {
   orpc: typeof orpc;
@@ -26,7 +26,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "My App",
+        title: "Taisuke",
       },
     ],
     links: [
@@ -42,14 +42,16 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 
 function RootDocument() {
   return (
-    <html lang="en" className="dark">
+    <html lang="ja">
       <head>
         <HeadContent />
       </head>
       <body>
-        <div className="grid h-svh grid-rows-[auto_1fr]">
+        <div className="min-h-svh flex flex-col">
           <Header />
-          <Outlet />
+          <main className="flex-1">
+            <Outlet />
+          </main>
         </div>
         <Toaster richColors />
         <TanStackRouterDevtools position="bottom-left" />

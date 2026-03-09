@@ -21,10 +21,8 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "turbo dev",
     "build": "turbo build",
     "check-types": "turbo check-types",
-    "dev:native": "turbo -F native dev",
     "dev:web": "turbo -F web dev",
     "db:push": "turbo -F @open-gikai/db db:push",
     "db:studio": "turbo -F @open-gikai/db db:studio",
