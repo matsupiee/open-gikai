@@ -13,7 +13,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SearchIndexRouteImport } from './routes/search/index'
-import { Route as MeetingsIndexRouteImport } from './routes/meetings/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiIngestMeetingsRouteImport } from './routes/api/ingest/meetings'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -38,11 +37,6 @@ const SearchIndexRoute = SearchIndexRouteImport.update({
   path: '/search/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MeetingsIndexRoute = MeetingsIndexRouteImport.update({
-  id: '/meetings/',
-  path: '/meetings/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
   id: '/api/rpc/$',
   path: '/api/rpc/$',
@@ -63,7 +57,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/meetings/': typeof MeetingsIndexRoute
   '/search/': typeof SearchIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/ingest/meetings': typeof ApiIngestMeetingsRoute
@@ -73,7 +66,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/meetings': typeof MeetingsIndexRoute
   '/search': typeof SearchIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/ingest/meetings': typeof ApiIngestMeetingsRoute
@@ -84,7 +76,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/meetings/': typeof MeetingsIndexRoute
   '/search/': typeof SearchIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/ingest/meetings': typeof ApiIngestMeetingsRoute
@@ -96,7 +87,6 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
-    | '/meetings/'
     | '/search/'
     | '/api/auth/$'
     | '/api/ingest/meetings'
@@ -106,7 +96,6 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
-    | '/meetings'
     | '/search'
     | '/api/auth/$'
     | '/api/ingest/meetings'
@@ -116,7 +105,6 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
-    | '/meetings/'
     | '/search/'
     | '/api/auth/$'
     | '/api/ingest/meetings'
@@ -127,7 +115,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
-  MeetingsIndexRoute: typeof MeetingsIndexRoute
   SearchIndexRoute: typeof SearchIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiIngestMeetingsRoute: typeof ApiIngestMeetingsRoute
@@ -164,13 +151,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/meetings/': {
-      id: '/meetings/'
-      path: '/meetings'
-      fullPath: '/meetings/'
-      preLoaderRoute: typeof MeetingsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/rpc/$': {
       id: '/api/rpc/$'
       path: '/api/rpc/$'
@@ -199,7 +179,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
-  MeetingsIndexRoute: MeetingsIndexRoute,
   SearchIndexRoute: SearchIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiIngestMeetingsRoute: ApiIngestMeetingsRoute,
