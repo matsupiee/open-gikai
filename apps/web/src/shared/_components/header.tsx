@@ -2,10 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 
 import UserMenu from "./user-menu";
 
-const links = [
-  { to: "/meetings", label: "議事録" },
-  { to: "/search", label: "答弁検索" },
-] as const;
+const links = [{ to: "/search", label: "答弁検索" }] as const;
 
 export default function Header() {
   const { location } = useRouterState();

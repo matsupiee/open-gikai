@@ -41,8 +41,6 @@ function RouteComponent() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <h1 className="mb-8 text-3xl font-bold">答弁検索</h1>
-
         <div className="mb-8 space-y-4">
           <div className="flex flex-col gap-3">
             <div className="flex gap-2">
@@ -107,13 +105,17 @@ function RouteComponent() {
 
           {!hasSearched && !isLoading && (
             <div className="rounded border border-border bg-card p-8 text-center">
-              <p className="text-sm text-muted-foreground">キーワードを入力して検索してください</p>
+              <p className="text-sm text-muted-foreground">
+                キーワードを入力して検索してください
+              </p>
             </div>
           )}
 
           {hasSearched && !isLoading && statements.length === 0 && (
             <div className="rounded border border-border bg-card p-8 text-center">
-              <p className="text-sm text-muted-foreground">発言が見つかりませんでした</p>
+              <p className="text-sm text-muted-foreground">
+                発言が見つかりませんでした
+              </p>
             </div>
           )}
 
