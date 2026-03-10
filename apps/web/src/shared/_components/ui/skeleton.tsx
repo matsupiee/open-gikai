@@ -1,6 +1,9 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/shadcn/utils";
 
-function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+function Skeleton({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       data-slot="skeleton"

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { orpc } from "@/utils/orpc";
 
-export type SearchMode = "keyword" | "semantic";
+export type SearchMode = "keyword" | "semantic" | "ai";
 
 export interface Statement {
   id: string;
@@ -45,11 +45,9 @@ export function useSearch() {
   const [assemblyLevel, setAssemblyLevel] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState<SubmittedQuery>(null);
 
-  const isKeywordSearch = searchMode === "keyword";
-
   const keywordQuery = useQuery({
     ...orpc.statements.search.queryOptions({
-      input: submittedQuery && isKeywordSearch
+      input: submittedQuery && searchMode === "keyword"
         ? {
             q: submittedQuery.q,
             kind: (submittedQuery.kind || undefined) as "question" | "answer" | "remark" | "unknown" | undefined,
@@ -62,12 +60,12 @@ export function useSearch() {
           }
         : {},
     }),
-    enabled: submittedQuery !== null && isKeywordSearch,
+    enabled: submittedQuery !== null && searchMode === "keyword",
   });
 
   const semanticQuery = useQuery({
     ...orpc.statements.semanticSearch.queryOptions({
-      input: submittedQuery && !isKeywordSearch
+      input: submittedQuery && searchMode === "semantic"
         ? {
             query: submittedQuery.semanticQuery || "",
             topK: submittedQuery.topK || 10,
@@ -81,21 +79,53 @@ export function useSearch() {
           }
         : { query: "", filters: {} },
     }),
-    enabled: submittedQuery !== null && !isKeywordSearch,
+    enabled: submittedQuery !== null && searchMode === "semantic",
+  });
+
+  const askQuery = useQuery({
+    ...orpc.statements.ask.queryOptions({
+      input: submittedQuery && searchMode === "ai"
+        ? {
+            query: submittedQuery.semanticQuery || "",
+            topK: 8,
+            filters: {
+              prefecture: submittedQuery.prefecture || undefined,
+              municipality: submittedQuery.municipality || undefined,
+              assemblyLevel: (submittedQuery.assemblyLevel || undefined) as "national" | "prefectural" | "municipal" | undefined,
+              heldOnFrom: submittedQuery.heldOnFrom || undefined,
+              heldOnTo: submittedQuery.heldOnTo || undefined,
+            },
+          }
+        : { query: "" },
+    }),
+    enabled: submittedQuery !== null && searchMode === "ai",
   });
 
   const { data: keywordData, isLoading: keywordLoading } = keywordQuery;
   const { data: semanticData, isLoading: semanticLoading } = semanticQuery;
+  const { data: askData, isLoading: askLoading } = askQuery;
 
-  const statements = isKeywordSearch ? (keywordData?.statements || []) : (semanticData?.statements || []);
-  const isLoading = isKeywordSearch ? keywordLoading : semanticLoading;
+  const statements =
+    searchMode === "keyword"
+      ? (keywordData?.statements || [])
+      : searchMode === "semantic"
+      ? (semanticData?.statements || [])
+      : [];
+
+  const isLoading =
+    searchMode === "keyword"
+      ? keywordLoading
+      : searchMode === "semantic"
+      ? semanticLoading
+      : askLoading;
+
   const hasSearched = submittedQuery !== null;
 
   const handleSearch = () => {
     if (!query.trim() && searchMode === "keyword") return;
     setSubmittedQuery({
-      q: isKeywordSearch ? query : undefined,
-      semanticQuery: !isKeywordSearch ? query : undefined,
+      q: searchMode === "keyword" ? query : undefined,
+      semanticQuery: searchMode !== "keyword" ? query : undefined,
       kind: kind || undefined,
       speakerName: speakerName || undefined,
       heldOnFrom: heldOnFrom || undefined,
@@ -141,7 +171,9 @@ export function useSearch() {
     statements,
     isLoading,
     hasSearched,
-    isKeywordSearch,
+    isKeywordSearch: searchMode === "keyword",
+    aiAnswer: askData?.answer ?? null,
+    aiSources: askData?.sources ?? [],
     handleSearch,
     handleReset,
   };

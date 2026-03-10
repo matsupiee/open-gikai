@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shared/_components/ui/button";
 import { Input } from "@/shared/_components/ui/input";
 
+import { AiAnswerCard } from "./_components/ai-answer-card";
 import { SearchFilters } from "./_components/search-filters";
 import { SkeletonCard } from "./_components/skeleton-card";
 import { StatementCard } from "./_components/statement-card";
@@ -34,9 +35,16 @@ function RouteComponent() {
     isLoading,
     hasSearched,
     isKeywordSearch,
+    aiAnswer,
+    aiSources,
     handleSearch,
     handleReset,
   } = useSearch();
+
+  const placeholder =
+    searchMode === "ai"
+      ? "例: ○○市の子育て支援について議員はどんな発言をしていますか？"
+      : "質問・答弁を検索...";
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,7 +54,7 @@ function RouteComponent() {
             <div className="flex gap-2">
               <Input
                 type="text"
-                placeholder="質問・答弁を検索..."
+                placeholder={placeholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => {
@@ -55,7 +63,7 @@ function RouteComponent() {
                 className="flex-1"
               />
               <Button onClick={handleSearch} variant="default">
-                検索
+                {searchMode === "ai" ? "質問する" : "検索"}
               </Button>
             </div>
 
@@ -73,6 +81,13 @@ function RouteComponent() {
                 size="sm"
               >
                 類似検索
+              </Button>
+              <Button
+                variant={searchMode === "ai" ? "default" : "outline"}
+                onClick={() => setSearchMode("ai")}
+                size="sm"
+              >
+                AIに質問
               </Button>
             </div>
           </div>
@@ -106,33 +121,53 @@ function RouteComponent() {
           {!hasSearched && !isLoading && (
             <div className="rounded border border-border bg-card p-8 text-center">
               <p className="text-sm text-muted-foreground">
-                キーワードを入力して検索してください
+                {searchMode === "ai"
+                  ? "議会に関する質問を入力してください"
+                  : "キーワードを入力して検索してください"}
               </p>
             </div>
           )}
 
-          {hasSearched && !isLoading && statements.length === 0 && (
-            <div className="rounded border border-border bg-card p-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                発言が見つかりませんでした
-              </p>
-            </div>
-          )}
-
-          {statements.length > 0 && (
+          {searchMode === "ai" && hasSearched && !isLoading && (
             <>
-              <div className="text-xs text-muted-foreground mb-4">
-                {statements.length}件の結果
-              </div>
-              <div className="grid gap-4">
-                {statements.map((statement) => (
-                  <StatementCard
-                    key={statement.id}
-                    statement={statement}
-                    showSimilarity={!isKeywordSearch}
-                  />
-                ))}
-              </div>
+              {aiAnswer ? (
+                <AiAnswerCard answer={aiAnswer} sources={aiSources} />
+              ) : (
+                <div className="rounded border border-border bg-card p-8 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    関連する発言が見つかりませんでした
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+
+          {searchMode !== "ai" && (
+            <>
+              {hasSearched && !isLoading && statements.length === 0 && (
+                <div className="rounded border border-border bg-card p-8 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    発言が見つかりませんでした
+                  </p>
+                </div>
+              )}
+
+              {statements.length > 0 && (
+                <>
+                  <div className="text-xs text-muted-foreground mb-4">
+                    {statements.length}件の結果
+                  </div>
+                  <div className="grid gap-4">
+                    {statements.map((statement) => (
+                      <StatementCard
+                        key={statement.id}
+                        statement={statement}
+                        showSimilarity={!isKeywordSearch}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>

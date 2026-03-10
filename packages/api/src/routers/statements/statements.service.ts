@@ -3,9 +3,11 @@ import { and, desc, eq, gte, ilike, lte, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, meetings, statements } from "@open-gikai/db";
 import { generateEmbedding } from "../../shared/embedding";
+import { generateAnswer } from "../../shared/llm";
 import type {
   statementsSearchSchema,
   statementsSemanticSearchSchema,
+  statementsAskSchema,
 } from "./_schemas";
 
 export interface SearchResult {
@@ -33,6 +35,11 @@ export interface SearchResponse {
 
 export interface SemanticSearchResponse {
   statements: SemanticSearchResult[];
+}
+
+export interface AskResponse {
+  answer: string;
+  sources: SemanticSearchResult[];
 }
 
 function buildMeetingFilters(input: z.infer<typeof statementsSearchSchema>) {
@@ -202,6 +209,34 @@ export async function semanticSearchStatements(
     console.error("Error in semantic search:", error);
     throw new ORPCError("INTERNAL_SERVER_ERROR", {
       message: "Failed to perform semantic search",
+    });
+  }
+}
+
+export async function askStatements(
+  input: z.infer<typeof statementsAskSchema>
+): Promise<AskResponse> {
+  try {
+    const { statements: sources } = await semanticSearchStatements({
+      query: input.query,
+      topK: input.topK ?? 8,
+      filters: input.filters,
+    });
+
+    if (sources.length === 0) {
+      return {
+        answer: "関連する発言が見つかりませんでした。検索条件を変えてお試しください。",
+        sources: [],
+      };
+    }
+
+    const answer = await generateAnswer(input.query, sources);
+
+    return { answer, sources };
+  } catch (error) {
+    console.error("Error in ask:", error);
+    throw new ORPCError("INTERNAL_SERVER_ERROR", {
+      message: "Failed to generate answer",
     });
   }
 }
