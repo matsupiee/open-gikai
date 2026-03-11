@@ -14,11 +14,16 @@ Frontend patterns
 
 Each feature/page owns its UI, hooks, schemas, and utils. Related files must be placed together.
 
+## Component Placement Rules
+
+- **ページ固有のコンポーネント**は必ず `routes/xxx/_components/` 内に置く
+- **`shared/_components/`** は複数の機能・ページで使われる汎用コンポーネントのみ。単一ページにしか使わないコンポーネントは置かない
+
 ## Standard Page Structure
 
-{route}/
+routes/xxx/
 ├── page.tsx
-├── \_components/ # Page-specific components
+├── \_components/ # このページ専用のコンポーネント（他ページで使わないもの）
 │ ├── component-a.tsx
 │ └── component-b.tsx
 ├── \_hooks/ # Page-specific hooks
@@ -28,6 +33,11 @@ Each feature/page owns its UI, hooks, schemas, and utils. Related files must be 
 │ └── form-context.tsx
 └── \_utils/ # Page-specific utilities
 │ └── helpers.ts
+
+shared/
+└── \_components/ # 複数の機能・ページをまたいで使われる汎用コンポーネントのみ
+    ├── header.tsx
+    └── ...
 
 CRITICAL: When placing form fields horizontally, ALWAYS add items-start.
 
