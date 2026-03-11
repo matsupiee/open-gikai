@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { orpc } from "@/utils/orpc";
+import { orpc } from "@/lib/orpc/orpc";
 
 export type SearchMode = "keyword" | "semantic" | "ai";
 
@@ -47,56 +47,76 @@ export function useSearch() {
 
   const keywordQuery = useQuery({
     ...orpc.statements.search.queryOptions({
-      input: submittedQuery && searchMode === "keyword"
-        ? {
-            q: submittedQuery.q,
-            kind: (submittedQuery.kind || undefined) as "question" | "answer" | "remark" | "unknown" | undefined,
-            speakerName: submittedQuery.speakerName || undefined,
-            heldOnFrom: submittedQuery.heldOnFrom || undefined,
-            heldOnTo: submittedQuery.heldOnTo || undefined,
-            prefecture: submittedQuery.prefecture || undefined,
-            municipality: submittedQuery.municipality || undefined,
-            assemblyLevel: (submittedQuery.assemblyLevel || undefined) as "national" | "prefectural" | "municipal" | undefined,
-          }
-        : {},
+      input:
+        submittedQuery && searchMode === "keyword"
+          ? {
+              q: submittedQuery.q,
+              kind: (submittedQuery.kind || undefined) as
+                | "question"
+                | "answer"
+                | "remark"
+                | "unknown"
+                | undefined,
+              speakerName: submittedQuery.speakerName || undefined,
+              heldOnFrom: submittedQuery.heldOnFrom || undefined,
+              heldOnTo: submittedQuery.heldOnTo || undefined,
+              prefecture: submittedQuery.prefecture || undefined,
+              municipality: submittedQuery.municipality || undefined,
+              assemblyLevel: (submittedQuery.assemblyLevel || undefined) as
+                | "national"
+                | "prefectural"
+                | "municipal"
+                | undefined,
+            }
+          : {},
     }),
     enabled: submittedQuery !== null && searchMode === "keyword",
   });
 
   const semanticQuery = useQuery({
     ...orpc.statements.semanticSearch.queryOptions({
-      input: submittedQuery && searchMode === "semantic"
-        ? {
-            query: submittedQuery.semanticQuery || "",
-            topK: submittedQuery.topK || 10,
-            filters: {
-              prefecture: submittedQuery.prefecture || undefined,
-              municipality: submittedQuery.municipality || undefined,
-              assemblyLevel: (submittedQuery.assemblyLevel || undefined) as "national" | "prefectural" | "municipal" | undefined,
-              heldOnFrom: submittedQuery.heldOnFrom || undefined,
-              heldOnTo: submittedQuery.heldOnTo || undefined,
-            },
-          }
-        : { query: "", filters: {} },
+      input:
+        submittedQuery && searchMode === "semantic"
+          ? {
+              query: submittedQuery.semanticQuery || "",
+              topK: submittedQuery.topK || 10,
+              filters: {
+                prefecture: submittedQuery.prefecture || undefined,
+                municipality: submittedQuery.municipality || undefined,
+                assemblyLevel: (submittedQuery.assemblyLevel || undefined) as
+                  | "national"
+                  | "prefectural"
+                  | "municipal"
+                  | undefined,
+                heldOnFrom: submittedQuery.heldOnFrom || undefined,
+                heldOnTo: submittedQuery.heldOnTo || undefined,
+              },
+            }
+          : { query: "", filters: {} },
     }),
     enabled: submittedQuery !== null && searchMode === "semantic",
   });
 
   const askQuery = useQuery({
     ...orpc.statements.ask.queryOptions({
-      input: submittedQuery && searchMode === "ai"
-        ? {
-            query: submittedQuery.semanticQuery || "",
-            topK: 8,
-            filters: {
-              prefecture: submittedQuery.prefecture || undefined,
-              municipality: submittedQuery.municipality || undefined,
-              assemblyLevel: (submittedQuery.assemblyLevel || undefined) as "national" | "prefectural" | "municipal" | undefined,
-              heldOnFrom: submittedQuery.heldOnFrom || undefined,
-              heldOnTo: submittedQuery.heldOnTo || undefined,
-            },
-          }
-        : { query: "" },
+      input:
+        submittedQuery && searchMode === "ai"
+          ? {
+              query: submittedQuery.semanticQuery || "",
+              topK: 8,
+              filters: {
+                prefecture: submittedQuery.prefecture || undefined,
+                municipality: submittedQuery.municipality || undefined,
+                assemblyLevel: (submittedQuery.assemblyLevel || undefined) as
+                  | "national"
+                  | "prefectural"
+                  | "municipal"
+                  | undefined,
+                heldOnFrom: submittedQuery.heldOnFrom || undefined,
+                heldOnTo: submittedQuery.heldOnTo || undefined,
+              },
+            }
+          : { query: "" },
     }),
     enabled: submittedQuery !== null && searchMode === "ai",
   });
@@ -107,9 +127,9 @@ export function useSearch() {
 
   const statements =
     searchMode === "keyword"
-      ? (keywordData?.statements || [])
+      ? keywordData?.statements || []
       : searchMode === "semantic"
-      ? (semanticData?.statements || [])
+      ? semanticData?.statements || []
       : [];
 
   const isLoading =

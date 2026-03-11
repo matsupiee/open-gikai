@@ -2,6 +2,7 @@ import type { RouterClient } from "@orpc/server";
 
 import { protectedProcedure } from "../index";
 import { statementsRouter } from "./statements/statements.router";
+import { scrapersRouter } from "./scrapers/scrapers.router";
 
 export const appRouter = {
   privateData: protectedProcedure.handler(({ context }) => {
@@ -11,6 +12,7 @@ export const appRouter = {
     };
   }),
   statements: statementsRouter,
+  scrapers: scrapersRouter,
 };
 export type AppRouter = typeof appRouter;
 export type AppRouterClient = RouterClient<typeof appRouter>;

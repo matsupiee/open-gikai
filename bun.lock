@@ -19,11 +19,18 @@
         "typescript": "catalog:",
       },
     },
-    "apps/scraper": {
-      "name": "@open-gikai/scraper",
-      "version": "0.1.0",
+    "apps/scraper-worker": {
+      "name": "@open-gikai/scraper-worker",
       "dependencies": {
-        "cheerio": "^1.0.0",
+        "@open-gikai/db": "workspace:*",
+        "@open-gikai/scraper": "workspace:*",
+        "drizzle-orm": "^0.45.1",
+        "pg": "^8.17.1",
+      },
+      "devDependencies": {
+        "@cloudflare/workers-types": "^4.20251213.0",
+        "@open-gikai/config": "workspace:*",
+        "typescript": "catalog:",
       },
     },
     "apps/web": {
@@ -158,6 +165,16 @@
       "devDependencies": {
         "@open-gikai/config": "workspace:*",
         "alchemy": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/scraper": {
+      "name": "@open-gikai/scraper",
+      "dependencies": {
+        "cheerio": "^1.0.0",
+      },
+      "devDependencies": {
+        "@open-gikai/config": "workspace:*",
         "typescript": "catalog:",
       },
     },
@@ -585,7 +602,9 @@
 
     "@open-gikai/infra": ["@open-gikai/infra@workspace:packages/infra"],
 
-    "@open-gikai/scraper": ["@open-gikai/scraper@workspace:apps/scraper"],
+    "@open-gikai/scraper": ["@open-gikai/scraper@workspace:packages/scraper"],
+
+    "@open-gikai/scraper-worker": ["@open-gikai/scraper-worker@workspace:apps/scraper-worker"],
 
     "@orpc/client": ["@orpc/client@1.13.6", "", { "dependencies": { "@orpc/shared": "1.13.6", "@orpc/standard-server": "1.13.6", "@orpc/standard-server-fetch": "1.13.6", "@orpc/standard-server-peer": "1.13.6" } }, "sha512-M6lYM6fJUFp9GR+It/qglYTeXwspb6sGj46xXWHqHS6iDVquqju0bdYuLOfHx8CGJcUSzi0aKUcqMXiGJhBG3w=="],
 

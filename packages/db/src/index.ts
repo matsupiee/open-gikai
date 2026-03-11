@@ -6,4 +6,4 @@ import * as schema from "./schema";
 export const db = drizzle(env.DATABASE_URL, { schema });
 
 // Re-export schema for convenience
-export { meetings, statements } from "./schema";
+export { meetings, statements, scraper_jobs, scraper_job_logs } from "./schema";

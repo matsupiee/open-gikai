@@ -9,24 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SearchIndexRouteImport } from './routes/search/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
+import { Route as AdminScrapersIndexRouteImport } from './routes/admin/scrapers/index'
+import { Route as authSignUpIndexRouteImport } from './routes/(auth)/sign-up/index'
+import { Route as authSignInIndexRouteImport } from './routes/(auth)/sign-in/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiIngestMeetingsRouteImport } from './routes/api/ingest/meetings'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AdminScrapersJobIdRouteImport } from './routes/admin/scrapers/$jobId'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -35,6 +29,31 @@ const IndexRoute = IndexRouteImport.update({
 const SearchIndexRoute = SearchIndexRouteImport.update({
   id: '/search/',
   path: '/search/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLayoutRoute = AdminLayoutRouteImport.update({
+  id: '/admin/_layout',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminScrapersIndexRoute = AdminScrapersIndexRouteImport.update({
+  id: '/admin/scrapers/',
+  path: '/admin/scrapers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authSignUpIndexRoute = authSignUpIndexRouteImport.update({
+  id: '/(auth)/sign-up/',
+  path: '/sign-up/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authSignInIndexRoute = authSignInIndexRouteImport.update({
+  id: '/(auth)/sign-in/',
+  path: '/sign-in/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
@@ -52,91 +71,108 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminScrapersJobIdRoute = AdminScrapersJobIdRouteImport.update({
+  id: '/admin/scrapers/$jobId',
+  path: '/admin/scrapers/$jobId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/login': typeof LoginRoute
+  '/admin': typeof AdminLayoutRoute
+  '/admin/': typeof AdminIndexRoute
   '/search/': typeof SearchIndexRoute
+  '/admin/scrapers/$jobId': typeof AdminScrapersJobIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/ingest/meetings': typeof ApiIngestMeetingsRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/sign-in/': typeof authSignInIndexRoute
+  '/sign-up/': typeof authSignUpIndexRoute
+  '/admin/scrapers/': typeof AdminScrapersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/login': typeof LoginRoute
+  '/admin': typeof AdminIndexRoute
   '/search': typeof SearchIndexRoute
+  '/admin/scrapers/$jobId': typeof AdminScrapersJobIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/ingest/meetings': typeof ApiIngestMeetingsRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/sign-in': typeof authSignInIndexRoute
+  '/sign-up': typeof authSignUpIndexRoute
+  '/admin/scrapers': typeof AdminScrapersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/login': typeof LoginRoute
+  '/admin/_layout': typeof AdminLayoutRoute
+  '/admin/': typeof AdminIndexRoute
   '/search/': typeof SearchIndexRoute
+  '/admin/scrapers/$jobId': typeof AdminScrapersJobIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/ingest/meetings': typeof ApiIngestMeetingsRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/(auth)/sign-in/': typeof authSignInIndexRoute
+  '/(auth)/sign-up/': typeof authSignUpIndexRoute
+  '/admin/scrapers/': typeof AdminScrapersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dashboard'
-    | '/login'
+    | '/admin'
+    | '/admin/'
     | '/search/'
+    | '/admin/scrapers/$jobId'
     | '/api/auth/$'
     | '/api/ingest/meetings'
     | '/api/rpc/$'
+    | '/sign-in/'
+    | '/sign-up/'
+    | '/admin/scrapers/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/dashboard'
-    | '/login'
+    | '/admin'
     | '/search'
+    | '/admin/scrapers/$jobId'
     | '/api/auth/$'
     | '/api/ingest/meetings'
     | '/api/rpc/$'
+    | '/sign-in'
+    | '/sign-up'
+    | '/admin/scrapers'
   id:
     | '__root__'
     | '/'
-    | '/dashboard'
-    | '/login'
+    | '/admin/_layout'
+    | '/admin/'
     | '/search/'
+    | '/admin/scrapers/$jobId'
     | '/api/auth/$'
     | '/api/ingest/meetings'
     | '/api/rpc/$'
+    | '/(auth)/sign-in/'
+    | '/(auth)/sign-up/'
+    | '/admin/scrapers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
-  LoginRoute: typeof LoginRoute
+  AdminLayoutRoute: typeof AdminLayoutRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   SearchIndexRoute: typeof SearchIndexRoute
+  AdminScrapersJobIdRoute: typeof AdminScrapersJobIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiIngestMeetingsRoute: typeof ApiIngestMeetingsRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
+  authSignInIndexRoute: typeof authSignInIndexRoute
+  authSignUpIndexRoute: typeof authSignUpIndexRoute
+  AdminScrapersIndexRoute: typeof AdminScrapersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -149,6 +185,41 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search/'
       preLoaderRoute: typeof SearchIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/_layout': {
+      id: '/admin/_layout'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/scrapers/': {
+      id: '/admin/scrapers/'
+      path: '/admin/scrapers'
+      fullPath: '/admin/scrapers/'
+      preLoaderRoute: typeof AdminScrapersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/sign-up/': {
+      id: '/(auth)/sign-up/'
+      path: '/sign-up'
+      fullPath: '/sign-up/'
+      preLoaderRoute: typeof authSignUpIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/sign-in/': {
+      id: '/(auth)/sign-in/'
+      path: '/sign-in'
+      fullPath: '/sign-in/'
+      preLoaderRoute: typeof authSignInIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rpc/$': {
@@ -172,17 +243,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/scrapers/$jobId': {
+      id: '/admin/scrapers/$jobId'
+      path: '/admin/scrapers/$jobId'
+      fullPath: '/admin/scrapers/$jobId'
+      preLoaderRoute: typeof AdminScrapersJobIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
-  LoginRoute: LoginRoute,
+  AdminLayoutRoute: AdminLayoutRoute,
+  AdminIndexRoute: AdminIndexRoute,
   SearchIndexRoute: SearchIndexRoute,
+  AdminScrapersJobIdRoute: AdminScrapersJobIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiIngestMeetingsRoute: ApiIngestMeetingsRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
+  authSignInIndexRoute: authSignInIndexRoute,
+  authSignUpIndexRoute: authSignUpIndexRoute,
+  AdminScrapersIndexRoute: AdminScrapersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

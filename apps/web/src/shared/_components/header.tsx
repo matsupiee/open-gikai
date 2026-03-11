@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 
 import UserMenu from "./user-menu";
+import { FileSearch } from "lucide-react";
 
 const links = [{ to: "/search", label: "答弁検索" }] as const;
 
@@ -12,9 +13,7 @@ export default function Header() {
       <div className="flex h-14 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-base font-semibold tracking-tight text-gray-900">
-              Taisuke
-            </span>
+            <FileSearch className="h-8 w-8" />
           </Link>
           <nav className="flex items-center gap-1">
             {links.map(({ to, label }) => {

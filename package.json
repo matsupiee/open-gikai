@@ -30,7 +30,8 @@
     "db:migrate": "turbo -F @open-gikai/db db:migrate",
     "deploy": "turbo -F @open-gikai/infra deploy",
     "destroy": "turbo -F @open-gikai/infra destroy",
-    "check": "oxlint && oxfmt --write"
+    "check": "oxlint && oxfmt --write",
+    "scraper:run": "cd apps/scraper-worker && bun --env-file ../web/.env src/local-runner.ts"
   },
   "dependencies": {
     "@open-gikai/env": "workspace:*",
