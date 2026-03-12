@@ -1,8 +1,9 @@
-import { eq } from "drizzle-orm";
-import { scraper_jobs } from "@open-gikai/db/schema";
+import { and, eq } from "drizzle-orm";
+import { municipalities, scraper_jobs } from "@open-gikai/db/schema";
 import type { Db } from "@open-gikai/db";
 import { createJobLogger, updateJobStatus } from "../db/job-logger";
 import type {
+  DiscussnetScraperConfig,
   KagoshimaScraperConfig,
   LocalScraperConfig,
   NdlScraperConfig,
@@ -181,6 +182,50 @@ export async function handleStartJob(
         type: "local-target",
         jobId,
         target,
+        limit: scraperConfig.limit,
+      });
+    }
+  } else if (job.source === "discussnet") {
+    const scraperConfig: DiscussnetScraperConfig = {
+      year: config.year as number | undefined,
+      limit: config.limit as number | undefined,
+    };
+
+    await logger("info", "DiscussNet: 対象自治体を municipalities テーブルから取得中...");
+
+    const targets = await db
+      .select()
+      .from(municipalities)
+      .where(
+        and(
+          eq(municipalities.systemType, "discussnet"),
+          eq(municipalities.enabled, true)
+        )
+      );
+
+    if (targets.length === 0) {
+      await logger("warn", "DiscussNet: 対象自治体が見つかりません（municipalities テーブルにデータを投入してください）");
+      await updateJobStatus(db, jobId, "completed");
+      return;
+    }
+
+    await updateJobStatus(db, jobId, "running", { totalItems: targets.length });
+    await logger("info", `DiscussNet: ${targets.length} 自治体をキューに投入します`);
+
+    for (const m of targets) {
+      if (!m.baseUrl) {
+        await logger("warn", `DiscussNet: ${m.name} の baseUrl が未設定のためスキップ`);
+        continue;
+      }
+      await queue.send({
+        type: "discussnet-list",
+        jobId,
+        municipalityId: m.id,
+        municipalityName: m.name,
+        prefecture: m.prefecture,
+        baseUrl: m.baseUrl,
+        year: scraperConfig.year,
+        page: 1,
         limit: scraperConfig.limit,
       });
     }

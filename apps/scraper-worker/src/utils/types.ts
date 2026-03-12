@@ -43,6 +43,14 @@ export interface LocalScraperConfig {
   limit?: number;
 }
 
+/** DiscussNet スクレイパー設定 */
+export interface DiscussnetScraperConfig {
+  /** スクレイピング対象年（未指定の場合は全年） */
+  year?: number;
+  /** 1ジョブあたりの最大取得件数（テスト用） */
+  limit?: number;
+}
+
 /**
  * Cloudflare Queue に投入するメッセージの型定義。
  * 各メッセージは 1 つの作業単位（1 council、1 NDL ページ、1 local target）を表す。
@@ -74,6 +82,27 @@ export type ScraperQueueMessage =
       jobId: string;
       target: LocalScraperTarget;
       limit?: number;
+    }
+  | {
+      /** DiscussNet: 自治体の議事録一覧ページを取得するメッセージ */
+      type: "discussnet-list";
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      prefecture: string;
+      baseUrl: string;
+      year?: number;
+      page: number;
+      limit?: number;
+    }
+  | {
+      /** DiscussNet: 個別議事録ページを取得・保存するメッセージ */
+      type: "discussnet-meeting";
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      prefecture: string;
+      meetingUrl: string;
     };
 
 /** Cloudflare Worker の環境変数（bindings） */

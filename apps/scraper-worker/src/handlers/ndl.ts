@@ -112,7 +112,7 @@ export async function handleNdlPage(
     prefecture: null,
     municipality: null,
     externalId: r.issueID,
-    rawText: r.speechRecord.map((s) => s.speech).join("\n"),
+    rawText: r.speechRecord.map((s) => s.speech).join("\n\n---\n\n"),
   }));
 
   const { inserted, skipped } = await saveMeetings(db, meetings);

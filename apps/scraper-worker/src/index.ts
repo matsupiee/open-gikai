@@ -6,6 +6,10 @@ import { handleStartJob } from "./handlers/start-job";
 import { handleKagoshimaCouncil } from "./handlers/kagoshima";
 import { handleNdlPage } from "./handlers/ndl";
 import { handleLocalTarget } from "./handlers/local";
+import {
+  handleDiscussnetList,
+  handleDiscussnetMeeting,
+} from "./handlers/discussnet";
 import { updateScraperJobStatus } from "./db/job-logger";
 
 export default {
@@ -67,6 +71,12 @@ export default {
             break;
           case "local-target":
             await handleLocalTarget(db, msg);
+            break;
+          case "discussnet-list":
+            await handleDiscussnetList(db, env.SCRAPER_QUEUE, msg);
+            break;
+          case "discussnet-meeting":
+            await handleDiscussnetMeeting(db, msg);
             break;
         }
         message.ack();

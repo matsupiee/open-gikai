@@ -41,6 +41,83 @@ function splitIntoStatements(rawText: string): string[] {
 }
 
 /**
+ * 役職サフィックス一覧（長いものを優先してマッチ）
+ */
+const ROLE_SUFFIXES = [
+  "委員長",
+  "副委員長",
+  "副議長",
+  "市長室長",
+  "副市長",
+  "副部長",
+  "副課長",
+  "議長",
+  "市長",
+  "委員",
+  "部長",
+  "課長",
+  "室長",
+  "局長",
+  "係長",
+  "主任",
+  "補佐",
+  "主査",
+];
+
+/**
+ * 発言テキストから発言者情報を抽出する。
+ *
+ * 対応パターン:
+ *   NDL:      ○役職（氏名）　content  → speakerRole=役職,  speakerName=氏名
+ *             ○氏名君　content        → speakerRole=null,   speakerName=氏名
+ *   鹿児島:   ○氏名役職　content      → speakerRole=役職,  speakerName=氏名
+ *             ◎氏名役職　content      → speakerRole=役職,  speakerName=氏名
+ *             ◆氏名役職　content      → speakerRole=役職,  speakerName=氏名
+ */
+function parseSpeaker(text: string): {
+  speakerName: string | null;
+  speakerRole: string | null;
+} {
+  const match = text.match(/^[○◎◆]([^（　\s]+)(?:（([^）]+)）)?[　\s]/);
+  if (!match) return { speakerName: null, speakerRole: null };
+
+  const nameAndRole = match[1] ?? "";
+  const inParen = match[2];
+
+  // NDL パターン: ○役職（氏名）
+  if (inParen) {
+    return {
+      speakerRole: nameAndRole,
+      speakerName: inParen.replace(/君$/, ""),
+    };
+  }
+
+  // NDL パターン: ○氏名君
+  if (nameAndRole.endsWith("君")) {
+    return {
+      speakerRole: null,
+      speakerName: nameAndRole.replace(/君$/, ""),
+    };
+  }
+
+  // 鹿児島パターン: 氏名 + 役職サフィックス
+  for (const suffix of ROLE_SUFFIXES) {
+    if (nameAndRole.endsWith(suffix) && nameAndRole.length > suffix.length) {
+      return {
+        speakerRole: suffix,
+        speakerName: nameAndRole.slice(0, -suffix.length),
+      };
+    }
+  }
+
+  // サフィックス不明: 全体を氏名として扱う
+  return {
+    speakerRole: null,
+    speakerName: nameAndRole,
+  };
+}
+
+/**
  * status="pending" の meetings を statements に変換して保存する。
  * OPENAI_API_KEY が指定された場合は embedding も生成する。
  */
@@ -88,14 +165,16 @@ export async function processPendingMeetings(
         }
       }
 
+      const { speakerName, speakerRole } = parseSpeaker(part);
+
       try {
         await db
           .insert(statements)
           .values({
             meetingId: meeting.id,
             kind: "speech",
-            speakerName: null,
-            speakerRole: null,
+            speakerName,
+            speakerRole,
             content: part,
             contentHash,
             startOffset,

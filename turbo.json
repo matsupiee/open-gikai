@@ -28,6 +28,10 @@
       "cache": false,
       "persistent": true
     },
+    "db:seed": {
+      "cache": false,
+      "persistent": false
+    },
     "scrape:local": {
       "cache": false,
       "persistent": false

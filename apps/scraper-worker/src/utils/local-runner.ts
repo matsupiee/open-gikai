@@ -20,6 +20,10 @@ import { handleStartJob } from "../handlers/start-job";
 import { handleKagoshimaCouncil } from "../handlers/kagoshima";
 import { handleNdlPage } from "../handlers/ndl";
 import { handleLocalTarget } from "../handlers/local";
+import {
+  handleDiscussnetList,
+  handleDiscussnetMeeting,
+} from "../handlers/discussnet";
 import { processPendingMeetings } from "../db/process-meetings";
 import { updateScraperJobStatus } from "../db/job-logger";
 
@@ -68,6 +72,12 @@ class LocalQueue {
             break;
           case "local-target":
             await handleLocalTarget(db, msg);
+            break;
+          case "discussnet-list":
+            await handleDiscussnetList(db, q, msg);
+            break;
+          case "discussnet-meeting":
+            await handleDiscussnetMeeting(db, msg);
             break;
         }
       } catch (err) {
