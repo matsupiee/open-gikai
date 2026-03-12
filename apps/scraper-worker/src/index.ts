@@ -1,11 +1,8 @@
 import { eq, inArray } from "drizzle-orm";
-import { scraper_jobs } from "@open-gikai/db/schema";
+import { municipalities, scraper_jobs } from "@open-gikai/db/schema";
 import { createDb } from "@open-gikai/db";
 import type { Env, ScraperQueueMessage } from "./utils/types";
-import { handleStartJob } from "./handlers/start-job";
-import { handleKagoshimaCouncil } from "./handlers/kagoshima";
-import { handleNdlPage } from "./handlers/ndl";
-import { handleLocalTarget } from "./handlers/local";
+import { dispatchJob } from "./handlers/dispatch-job";
 import {
   handleDiscussnetList,
   handleDiscussnetMeeting,
@@ -14,7 +11,7 @@ import { updateScraperJobStatus } from "./db/job-logger";
 
 export default {
   /**
-   * Cron トリガー: 1 分ごとに pending ジョブを検出して Queue に投入する。
+   * Cron トリガー: 1 分ごとに pending ジョブを検出し、各ジョブの最初のキューメッセージを直接投入する。
    */
   async scheduled(
     _event: ScheduledController,
@@ -23,30 +20,31 @@ export default {
   ): Promise<void> {
     const db = createDb(env.DATABASE_URL);
 
-    // pendingステータスのjobを10件取得する
     const pendingJobs = await db
-      .select({ id: scraper_jobs.id })
+      .select()
       .from(scraper_jobs)
+      .innerJoin(
+        municipalities,
+        eq(scraper_jobs.municipalityId, municipalities.id)
+      )
       .where(eq(scraper_jobs.status, "pending"))
       .limit(10);
 
     if (pendingJobs.length === 0) return;
 
-    // 取得した10件をqueuedに変更してから投入する（次のcronで重複投入されないようにする）
-    const jobIds = pendingJobs.map((j) => j.id);
+    const jobIds = pendingJobs.map((j) => j.scraper_jobs.id);
     await db
       .update(scraper_jobs)
       .set({ status: "queued" })
       .where(inArray(scraper_jobs.id, jobIds));
 
     for (const job of pendingJobs) {
-      // packages/infra/alchemyで作成されたCloudflare Queueが環境変数としてバインドされているので、それを呼び出す
-      await env.SCRAPER_QUEUE.send({ type: "start-job", jobId: job.id });
+      await dispatchJob(db, env.SCRAPER_QUEUE, job);
     }
   },
 
   /**
-   * Queue コンシューマー: 各メッセージをタイプに応じたハンドラーに振り分ける。
+   * Queue コンシューマー: discussnet-list / discussnet-meeting を処理する。
    */
   async queue(
     batch: MessageBatch<unknown>,
@@ -60,24 +58,16 @@ export default {
 
       try {
         switch (msg.type) {
-          case "start-job":
-            await handleStartJob(db, env.SCRAPER_QUEUE, msg.jobId);
-            break;
-          case "kagoshima-council":
-            await handleKagoshimaCouncil(db, env.SCRAPER_QUEUE, msg);
-            break;
-          case "ndl-page":
-            await handleNdlPage(db, env.SCRAPER_QUEUE, msg);
-            break;
-          case "local-target":
-            await handleLocalTarget(db, msg);
-            break;
           case "discussnet-list":
             await handleDiscussnetList(db, env.SCRAPER_QUEUE, msg);
             break;
           case "discussnet-meeting":
             await handleDiscussnetMeeting(db, msg);
             break;
+          default: {
+            const _exhaustive: never = msg;
+            console.warn(`[scraper-worker] unknown message type:`, _exhaustive);
+          }
         }
         message.ack();
       } catch (err) {

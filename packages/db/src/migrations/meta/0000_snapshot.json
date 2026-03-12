@@ -1,5 +1,5 @@
 {
-  "id": "48a8181c-e5ec-4826-8c2d-c9b70e0d0567",
+  "id": "b3c467f8-7bff-4d15-8043-0207a0b13258",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -13,6 +13,20 @@
           "type": "text",
           "primaryKey": true,
           "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         },
         "account_id": {
           "name": "account_id",
@@ -73,24 +87,11 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
         }
       },
       "indexes": {
-        "account_userId_idx": {
-          "name": "account_userId_idx",
+        "accounts_user_id_index": {
+          "name": "accounts_user_id_index",
           "columns": [
             {
               "expression": "user_id",
@@ -136,18 +137,6 @@
           "primaryKey": true,
           "notNull": true
         },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "token": {
-          "name": "token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -158,6 +147,19 @@
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -181,8 +183,8 @@
         }
       },
       "indexes": {
-        "session_userId_idx": {
-          "name": "session_userId_idx",
+        "sessions_user_id_index": {
+          "name": "sessions_user_id_index",
           "columns": [
             {
               "expression": "user_id",
@@ -236,6 +238,20 @@
           "primaryKey": true,
           "notNull": true
         },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "name": {
           "name": "name",
           "type": "text",
@@ -260,20 +276,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {},
@@ -302,6 +304,20 @@
           "primaryKey": true,
           "notNull": true
         },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "identifier": {
           "name": "identifier",
           "type": "text",
@@ -319,25 +335,11 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {
-        "verification_identifier_idx": {
-          "name": "verification_identifier_idx",
+        "verifications_identifier_index": {
+          "name": "verifications_identifier_index",
           "columns": [
             {
               "expression": "identifier",
@@ -368,6 +370,20 @@
           "type": "text",
           "primaryKey": true,
           "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         },
         "title": {
           "name": "title",
@@ -436,18 +452,11 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {
-        "meetings_assembly_level_external_id_idx": {
-          "name": "meetings_assembly_level_external_id_idx",
+        "meetings_assembly_level_external_id_index": {
+          "name": "meetings_assembly_level_external_id_index",
           "columns": [
             {
               "expression": "assembly_level",
@@ -467,8 +476,8 @@
           "method": "btree",
           "with": {}
         },
-        "meetings_held_on_idx": {
-          "name": "meetings_held_on_idx",
+        "meetings_held_on_index": {
+          "name": "meetings_held_on_index",
           "columns": [
             {
               "expression": "held_on",
@@ -482,8 +491,8 @@
           "method": "btree",
           "with": {}
         },
-        "meetings_meeting_type_held_on_idx": {
-          "name": "meetings_meeting_type_held_on_idx",
+        "meetings_meeting_type_held_on_index": {
+          "name": "meetings_meeting_type_held_on_index",
           "columns": [
             {
               "expression": "meeting_type",
@@ -503,8 +512,8 @@
           "method": "btree",
           "with": {}
         },
-        "meetings_assembly_level_held_on_idx": {
-          "name": "meetings_assembly_level_held_on_idx",
+        "meetings_assembly_level_held_on_index": {
+          "name": "meetings_assembly_level_held_on_index",
           "columns": [
             {
               "expression": "assembly_level",
@@ -524,8 +533,8 @@
           "method": "btree",
           "with": {}
         },
-        "meetings_prefecture_held_on_idx": {
-          "name": "meetings_prefecture_held_on_idx",
+        "meetings_prefecture_held_on_index": {
+          "name": "meetings_prefecture_held_on_index",
           "columns": [
             {
               "expression": "prefecture",
@@ -545,8 +554,8 @@
           "method": "btree",
           "with": {}
         },
-        "meetings_municipality_held_on_idx": {
-          "name": "meetings_municipality_held_on_idx",
+        "meetings_municipality_held_on_index": {
+          "name": "meetings_municipality_held_on_index",
           "columns": [
             {
               "expression": "municipality",
@@ -574,6 +583,152 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.municipalities": {
+      "name": "municipalities",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prefecture": {
+          "name": "prefecture",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "system_type": {
+          "name": "system_type",
+          "type": "system_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "base_url": {
+          "name": "base_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "municipalities_code_index": {
+          "name": "municipalities_code_index",
+          "columns": [
+            {
+              "expression": "code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "municipalities_prefecture_index": {
+          "name": "municipalities_prefecture_index",
+          "columns": [
+            {
+              "expression": "prefecture",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "municipalities_system_type_index": {
+          "name": "municipalities_system_type_index",
+          "columns": [
+            {
+              "expression": "system_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "municipalities_enabled_system_type_index": {
+          "name": "municipalities_enabled_system_type_index",
+          "columns": [
+            {
+              "expression": "enabled",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "system_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "municipalities_code_unique": {
+          "name": "municipalities_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.statements": {
       "name": "statements",
       "schema": "",
@@ -583,6 +738,20 @@
           "type": "text",
           "primaryKey": true,
           "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         },
         "meeting_id": {
           "name": "meeting_id",
@@ -653,18 +822,11 @@
             "as": "to_tsvector('simple', coalesce(content, ''))",
             "type": "stored"
           }
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {
-        "statements_meeting_id_content_hash_idx": {
-          "name": "statements_meeting_id_content_hash_idx",
+        "statements_meeting_id_content_hash_index": {
+          "name": "statements_meeting_id_content_hash_index",
           "columns": [
             {
               "expression": "meeting_id",
@@ -684,8 +846,8 @@
           "method": "btree",
           "with": {}
         },
-        "statements_meeting_id_idx": {
-          "name": "statements_meeting_id_idx",
+        "statements_meeting_id_index": {
+          "name": "statements_meeting_id_index",
           "columns": [
             {
               "expression": "meeting_id",
@@ -699,8 +861,8 @@
           "method": "btree",
           "with": {}
         },
-        "statements_kind_idx": {
-          "name": "statements_kind_idx",
+        "statements_kind_index": {
+          "name": "statements_kind_index",
           "columns": [
             {
               "expression": "kind",
@@ -714,8 +876,8 @@
           "method": "btree",
           "with": {}
         },
-        "statements_speaker_name_idx": {
-          "name": "statements_speaker_name_idx",
+        "statements_speaker_name_index": {
+          "name": "statements_speaker_name_index",
           "columns": [
             {
               "expression": "speaker_name",
@@ -761,18 +923,25 @@
           "primaryKey": true,
           "notNull": true
         },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -809,8 +978,8 @@
         }
       },
       "indexes": {
-        "statement_policy_tags_statement_id_tag_id_idx": {
-          "name": "statement_policy_tags_statement_id_tag_id_idx",
+        "statement_policy_tags_statement_id_tag_id_index": {
+          "name": "statement_policy_tags_statement_id_tag_id_index",
           "columns": [
             {
               "expression": "statement_id",
@@ -830,8 +999,8 @@
           "method": "btree",
           "with": {}
         },
-        "statement_policy_tags_tag_id_statement_id_idx": {
-          "name": "statement_policy_tags_tag_id_statement_id_idx",
+        "statement_policy_tags_tag_id_statement_id_index": {
+          "name": "statement_policy_tags_tag_id_statement_id_index",
           "columns": [
             {
               "expression": "tag_id",
@@ -924,8 +1093,8 @@
         }
       },
       "indexes": {
-        "scraper_job_logs_job_id_idx": {
-          "name": "scraper_job_logs_job_id_idx",
+        "scraper_job_logs_job_id_index": {
+          "name": "scraper_job_logs_job_id_index",
           "columns": [
             {
               "expression": "job_id",
@@ -939,8 +1108,8 @@
           "method": "btree",
           "with": {}
         },
-        "scraper_job_logs_created_at_idx": {
-          "name": "scraper_job_logs_created_at_idx",
+        "scraper_job_logs_created_at_index": {
+          "name": "scraper_job_logs_created_at_index",
           "columns": [
             {
               "expression": "created_at",
@@ -986,8 +1155,22 @@
           "primaryKey": true,
           "notNull": true
         },
-        "source": {
-          "name": "source",
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "municipality_id": {
+          "name": "municipality_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1000,9 +1183,9 @@
           "notNull": true,
           "default": "'pending'"
         },
-        "config": {
-          "name": "config",
-          "type": "jsonb",
+        "year": {
+          "name": "year",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -1039,13 +1222,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
         "started_at": {
           "name": "started_at",
           "type": "timestamp",
@@ -1060,8 +1236,8 @@
         }
       },
       "indexes": {
-        "scraper_jobs_status_idx": {
-          "name": "scraper_jobs_status_idx",
+        "scraper_jobs_status_index": {
+          "name": "scraper_jobs_status_index",
           "columns": [
             {
               "expression": "status",
@@ -1075,8 +1251,8 @@
           "method": "btree",
           "with": {}
         },
-        "scraper_jobs_created_at_idx": {
-          "name": "scraper_jobs_created_at_idx",
+        "scraper_jobs_created_at_index": {
+          "name": "scraper_jobs_created_at_index",
           "columns": [
             {
               "expression": "created_at",
@@ -1089,9 +1265,38 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "scraper_jobs_municipality_id_index": {
+          "name": "scraper_jobs_municipality_id_index",
+          "columns": [
+            {
+              "expression": "municipality_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "scraper_jobs_municipality_id_municipalities_id_fk": {
+          "name": "scraper_jobs_municipality_id_municipalities_id_fk",
+          "tableFrom": "scraper_jobs",
+          "tableTo": "municipalities",
+          "columnsFrom": [
+            "municipality_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1107,6 +1312,18 @@
         "national",
         "prefectural",
         "municipal"
+      ]
+    },
+    "public.system_type": {
+      "name": "system_type",
+      "schema": "public",
+      "values": [
+        "discussnet",
+        "dbsearch",
+        "sophia",
+        "voices",
+        "custom_html",
+        "pdf"
       ]
     },
     "public.log_level": {

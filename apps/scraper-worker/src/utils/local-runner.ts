@@ -16,10 +16,7 @@ import { eq } from "drizzle-orm";
 import { scraper_jobs } from "@open-gikai/db/schema";
 import { createDb } from "@open-gikai/db";
 import type { ScraperQueueMessage } from "./types";
-import { handleStartJob } from "../handlers/start-job";
-import { handleKagoshimaCouncil } from "../handlers/kagoshima";
-import { handleNdlPage } from "../handlers/ndl";
-import { handleLocalTarget } from "../handlers/local";
+import { dispatchJob } from "../handlers/dispatch-job";
 import {
   handleDiscussnetList,
   handleDiscussnetMeeting,
@@ -61,18 +58,6 @@ class LocalQueue {
         const q = this as unknown as Queue<ScraperQueueMessage>;
 
         switch (msg.type) {
-          case "start-job":
-            await handleStartJob(db, q, msg.jobId);
-            break;
-          case "kagoshima-council":
-            await handleKagoshimaCouncil(db, q, msg);
-            break;
-          case "ndl-page":
-            await handleNdlPage(db, q, msg);
-            break;
-          case "local-target":
-            await handleLocalTarget(db, msg);
-            break;
           case "discussnet-list":
             await handleDiscussnetList(db, q, msg);
             break;
@@ -112,9 +97,8 @@ async function main() {
 
     const queue = new LocalQueue();
     for (const job of pendingJobs) {
-      await queue.send({ type: "start-job", jobId: job.id });
+      await dispatchJob(db, queue, job.id);
     }
-
     await queue.processAll();
     console.log("[local-runner] Scraping complete.");
   }

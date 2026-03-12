@@ -7,11 +7,12 @@
 
 import { load } from "cheerio";
 import type { Db } from "@open-gikai/db";
-import type {
-  MeetingData,
-  LocalScraperConfig,
-  LocalScraperTarget,
-} from "../utils/types";
+import type { MeetingData, LocalScraperTarget } from "../utils/types";
+
+interface LocalScraperConfig {
+  targets: LocalScraperTarget[];
+  limit?: number;
+}
 import { delay } from "../utils/delay";
 import { createScraperJobLog } from "../db/job-logger";
 import type { LogLevel } from "@open-gikai/db/schema";

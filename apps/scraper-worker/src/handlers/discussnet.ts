@@ -48,15 +48,14 @@ export async function handleDiscussnetList(
   }
 
   const links = extractMeetingLinks(html, listUrl);
-  const limited = msg.limit !== undefined ? links.slice(0, msg.limit) : links;
 
   await logger(
     "info",
-    `DiscussNet [${msg.municipalityName}] ${limited.length} 件の議事録リンクを検出`
+    `DiscussNet [${msg.municipalityName}] ${links.length} 件の議事録リンクを検出`
   );
 
   // 個別議事録をキューに投入
-  for (const meetingUrl of limited) {
+  for (const meetingUrl of links) {
     await queue.send({
       type: "discussnet-meeting",
       jobId: msg.jobId,
@@ -67,8 +66,8 @@ export async function handleDiscussnetList(
     });
   }
 
-  // 次ページがあればキューに投入（limit 未指定時のみ）
-  if (msg.limit === undefined) {
+  // 次ページがあればキューに投入
+  {
     const nextUrl = detectNextPageUrl(html, listUrl);
     if (nextUrl) {
       await logger(

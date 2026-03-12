@@ -13,8 +13,12 @@ export const policy_tags = pgTable("policy_tags", {
   id: text()
     .$defaultFn(() => createId())
     .primaryKey(),
-  name: text().notNull().unique(),
   createdAt: timestamp().defaultNow().notNull(),
+  updatedAt: timestamp()
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  name: text().notNull().unique(),
 });
 
 export const statement_policy_tags = pgTable(
@@ -28,14 +32,8 @@ export const statement_policy_tags = pgTable(
       .references(() => policy_tags.id, { onDelete: "cascade" }),
   },
   (table) => [
-    uniqueIndex("statement_policy_tags_statement_id_tag_id_idx").on(
-      table.statementId,
-      table.tagId
-    ),
-    index("statement_policy_tags_tag_id_statement_id_idx").on(
-      table.tagId,
-      table.statementId
-    ),
+    uniqueIndex().on(table.statementId, table.tagId),
+    index().on(table.tagId, table.statementId),
   ]
 );
 

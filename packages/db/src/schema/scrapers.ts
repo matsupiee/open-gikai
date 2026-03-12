@@ -4,11 +4,11 @@ import {
   integer,
   timestamp,
   index,
-  jsonb,
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
+import { municipalities } from "./municipalities";
 
 export const scraperJobStatusEnum = pgEnum("scraper_job_status", [
   "pending",
@@ -23,6 +23,7 @@ export type ScraperJobStatus = (typeof scraperJobStatusEnum.enumValues)[number];
 /**
  * スクレイパージョブ管理テーブル。
  * GUI からトリガーされたスクレイピングジョブの状態を追跡する。
+ * 1 ジョブ = 1 自治体のスクレイピング。
  */
 export const scraper_jobs = pgTable(
   "scraper_jobs",
@@ -30,12 +31,19 @@ export const scraper_jobs = pgTable(
     id: text()
       .$defaultFn(() => createId())
       .primaryKey(),
-    /** スクレイパーの種類 */
-    source: text().notNull(), // "ndl" | "local" | "kagoshima-api"
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp()
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+    /** 対象自治体 */
+    municipalityId: text()
+      .notNull()
+      .references(() => municipalities.id),
     /** ジョブの状態 */
-    status: scraperJobStatusEnum("status").notNull().default("pending"),
-    /** スクレイパー設定 (例: { from, until, prefecture, municipality, year }) */
-    config: jsonb().notNull(),
+    status: scraperJobStatusEnum().notNull().default("pending"),
+    /** スクレイピング対象になる年 */
+    year: integer().notNull(),
     /** 処理済みアイテム数 */
     processedItems: integer().notNull().default(0),
     /** 総アイテム数 (判明次第更新) */
@@ -46,16 +54,15 @@ export const scraper_jobs = pgTable(
     totalSkipped: integer().notNull().default(0),
     /** エラーメッセージ (失敗時のみ) */
     errorMessage: text(),
-    /** ジョブ作成日時 */
-    createdAt: timestamp().defaultNow().notNull(),
     /** 処理開始日時 */
     startedAt: timestamp(),
     /** 処理完了日時 */
     completedAt: timestamp(),
   },
   (table) => [
-    index("scraper_jobs_status_idx").on(table.status),
-    index("scraper_jobs_created_at_idx").on(table.createdAt),
+    index().on(table.status),
+    index().on(table.createdAt),
+    index().on(table.municipalityId),
   ]
 );
 
@@ -76,19 +83,23 @@ export const scraper_job_logs = pgTable(
       .notNull()
       .references(() => scraper_jobs.id, { onDelete: "cascade" }),
     /** ログレベル */
-    level: logLevelEnum("level").notNull(),
+    level: logLevelEnum().notNull(),
     message: text().notNull(),
     createdAt: timestamp().defaultNow().notNull(),
   },
-  (table) => [
-    index("scraper_job_logs_job_id_idx").on(table.jobId),
-    index("scraper_job_logs_created_at_idx").on(table.createdAt),
-  ]
+  (table) => [index().on(table.jobId), index().on(table.createdAt)]
 );
 
-export const scraperJobsRelations = relations(scraper_jobs, ({ many }) => ({
-  logs: many(scraper_job_logs),
-}));
+export const scraperJobsRelations = relations(
+  scraper_jobs,
+  ({ many, one }) => ({
+    logs: many(scraper_job_logs),
+    municipality: one(municipalities, {
+      fields: [scraper_jobs.municipalityId],
+      references: [municipalities.id],
+    }),
+  })
+);
 
 export const scraperJobLogsRelations = relations(
   scraper_job_logs,

@@ -12,9 +12,9 @@ import type {
 } from "./_schemas";
 export interface ScraperJob {
   id: string;
-  source: string;
+  municipalityId: string;
   status: string;
-  config: unknown;
+  year: number;
   processedItems: number;
   totalItems: number | null;
   totalInserted: number;
@@ -45,9 +45,9 @@ export interface GetJobLogsResponse {
 function rowToJob(row: typeof scraper_jobs.$inferSelect): ScraperJob {
   return {
     id: row.id,
-    source: row.source,
+    municipalityId: row.municipalityId,
     status: row.status,
-    config: row.config,
+    year: row.year,
     processedItems: row.processedItems,
     totalItems: row.totalItems ?? null,
     totalInserted: row.totalInserted,
@@ -85,9 +85,9 @@ export async function createJob(
   const [row] = await db
     .insert(scraper_jobs)
     .values({
-      source: input.source,
+      municipalityId: input.municipalityId,
       status: "pending",
-      config: input.config,
+      year: input.year,
     })
     .returning();
 

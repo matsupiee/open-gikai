@@ -68,6 +68,11 @@ export const statements = pgTable(
     id: text()
       .$defaultFn(() => createId())
       .primaryKey(),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp()
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
     // どの会議の発言か（meetings テーブルへの外部キー。会議削除時に発言も削除）
     meetingId: text()
       .notNull()
@@ -91,20 +96,16 @@ export const statements = pgTable(
     contentTsv: tsvector().generatedAlwaysAs(
       sql`to_tsvector('simple', coalesce(content, ''))`
     ),
-    createdAt: timestamp().defaultNow().notNull(),
   },
   (table) => [
     // 同じ会議内での発言重複を防ぐユニーク制約
-    uniqueIndex("statements_meeting_id_content_hash_idx").on(
-      table.meetingId,
-      table.contentHash
-    ),
+    uniqueIndex().on(table.meetingId, table.contentHash),
     // 会議 ID での絞り込みを高速化
-    index("statements_meeting_id_idx").on(table.meetingId),
+    index().on(table.meetingId),
     // 発言種別での絞り込みを高速化
-    index("statements_kind_idx").on(table.kind),
+    index().on(table.kind),
     // 発言者名での絞り込みを高速化
-    index("statements_speaker_name_idx").on(table.speakerName),
+    index().on(table.speakerName),
   ]
 );
 

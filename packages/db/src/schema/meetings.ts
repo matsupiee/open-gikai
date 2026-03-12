@@ -24,38 +24,30 @@ export const meetings = pgTable(
     id: text()
       .$defaultFn(() => createId())
       .primaryKey(),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp()
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
     title: text().notNull(),
     meetingType: text().notNull(),
     heldOn: date().notNull(),
     sourceUrl: text(),
-    assemblyLevel: assemblyLevelEnum("assembly_level").notNull(),
+    assemblyLevel: assemblyLevelEnum().notNull(),
     prefecture: text(),
     municipality: text(),
     externalId: text(),
     rawText: text().notNull(),
     status: text().notNull().default("pending"),
     scrapedAt: timestamp(),
-    createdAt: timestamp().defaultNow().notNull(),
   },
   (table) => [
-    uniqueIndex("meetings_assembly_level_external_id_idx").on(
-      table.assemblyLevel,
-      table.externalId
-    ),
-    index("meetings_held_on_idx").on(table.heldOn),
-    index("meetings_meeting_type_held_on_idx").on(
-      table.meetingType,
-      table.heldOn
-    ),
-    index("meetings_assembly_level_held_on_idx").on(
-      table.assemblyLevel,
-      table.heldOn
-    ),
-    index("meetings_prefecture_held_on_idx").on(table.prefecture, table.heldOn),
-    index("meetings_municipality_held_on_idx").on(
-      table.municipality,
-      table.heldOn
-    ),
+    uniqueIndex().on(table.assemblyLevel, table.externalId),
+    index().on(table.heldOn),
+    index().on(table.meetingType, table.heldOn),
+    index().on(table.assemblyLevel, table.heldOn),
+    index().on(table.prefecture, table.heldOn),
+    index().on(table.municipality, table.heldOn),
   ]
 );
 
