@@ -46,18 +46,18 @@ function parseCsv(filePath: string): MunicipalityRecord[] {
 async function seed() {
   const __dirname = dirname(fileURLToPath(import.meta.url));
   const csvPath = join(__dirname, "municipalities.csv");
-  const municipalitiyList = parseCsv(csvPath);
+  const municipalityList = parseCsv(csvPath);
 
   const db = drizzle(DATABASE_URL as string, { casing: "snake_case" });
 
   console.log(
-    `[seed] ${municipalitiyList.length} 件の DiscussNet 自治体を登録します`
+    `[seed] ${municipalityList.length} 件の DiscussNet 自治体を登録します`
   );
 
   let inserted = 0;
   let skipped = 0;
 
-  for (const m of municipalitiyList) {
+  for (const m of municipalityList) {
     const displayName = m.name || m.prefecture; // 都道府県行は都道府県名を name に
     const result = await db
       .insert(municipalities)

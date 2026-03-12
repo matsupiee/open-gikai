@@ -16,7 +16,7 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "bun src/seeds/municipalities-discussnet.ts"
+    "db:seed": "bun src/seeds/seed-municipality.ts"
   },
   "dependencies": {
     "@open-gikai/env": "workspace:*",
