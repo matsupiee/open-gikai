@@ -6,7 +6,13 @@ import {
   scrapersCancelJobSchema,
   scrapersGetJobLogsSchema,
 } from "./_schemas";
-import { listJobs, createJob, getJob, cancelJob, getJobLogs } from "./scrapers.service";
+import {
+  listJobs,
+  createJob,
+  getJob,
+  cancelJob,
+  getJobLogs,
+} from "./scrapers.service";
 
 export const scrapersRouter = {
   listJobs: protectedProcedure

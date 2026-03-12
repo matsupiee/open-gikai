@@ -28,6 +28,19 @@ async function generateEmbedding(
 }
 
 /**
+ * rawText を発言単位に分割する。
+ * 鹿児島などのスクレイパーは複数のminuteを "\n\n---\n\n" で結合しているため、
+ * そのセパレータで分割する。セパレータがなければ全体を1件とみなす。
+ */
+function splitIntoStatements(rawText: string): string[] {
+  const parts = rawText
+    .split("\n\n---\n\n")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return parts.length > 0 ? parts : [rawText.trim()];
+}
+
+/**
  * status="pending" の meetings を statements に変換して保存する。
  * OPENAI_API_KEY が指定された場合は embedding も生成する。
  */
@@ -46,9 +59,9 @@ export async function processPendingMeetings(
   );
 
   for (const meeting of pendingMeetings) {
-    const content = meeting.rawText.trim();
+    const rawText = meeting.rawText.trim();
 
-    if (!content) {
+    if (!rawText) {
       await db
         .update(meetings)
         .set({ status: "processed" })
@@ -56,47 +69,63 @@ export async function processPendingMeetings(
       continue;
     }
 
-    const contentHash = createHash("sha256").update(content).digest("hex");
+    const parts = splitIntoStatements(rawText);
+    let offset = 0;
+    let hasError = false;
 
-    let embedding: number[] | null = null;
-    if (openaiApiKey) {
-      embedding = await generateEmbedding(content, openaiApiKey);
-      if (!embedding) {
-        console.warn(
-          `[process-meetings] Failed to generate embedding for meeting ${meeting.id}`
-        );
+    for (const part of parts) {
+      const contentHash = createHash("sha256").update(part).digest("hex");
+      const startOffset = offset;
+      const endOffset = offset + part.length;
+
+      let embedding: number[] | null = null;
+      if (openaiApiKey) {
+        embedding = await generateEmbedding(part, openaiApiKey);
+        if (!embedding) {
+          console.warn(
+            `[process-meetings] Failed to generate embedding for meeting ${meeting.id}`
+          );
+        }
       }
+
+      try {
+        await db
+          .insert(statements)
+          .values({
+            meetingId: meeting.id,
+            kind: "speech",
+            speakerName: null,
+            speakerRole: null,
+            content: part,
+            contentHash,
+            startOffset,
+            endOffset,
+            pageHint: null,
+            embedding,
+          })
+          .onConflictDoNothing();
+      } catch (err) {
+        console.error(
+          `[process-meetings] Failed to insert statement for meeting ${meeting.id}:`,
+          err
+        );
+        hasError = true;
+        break;
+      }
+
+      // 次の part の開始オフセットを更新（セパレータ "\n\n---\n\n" の9文字分を加算）
+      offset = endOffset + 9;
     }
 
-    try {
-      await db
-        .insert(statements)
-        .values({
-          meetingId: meeting.id,
-          kind: "speech",
-          speakerName: null,
-          speakerRole: null,
-          content,
-          contentHash,
-          startOffset: 0,
-          endOffset: content.length,
-          pageHint: null,
-          embedding,
-        })
-        .onConflictDoNothing();
-    } catch (err) {
-      console.error(
-        `[process-meetings] Failed to insert statement for meeting ${meeting.id}:`,
-        err
-      );
-      continue;
-    }
+    if (hasError) continue;
 
     await db
       .update(meetings)
       .set({ status: "processed" })
       .where(eq(meetings.id, meeting.id));
 
-    console.log(`[process-meetings] Processed meeting ${meeting.id}`);
+    console.log(
+      `[process-meetings] Processed meeting ${meeting.id} → ${parts.length} statement(s)`
+    );
   }
 }

@@ -8,17 +8,23 @@ import {
 import type { ScraperQueueMessage } from "../utils/types";
 import { saveMeetings } from "../db/save-meetings";
 
-const NDL_BASE = "https://kokkai.ndl.go.jp/api/speech";
+const NDL_BASE = "https://kokkai.ndl.go.jp/api/meeting";
 const DELAY_MS = 500;
 
 interface NdlSpeechRecord {
   speechID: string;
+  speaker?: string;
+  speech: string;
+  speechURL: string;
+}
+
+interface NdlMeetingRecord {
+  issueID: string;
   nameOfHouse: string;
   nameOfMeeting: string;
   date: string;
-  speechURL: string;
-  speech: string;
-  speaker?: string;
+  meetingURL: string;
+  speechRecord: NdlSpeechRecord[];
 }
 
 interface NdlApiResponse {
@@ -26,7 +32,7 @@ interface NdlApiResponse {
   numberOfReturn: number;
   startRecord: number;
   nextRecordPosition: number | null;
-  speechRecord: NdlSpeechRecord[];
+  meetingRecord: NdlMeetingRecord[];
 }
 
 async function fetchPage(
@@ -38,7 +44,7 @@ async function fetchPage(
     from,
     until,
     recordPacking: "json",
-    maximumRecords: "100",
+    maximumRecords: "10",
     startRecord: startRecord.toString(),
   });
 
@@ -81,7 +87,7 @@ export async function handleNdlPage(
     return;
   }
 
-  if (!response.speechRecord || response.speechRecord.length === 0) {
+  if (!response.meetingRecord || response.meetingRecord.length === 0) {
     await createScraperJobLog(db, {
       jobId,
       level: "info",
@@ -94,19 +100,19 @@ export async function handleNdlPage(
   const remaining = limit === undefined ? undefined : limit - fetchedSoFar;
   const records =
     remaining === undefined
-      ? response.speechRecord
-      : response.speechRecord.slice(0, remaining);
+      ? response.meetingRecord
+      : response.meetingRecord.slice(0, remaining);
 
-  const meetings = records.map((r) => ({
+  const meetings = records.map((r: NdlMeetingRecord) => ({
     title: `${r.nameOfHouse} ${r.nameOfMeeting}`,
     meetingType: "plenary" as const,
     heldOn: r.date,
-    sourceUrl: r.speechURL,
+    sourceUrl: r.meetingURL,
     assemblyLevel: "national" as const,
     prefecture: null,
     municipality: null,
-    externalId: r.speechID,
-    rawText: r.speech,
+    externalId: r.issueID,
+    rawText: r.speechRecord.map((s) => s.speech).join("\n"),
   }));
 
   const { inserted, skipped } = await saveMeetings(db, meetings);

@@ -10,11 +10,7 @@ export interface CreateContextParams {
 /**
  * フロントから認証トークンつきでアクセスする際に使う
  */
-export async function createContext({
-  req,
-  auth,
-  db,
-}: CreateContextParams) {
+export async function createContext({ req, auth, db }: CreateContextParams) {
   const session = await auth.api.getSession({
     headers: req.headers,
   });

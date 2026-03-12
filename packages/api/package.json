@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@open-gikai/config": "workspace:*",
+    "@types/pg": "^8.18.0",
     "typescript": "catalog:"
   }
 }

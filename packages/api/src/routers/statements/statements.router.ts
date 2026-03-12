@@ -1,6 +1,14 @@
 import { publicProcedure } from "../../index";
-import { statementsSearchSchema, statementsSemanticSearchSchema, statementsAskSchema } from "./_schemas";
-import { searchStatements, semanticSearchStatements, askStatements } from "./statements.service";
+import {
+  statementsSearchSchema,
+  statementsSemanticSearchSchema,
+  statementsAskSchema,
+} from "./_schemas";
+import {
+  searchStatements,
+  semanticSearchStatements,
+  askStatements,
+} from "./statements.service";
 
 export const statementsRouter = {
   search: publicProcedure
