@@ -2,6 +2,7 @@ import type { RouterClient } from "@orpc/server";
 
 import { createContext } from "@open-gikai/api/context";
 import { appRouter } from "@open-gikai/api/routers/index";
+import { getAuth, getDb } from "@/lib/server";
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { createRouterClient } from "@orpc/server";
@@ -28,7 +29,11 @@ const getORPCClient = createIsomorphicFn()
   .server(() =>
     createRouterClient(appRouter, {
       context: async () => {
-        return createContext({ req: getRequest() });
+        return createContext({
+          req: getRequest(),
+          auth: getAuth(),
+          db: getDb(),
+        });
       },
     }),
   )

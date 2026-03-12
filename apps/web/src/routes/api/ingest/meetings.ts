@@ -1,7 +1,9 @@
-import { db, meetings } from "@open-gikai/db";
+import { meetings } from "@open-gikai/db";
 import { env } from "@open-gikai/env/server";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+
+import { getDb } from "@/lib/server";
 
 const meetingSchema = z.object({
   title: z.string(),
@@ -42,20 +44,20 @@ async function handle({ request }: { request: Request }) {
 
   const now = new Date();
   const records = result.data.meetings.map((m) => ({
-    id: crypto.randomUUID(),
     title: m.title,
-    meeting_type: m.meetingType,
-    held_on: m.heldOn,
-    source_url: m.sourceUrl,
-    assembly_level: m.assemblyLevel,
+    meetingType: m.meetingType,
+    heldOn: m.heldOn,
+    sourceUrl: m.sourceUrl,
+    assemblyLevel: m.assemblyLevel,
     prefecture: m.prefecture,
     municipality: m.municipality,
-    external_id: m.externalId,
-    raw_text: m.rawText,
+    externalId: m.externalId,
+    rawText: m.rawText,
     status: "pending" as const,
-    scraped_at: now,
+    scrapedAt: now,
   }));
 
+  const db = getDb();
   const inserted = await db
     .insert(meetings)
     .values(records)

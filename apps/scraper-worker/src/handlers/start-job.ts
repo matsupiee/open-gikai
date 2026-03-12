@@ -1,9 +1,13 @@
 import { eq } from "drizzle-orm";
 import { scraper_jobs } from "@open-gikai/db/schema";
-import type { KagoshimaScraperConfig, LocalScraperConfig, NdlScraperConfig } from "@open-gikai/scraper";
-import type { Db } from "../db";
-import { createJobLogger, updateJobStatus } from "../job-logger";
-import type { ScraperQueueMessage } from "../types";
+import type { Db } from "@open-gikai/db";
+import { createJobLogger, updateJobStatus } from "../db/job-logger";
+import type {
+  KagoshimaScraperConfig,
+  LocalScraperConfig,
+  NdlScraperConfig,
+  ScraperQueueMessage,
+} from "../utils/types";
 
 const API_BASE = "https://ssp.kaigiroku.net/dnp/search";
 const TENANT_ID = 539;
@@ -31,7 +35,9 @@ interface CouncilsIndexResponse {
 
 async function fetchKagoshimaCouncils(
   config: KagoshimaScraperConfig
-): Promise<Array<{ councilId: number; councilName: string; typeGroupNames: string[] }>> {
+): Promise<
+  Array<{ councilId: number; councilName: string; typeGroupNames: string[] }>
+> {
   const res = await fetch(`${API_BASE}/councils/index`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -45,7 +51,11 @@ async function fetchKagoshimaCouncils(
     ? viewYears.filter((vy) => Number(vy.view_year) === config.year)
     : viewYears;
 
-  const result: Array<{ councilId: number; councilName: string; typeGroupNames: string[] }> = [];
+  const result: Array<{
+    councilId: number;
+    councilName: string;
+    typeGroupNames: string[];
+  }> = [];
   for (const yearEntry of filtered) {
     for (const typeGroup of yearEntry.council_type) {
       const typeGroupNames = [
@@ -91,6 +101,11 @@ export async function handleStartJob(
     return;
   }
 
+  if (job.status === "running" || job.status === "completed") {
+    await logger("warn", `ジョブは既に処理済みのためスキップします: status=${job.status}`);
+    return;
+  }
+
   await updateJobStatus(db, jobId, "running");
   await logger("info", `ジョブ開始: source=${job.source}`);
 
@@ -107,12 +122,19 @@ export async function handleStartJob(
 
     if (councils.length === 0) {
       await logger("error", "鹿児島: 議会一覧の取得に失敗しました");
-      await updateJobStatus(db, jobId, "failed", { errorMessage: "議会一覧の取得に失敗" });
+      await updateJobStatus(db, jobId, "failed", {
+        errorMessage: "議会一覧の取得に失敗",
+      });
       return;
     }
 
-    await updateJobStatus(db, jobId, "running", { totalItems: councils.length });
-    await logger("info", `鹿児島: ${councils.length} 件の議会セッションをキューに投入します`);
+    await updateJobStatus(db, jobId, "running", {
+      totalItems: councils.length,
+    });
+    await logger(
+      "info",
+      `鹿児島: ${councils.length} 件の議会セッションをキューに投入します`
+    );
 
     for (const council of councils) {
       await queue.send({
@@ -131,7 +153,10 @@ export async function handleStartJob(
       limit: config.limit as number | undefined,
     };
 
-    await logger("info", `NDL: ページ 1 をキューに投入します (${scraperConfig.from} ～ ${scraperConfig.until})`);
+    await logger(
+      "info",
+      `NDL: ページ 1 をキューに投入します (${scraperConfig.from} ～ ${scraperConfig.until})`
+    );
     await queue.send({
       type: "ndl-page",
       jobId,
@@ -146,7 +171,10 @@ export async function handleStartJob(
     const targets = scraperConfig.targets ?? [];
 
     await updateJobStatus(db, jobId, "running", { totalItems: targets.length });
-    await logger("info", `Local: ${targets.length} 件のターゲットをキューに投入します`);
+    await logger(
+      "info",
+      `Local: ${targets.length} 件のターゲットをキューに投入します`
+    );
 
     for (const target of targets) {
       await queue.send({
@@ -158,6 +186,8 @@ export async function handleStartJob(
     }
   } else {
     await logger("error", `不明なソース: ${job.source}`);
-    await updateJobStatus(db, jobId, "failed", { errorMessage: `不明なソース: ${job.source}` });
+    await updateJobStatus(db, jobId, "failed", {
+      errorMessage: `不明なソース: ${job.source}`,
+    });
   }
 }

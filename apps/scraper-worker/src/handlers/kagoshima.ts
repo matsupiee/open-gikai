@@ -1,9 +1,14 @@
 import { eq } from "drizzle-orm";
 import { scraper_jobs } from "@open-gikai/db/schema";
-import type { Db } from "../db";
-import { addJobStats, createJobLogger, updateJobStatus } from "../job-logger";
-import type { ScraperQueueMessage } from "../types";
-import { saveMeetings } from "./save-meetings";
+import type { Db } from "@open-gikai/db";
+import { delay } from "../utils/delay";
+import {
+  addJobStats,
+  createScraperJobLog,
+  updateScraperJobStatus,
+} from "../db/job-logger";
+import type { ScraperQueueMessage } from "../utils/types";
+import { saveMeetings } from "../db/save-meetings";
 
 const API_BASE = "https://ssp.kaigiroku.net/dnp/search";
 const TENANT_ID = 539;
@@ -32,11 +37,10 @@ interface GetMinuteResponse {
   tenant_minutes: MinuteEntry[];
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function apiPost<T>(path: string, body: Record<string, unknown>): Promise<T | null> {
+async function apiPost<T>(
+  path: string,
+  body: Record<string, unknown>
+): Promise<T | null> {
   try {
     const res = await fetch(`${API_BASE}/${path}`, {
       method: "POST",
@@ -51,7 +55,10 @@ async function apiPost<T>(path: string, body: Record<string, unknown>): Promise<
 }
 
 function extractText(html: string): string {
-  return html.replace(/<[^>]+>/g, "").replace(/\r\n/g, "\n").trim();
+  return html
+    .replace(/<[^>]+>/g, "")
+    .replace(/\r\n/g, "\n")
+    .trim();
 }
 
 function normalizeJa(str: string): string {
@@ -60,7 +67,10 @@ function normalizeJa(str: string): string {
     .replace(/[　]/g, " ");
 }
 
-function parseDateFromSchedule(scheduleName: string, councilName: string): string | null {
+function parseDateFromSchedule(
+  scheduleName: string,
+  councilName: string
+): string | null {
   const normCouncil = normalizeJa(councilName);
   const normSchedule = normalizeJa(scheduleName);
 
@@ -84,16 +94,18 @@ function classifyMeetingType(typeGroupNames: string[]): string {
   return "plenary";
 }
 
-type KagoshimaCouncilMsg = Extract<ScraperQueueMessage, { type: "kagoshima-council" }>;
+type KagoshimaCouncilMsg = Extract<
+  ScraperQueueMessage,
+  { type: "kagoshima-council" }
+>;
 
 export async function handleKagoshimaCouncil(
   db: Db,
   _queue: Queue<ScraperQueueMessage>,
   msg: KagoshimaCouncilMsg
 ): Promise<void> {
-  const { jobId, councilId, councilName, typeGroupNames, remainingCouncils } = msg;
-  const logger = createJobLogger(db, jobId);
-
+  const { jobId, councilId, councilName, typeGroupNames, remainingCouncils } =
+    msg;
   // キャンセル確認
   const rows = await db
     .select({ status: scraper_jobs.status })
@@ -101,11 +113,19 @@ export async function handleKagoshimaCouncil(
     .where(eq(scraper_jobs.id, jobId))
     .limit(1);
   if (rows[0]?.status === "cancelled") {
-    await logger("info", "ジョブがキャンセルされました");
+    await createScraperJobLog(db, {
+      jobId,
+      level: "info",
+      message: "ジョブがキャンセルされました",
+    });
     return;
   }
 
-  await logger("info", `鹿児島: 処理中 — ${councilName} (id=${councilId})`);
+  await createScraperJobLog(db, {
+    jobId,
+    level: "info",
+    message: `鹿児島: 処理中 — ${councilName} (id=${councilId})`,
+  });
 
   await delay(DELAY_MS);
   const schedResp = await apiPost<GetScheduleResponse>("minutes/get_schedule", {
@@ -114,8 +134,13 @@ export async function handleKagoshimaCouncil(
   });
 
   if (!schedResp || !schedResp.council_schedules.length) {
-    await logger("warn", `鹿児島: 議会 ${councilId} のスケジュールが見つかりません`);
-    await finishCouncil(db, jobId, remainingCouncils, logger, 0, 0);
+    await createScraperJobLog(db, {
+      jobId,
+      level: "warn",
+      message: `鹿児島: 議会 ${councilId} のスケジュールが見つかりません`,
+    });
+
+    await finishCouncil(db, jobId, remainingCouncils, 0, 0);
     return;
   }
 
@@ -132,7 +157,11 @@ export async function handleKagoshimaCouncil(
     });
 
     if (!minuteResp || !minuteResp.tenant_minutes.length) {
-      await logger("warn", `鹿児島: スケジュール ${sched.schedule_id} の議事録が見つかりません`);
+      await createScraperJobLog(db, {
+        jobId,
+        level: "warn",
+        message: `鹿児島: スケジュール ${sched.schedule_id} の議事録が見つかりません`,
+      });
       continue;
     }
 
@@ -143,7 +172,11 @@ export async function handleKagoshimaCouncil(
 
     const heldOn = parseDateFromSchedule(sched.name, councilName);
     if (!heldOn) {
-      await logger("warn", `鹿児島: 日付を解析できません — "${sched.name}" / "${councilName}"`);
+      await createScraperJobLog(db, {
+        jobId,
+        level: "warn",
+        message: `鹿児島: 日付を解析できません — "${sched.name}" / "${councilName}"`,
+      });
       continue;
     }
 
@@ -161,15 +194,19 @@ export async function handleKagoshimaCouncil(
   }
 
   const { inserted, skipped } = await saveMeetings(db, records);
-  await logger("info", `鹿児島: ${councilName} 完了 (inserted=${inserted}, skipped=${skipped})`);
-  await finishCouncil(db, jobId, remainingCouncils, logger, inserted, skipped);
+  await createScraperJobLog(db, {
+    jobId,
+    level: "info",
+    message: `鹿児島: ${councilName} 完了 (inserted=${inserted}, skipped=${skipped})`,
+  });
+
+  await finishCouncil(db, jobId, remainingCouncils, inserted, skipped);
 }
 
 async function finishCouncil(
   db: Db,
   jobId: string,
   remainingCouncils: number,
-  logger: ReturnType<typeof createJobLogger>,
   inserted: number,
   skipped: number
 ): Promise<void> {
@@ -177,21 +214,32 @@ async function finishCouncil(
 
   // processed_items が total_items に達したかチェック
   const rows = await db
-    .select({ processed: scraper_jobs.processed_items, total: scraper_jobs.total_items })
+    .select({
+      processed: scraper_jobs.processedItems,
+      total: scraper_jobs.totalItems,
+    })
     .from(scraper_jobs)
     .where(eq(scraper_jobs.id, jobId))
     .limit(1);
 
   const job = rows[0];
   if (job && job.total !== null && job.processed >= job.total) {
-    await updateJobStatus(db, jobId, "completed", {
+    await updateScraperJobStatus(db, jobId, "completed", {
       totalInserted: undefined,
       totalSkipped: undefined,
     });
-    await logger("info", `鹿児島 scrape 完了 (全 ${job.total} 件処理済み)`);
+    await createScraperJobLog(db, {
+      jobId,
+      level: "info",
+      message: `鹿児島 scrape 完了 (全 ${job.total} 件処理済み)`,
+    });
   } else if (remainingCouncils <= 1) {
     // フォールバック: remainingCouncils が 0 または 1 なら完了とみなす
-    await updateJobStatus(db, jobId, "completed");
-    await logger("info", "鹿児島 scrape 完了");
+    await updateScraperJobStatus(db, jobId, "completed");
+    await createScraperJobLog(db, {
+      jobId,
+      level: "info",
+      message: "鹿児島 scrape 完了",
+    });
   }
 }

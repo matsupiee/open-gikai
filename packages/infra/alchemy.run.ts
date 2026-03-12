@@ -10,10 +10,14 @@ const app = await alchemy("open-gikai");
 const scraperQueue = await Queue("scraper-jobs", {
   name: "scraper-jobs",
   settings: {
-    messageRetentionPeriod: 86400, // 24 時間
+    messageRetentionPeriod: 86400, // メッセージを24時間保持
   },
 });
 
+/**
+ * スクレイピング処理を実行するCloudflare Worker
+ * 1分ごとに pending ジョブを確認して、ジョブがあればジョブを実行する
+ */
 const scraperWorker = await Worker("scraper-worker", {
   entrypoint: "../../apps/scraper-worker/src/index.ts",
   crons: ["*/1 * * * *"], // 1 分ごとに pending ジョブを確認
@@ -21,10 +25,10 @@ const scraperWorker = await Worker("scraper-worker", {
     {
       queue: scraperQueue,
       settings: {
-        batchSize: 5,
-        maxConcurrency: 2,
-        maxRetries: 3,
-        retryDelay: 30,
+        batchSize: 5, // メッセージを5件まとめて処理する
+        maxConcurrency: 2, // 同時に処理するメッセージの最大数
+        maxRetries: 3, // 最大リトライ回数
+        retryDelay: 30, // リトライの遅延時間
       },
     },
   ],
@@ -34,6 +38,9 @@ const scraperWorker = await Worker("scraper-worker", {
   },
 });
 
+/**
+ * フロントエンドサーバーのCloudflare Worker
+ */
 export const web = await TanStackStart("web", {
   cwd: "../../apps/web",
   bindings: {

@@ -1,34 +1,61 @@
-import { pgTable, text, date, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  date,
+  timestamp,
+  index,
+  uniqueIndex,
+  pgEnum,
+} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { statements } from "./statements";
+import { createId } from "@paralleldrive/cuid2";
+
+export const assemblyLevelEnum = pgEnum("assembly_level", [
+  "national", // 国会
+  "prefectural", // 都道府県議会
+  "municipal", // 市町村議会
+]);
+export type AssemblyLevel = (typeof assemblyLevelEnum.enumValues)[number];
 
 export const meetings = pgTable(
   "meetings",
   {
-    id: text("id").primaryKey(),
-    title: text("title").notNull(),
-    meeting_type: text("meeting_type").notNull(),
-    held_on: date("held_on").notNull(),
-    source_url: text("source_url"),
-    assembly_level: text("assembly_level").notNull(),
-    prefecture: text("prefecture"),
-    municipality: text("municipality"),
-    external_id: text("external_id"),
-    raw_text: text("raw_text").notNull(),
-    status: text("status").notNull().default("pending"),
-    scraped_at: timestamp("scraped_at"),
-    created_at: timestamp("created_at").defaultNow().notNull(),
+    id: text()
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    title: text().notNull(),
+    meetingType: text().notNull(),
+    heldOn: date().notNull(),
+    sourceUrl: text(),
+    assemblyLevel: assemblyLevelEnum("assembly_level").notNull(),
+    prefecture: text(),
+    municipality: text(),
+    externalId: text(),
+    rawText: text().notNull(),
+    status: text().notNull().default("pending"),
+    scrapedAt: timestamp(),
+    createdAt: timestamp().defaultNow().notNull(),
   },
   (table) => [
     uniqueIndex("meetings_assembly_level_external_id_idx").on(
-      table.assembly_level,
-      table.external_id
+      table.assemblyLevel,
+      table.externalId
     ),
-    index("meetings_held_on_idx").on(table.held_on),
-    index("meetings_meeting_type_held_on_idx").on(table.meeting_type, table.held_on),
-    index("meetings_assembly_level_held_on_idx").on(table.assembly_level, table.held_on),
-    index("meetings_prefecture_held_on_idx").on(table.prefecture, table.held_on),
-    index("meetings_municipality_held_on_idx").on(table.municipality, table.held_on),
+    index("meetings_held_on_idx").on(table.heldOn),
+    index("meetings_meeting_type_held_on_idx").on(
+      table.meetingType,
+      table.heldOn
+    ),
+    index("meetings_assembly_level_held_on_idx").on(
+      table.assemblyLevel,
+      table.heldOn
+    ),
+    index("meetings_prefecture_held_on_idx").on(table.prefecture, table.heldOn),
+    index("meetings_municipality_held_on_idx").on(
+      table.municipality,
+      table.heldOn
+    ),
   ]
 );
 

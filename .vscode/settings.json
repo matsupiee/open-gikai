@@ -1,3 +1,11 @@
 {
-  "cSpell.words": ["gikai", "orpc", "pgvector", "psql", "tsvector", "Turborepo"]
+  "cSpell.words": [
+    "gikai",
+    "orpc",
+    "paralleldrive",
+    "pgvector",
+    "psql",
+    "tsvector",
+    "Turborepo"
+  ]
 }

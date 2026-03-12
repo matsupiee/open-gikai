@@ -1,6 +1,6 @@
+import type { Db } from "@open-gikai/db";
 import { meetings } from "@open-gikai/db/schema";
-import type { MeetingData } from "@open-gikai/scraper";
-import type { Db } from "../db";
+import type { MeetingData } from "../utils/types";
 
 /**
  * MeetingData 配列を DB に upsert する。
@@ -15,18 +15,17 @@ export async function saveMeetings(
 
   const now = new Date();
   const rows = records.map((m) => ({
-    id: crypto.randomUUID(),
     title: m.title,
-    meeting_type: m.meetingType,
-    held_on: m.heldOn,
-    source_url: m.sourceUrl,
-    assembly_level: m.assemblyLevel,
+    meetingType: m.meetingType,
+    heldOn: m.heldOn,
+    sourceUrl: m.sourceUrl,
+    assemblyLevel: m.assemblyLevel,
     prefecture: m.prefecture,
     municipality: m.municipality,
-    external_id: m.externalId,
-    raw_text: m.rawText,
+    externalId: m.externalId,
+    rawText: m.rawText,
     status: "pending" as const,
-    scraped_at: now,
+    scrapedAt: now,
   }));
 
   const inserted = await db

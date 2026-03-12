@@ -1,7 +1,12 @@
-import type { Db } from "../db";
-import { addJobStats, createJobLogger, updateJobStatus } from "../job-logger";
-import type { ScraperQueueMessage } from "../types";
-import { saveMeetings } from "./save-meetings";
+import type { Db } from "@open-gikai/db";
+import { delay } from "../utils/delay";
+import {
+  addJobStats,
+  createScraperJobLog,
+  updateScraperJobStatus,
+} from "../db/job-logger";
+import type { ScraperQueueMessage } from "../utils/types";
+import { saveMeetings } from "../db/save-meetings";
 
 const NDL_BASE = "https://kokkai.ndl.go.jp/api/speech";
 const DELAY_MS = 500;
@@ -22,10 +27,6 @@ interface NdlApiResponse {
   startRecord: number;
   nextRecordPosition: number | null;
   speechRecord: NdlSpeechRecord[];
-}
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function fetchPage(
@@ -58,29 +59,43 @@ export async function handleNdlPage(
   msg: NdlPageMsg
 ): Promise<void> {
   const { jobId, from, until, startRecord, limit, fetchedSoFar } = msg;
-  const logger = createJobLogger(db, jobId);
 
-  await logger("info", `NDL: レコード取得中 (開始位置: ${startRecord}, 累計: ${fetchedSoFar})`);
+  await createScraperJobLog(db, {
+    jobId,
+    level: "info",
+    message: `NDL: レコード取得中 (開始位置: ${startRecord}, 累計: ${fetchedSoFar})`,
+  });
 
   await delay(DELAY_MS);
   const response = await fetchPage(from, until, startRecord);
 
   if (!response) {
-    await logger("error", "NDL: API からの取得に失敗しました");
-    await updateJobStatus(db, jobId, "failed", { errorMessage: "NDL API 取得失敗" });
+    await createScraperJobLog(db, {
+      jobId,
+      level: "error",
+      message: "NDL: API からの取得に失敗しました",
+    });
+    await updateScraperJobStatus(db, jobId, "failed", {
+      errorMessage: "NDL API 取得失敗",
+    });
     return;
   }
 
   if (!response.speechRecord || response.speechRecord.length === 0) {
-    await logger("info", "NDL: 全レコード処理完了");
-    await updateJobStatus(db, jobId, "completed");
+    await createScraperJobLog(db, {
+      jobId,
+      level: "info",
+      message: "NDL: 全レコード処理完了",
+    });
+    await updateScraperJobStatus(db, jobId, "completed");
     return;
   }
 
-  const remaining = limit !== undefined ? limit - fetchedSoFar : undefined;
-  const records = remaining !== undefined
-    ? response.speechRecord.slice(0, remaining)
-    : response.speechRecord;
+  const remaining = limit === undefined ? undefined : limit - fetchedSoFar;
+  const records =
+    remaining === undefined
+      ? response.speechRecord
+      : response.speechRecord.slice(0, remaining);
 
   const meetings = records.map((r) => ({
     title: `${r.nameOfHouse} ${r.nameOfMeeting}`,
@@ -98,18 +113,30 @@ export async function handleNdlPage(
   const newFetchedSoFar = fetchedSoFar + records.length;
 
   await addJobStats(db, jobId, inserted, skipped);
-  await logger("info", `NDL: ${records.length} 件取得 (累計: ${newFetchedSoFar} 件, inserted=${inserted}, skipped=${skipped})`);
+  await createScraperJobLog(db, {
+    jobId,
+    level: "info",
+    message: `NDL: ${records.length} 件取得 (累計: ${newFetchedSoFar} 件, inserted=${inserted}, skipped=${skipped})`,
+  });
 
   const reachedLimit = limit !== undefined && newFetchedSoFar >= limit;
   if (reachedLimit) {
-    await logger("info", `NDL: 上限 ${limit} 件に達しました`);
-    await updateJobStatus(db, jobId, "completed");
+    await createScraperJobLog(db, {
+      jobId,
+      level: "info",
+      message: `NDL: 上限 ${limit} 件に達しました`,
+    });
+    await updateScraperJobStatus(db, jobId, "completed");
     return;
   }
 
   if (!response.nextRecordPosition) {
-    await logger("info", "NDL: 全レコード処理完了");
-    await updateJobStatus(db, jobId, "completed");
+    await createScraperJobLog(db, {
+      jobId,
+      level: "info",
+      message: "NDL: 全レコード処理完了",
+    });
+    await updateScraperJobStatus(db, jobId, "completed");
     return;
   }
 

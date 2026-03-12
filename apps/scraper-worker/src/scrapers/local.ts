@@ -6,11 +6,15 @@
  */
 
 import { load } from "cheerio";
-import type { MeetingData, Logger, LocalScraperConfig, LocalScraperTarget } from "../types";
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+import type { Db } from "@open-gikai/db";
+import type {
+  MeetingData,
+  LocalScraperConfig,
+  LocalScraperTarget,
+} from "../utils/types";
+import { delay } from "../utils/delay";
+import { createScraperJobLog } from "../db/job-logger";
+import type { LogLevel } from "@open-gikai/db/schema";
 
 async function fetchHtml(url: string): Promise<string | null> {
   try {
@@ -47,7 +51,10 @@ function parseDateString(dateStr: string): string | null {
 
   const match = cleaned.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
   if (match?.[1] && match[2] && match[3]) {
-    return `${match[1]}-${match[2].padStart(2, "0")}-${match[3].padStart(2, "0")}`;
+    return `${match[1]}-${match[2].padStart(2, "0")}-${match[3].padStart(
+      2,
+      "0"
+    )}`;
   }
 
   return null;
@@ -56,20 +63,27 @@ function parseDateString(dateStr: string): string | null {
 async function extractMeetingData(
   url: string,
   target: LocalScraperTarget,
-  logger: Logger
+  logger: (level: LogLevel, message: string) => Promise<void>
 ): Promise<MeetingData | null> {
   const html = await fetchHtml(url);
   if (!html) return null;
 
   try {
     const $ = load(html);
-    const title = $(target.titleSelector || "h1").first().text().trim() || "Unknown Title";
+    const title =
+      $(target.titleSelector || "h1")
+        .first()
+        .text()
+        .trim() || "Unknown Title";
     const dateText = $(target.dateSelector).first().text().trim();
     const content = $(target.contentSelector).html() || "";
 
     const heldOn = parseDateString(dateText);
     if (!heldOn) {
-      await logger("warn", `[Local] 日付を解析できません: "${dateText}" (${url})`);
+      await logger(
+        "warn",
+        `[Local] 日付を解析できません: "${dateText}" (${url})`
+      );
       return null;
     }
 
@@ -97,30 +111,48 @@ async function extractMeetingData(
  */
 export async function scrapeLocal(
   config: LocalScraperConfig,
-  logger: Logger
+  db: Db,
+  jobId: string
 ): Promise<MeetingData[]> {
   const { targets, limit } = config;
 
-  await logger("info", `Local scrape 開始: ${targets.length} ターゲット${limit ? ` (上限 ${limit} 件/target)` : ""}`);
+  const logger = async (level: LogLevel, message: string) => {
+    await createScraperJobLog(db, {
+      jobId,
+      level,
+      message,
+    });
+  };
 
-  if (targets.length === 0) {
-    await logger("warn", "Local: ターゲットが設定されていません");
-    return [];
-  }
+  await logger(
+    "info",
+    `Local scrape 開始: ${targets.length} ターゲット${
+      limit ? ` (上限 ${limit} 件/target)` : ""
+    }`
+  );
+
+  if (targets.length === 0) return [];
 
   const results: MeetingData[] = [];
 
   for (const target of targets) {
-    await logger("info", `Local: ${target.prefecture} ${target.municipality} を処理中`);
-
     try {
-      const allLinks = await extractMeetingLinks(target.baseUrl, target.listSelector);
+      const allLinks = await extractMeetingLinks(
+        target.baseUrl,
+        target.listSelector
+      );
       const links = limit !== undefined ? allLinks.slice(0, limit) : allLinks;
 
-      await logger("info", `Local: ${target.municipality} — ${links.length} 件のリンクを検出`);
+      await logger(
+        "info",
+        `Local: ${target.municipality} — ${links.length} 件のリンクを検出`
+      );
 
       if (links.length === 0) {
-        await logger("warn", `Local: ${target.municipality} — リンクが見つかりません`);
+        await logger(
+          "warn",
+          `Local: ${target.municipality} — リンクが見つかりません`
+        );
         continue;
       }
 
@@ -132,9 +164,15 @@ export async function scrapeLocal(
         await delay(1000);
       }
 
-      await logger("info", `Local: ${target.municipality} 処理完了 (累計: ${results.length} 件)`);
+      await logger(
+        "info",
+        `Local: ${target.municipality} 処理完了 (累計: ${results.length} 件)`
+      );
     } catch (err) {
-      await logger("error", `Local: ${target.municipality} でエラーが発生しました — ${String(err)}`);
+      await logger(
+        "error",
+        `Local: ${target.municipality} でエラーが発生しました — ${String(err)}`
+      );
     }
 
     await delay(1000);

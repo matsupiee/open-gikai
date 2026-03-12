@@ -1,7 +1,8 @@
+import type { Db } from "@open-gikai/db";
+import { meetings, statements } from "@open-gikai/db";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq, gte, ilike, lte, lt, sql } from "drizzle-orm";
 import { z } from "zod";
-import { db, meetings, statements } from "@open-gikai/db";
 import { generateEmbedding } from "../../shared/embedding";
 import { generateAnswer } from "../../shared/llm";
 import type {
@@ -46,10 +47,10 @@ function buildMeetingFilters(input: z.infer<typeof statementsSearchSchema>) {
   const conditions = [];
 
   if (input.heldOnFrom) {
-    conditions.push(gte(meetings.held_on, input.heldOnFrom));
+    conditions.push(gte(meetings.heldOn, input.heldOnFrom));
   }
   if (input.heldOnTo) {
-    conditions.push(lte(meetings.held_on, input.heldOnTo));
+    conditions.push(lte(meetings.heldOn, input.heldOnTo));
   }
   if (input.prefecture) {
     conditions.push(eq(meetings.prefecture, input.prefecture));
@@ -58,7 +59,7 @@ function buildMeetingFilters(input: z.infer<typeof statementsSearchSchema>) {
     conditions.push(eq(meetings.municipality, input.municipality));
   }
   if (input.assemblyLevel) {
-    conditions.push(eq(meetings.assembly_level, input.assemblyLevel));
+    conditions.push(eq(meetings.assemblyLevel, input.assemblyLevel));
   }
 
   return conditions;
@@ -71,7 +72,7 @@ function buildStatementFilters(input: z.infer<typeof statementsSearchSchema>) {
     conditions.push(eq(statements.kind, input.kind));
   }
   if (input.speakerName) {
-    conditions.push(ilike(statements.speaker_name, `%${input.speakerName}%`));
+    conditions.push(ilike(statements.speakerName, `%${input.speakerName}%`));
   }
   if (input.cursor) {
     conditions.push(lt(statements.id, input.cursor));
@@ -81,6 +82,7 @@ function buildStatementFilters(input: z.infer<typeof statementsSearchSchema>) {
 }
 
 export async function searchStatements(
+  db: Db,
   input: z.infer<typeof statementsSearchSchema>
 ): Promise<SearchResponse> {
   const limit = input.limit ?? 20;
@@ -90,26 +92,26 @@ export async function searchStatements(
   const query = db
     .select({
       id: statements.id,
-      meetingId: statements.meeting_id,
+      meetingId: statements.meetingId,
       kind: statements.kind,
-      speakerName: statements.speaker_name,
+      speakerName: statements.speakerName,
       content: statements.content,
-      createdAt: statements.created_at,
+      createdAt: statements.createdAt,
       meetingTitle: meetings.title,
-      heldOn: meetings.held_on,
+      heldOn: meetings.heldOn,
       prefecture: meetings.prefecture,
       municipality: meetings.municipality,
-      sourceUrl: meetings.source_url,
+      sourceUrl: meetings.sourceUrl,
     })
     .from(statements)
-    .innerJoin(meetings, eq(statements.meeting_id, meetings.id));
+    .innerJoin(meetings, eq(statements.meetingId, meetings.id));
 
   const allConditions = [...statementFilters, ...meetingFilters];
 
   if (input.q) {
     const searchQuery = input.q.replace(/\s+/g, " ").trim();
     allConditions.push(
-      sql`${statements.content_tsv} @@ to_tsquery('simple', ${searchQuery})`
+      sql`${statements.contentTsv} @@ to_tsquery('simple', ${searchQuery})`
     );
   }
 
@@ -117,7 +119,7 @@ export async function searchStatements(
     allConditions.length > 0 ? query.where(and(...allConditions)) : query;
 
   const results = await finalQuery
-    .orderBy(desc(statements.created_at), desc(statements.id))
+    .orderBy(desc(statements.createdAt), desc(statements.id))
     .limit(limit + 1);
 
   const hasMore = results.length > limit;
@@ -143,6 +145,7 @@ export async function searchStatements(
  * 類似度の計算は、ベクトルの内積をとることで行う
  */
 export async function semanticSearchStatements(
+  db: Db,
   input: z.infer<typeof statementsSemanticSearchSchema>
 ): Promise<SemanticSearchResponse> {
   try {
@@ -151,10 +154,10 @@ export async function semanticSearchStatements(
 
     const meetingConditions = [];
     if (input.filters?.heldOnFrom) {
-      meetingConditions.push(gte(meetings.held_on, input.filters.heldOnFrom));
+      meetingConditions.push(gte(meetings.heldOn, input.filters.heldOnFrom));
     }
     if (input.filters?.heldOnTo) {
-      meetingConditions.push(lte(meetings.held_on, input.filters.heldOnTo));
+      meetingConditions.push(lte(meetings.heldOn, input.filters.heldOnTo));
     }
     if (input.filters?.prefecture) {
       meetingConditions.push(eq(meetings.prefecture, input.filters.prefecture));
@@ -166,7 +169,7 @@ export async function semanticSearchStatements(
     }
     if (input.filters?.assemblyLevel) {
       meetingConditions.push(
-        eq(meetings.assembly_level, input.filters.assemblyLevel)
+        eq(meetings.assemblyLevel, input.filters.assemblyLevel)
       );
     }
 
@@ -178,22 +181,22 @@ export async function semanticSearchStatements(
     const query = db
       .select({
         id: statements.id,
-        meetingId: statements.meeting_id,
+        meetingId: statements.meetingId,
         kind: statements.kind,
-        speakerName: statements.speaker_name,
+        speakerName: statements.speakerName,
         content: statements.content,
-        createdAt: statements.created_at,
+        createdAt: statements.createdAt,
         meetingTitle: meetings.title,
-        heldOn: meetings.held_on,
+        heldOn: meetings.heldOn,
         prefecture: meetings.prefecture,
         municipality: meetings.municipality,
-        sourceUrl: meetings.source_url,
+        sourceUrl: meetings.sourceUrl,
         similarity: sql<number>`1 - (${statements.embedding} <=> ${sql.raw(
           `'${embeddingStr}'::vector`
         )})`,
       })
       .from(statements)
-      .innerJoin(meetings, eq(statements.meeting_id, meetings.id));
+      .innerJoin(meetings, eq(statements.meetingId, meetings.id));
 
     const results = await query
       .where(and(...allConditions))
@@ -214,10 +217,11 @@ export async function semanticSearchStatements(
 }
 
 export async function askStatements(
+  db: Db,
   input: z.infer<typeof statementsAskSchema>
 ): Promise<AskResponse> {
   try {
-    const { statements: sources } = await semanticSearchStatements({
+    const { statements: sources } = await semanticSearchStatements(db, {
       query: input.query,
       topK: input.topK ?? 8,
       filters: input.filters,

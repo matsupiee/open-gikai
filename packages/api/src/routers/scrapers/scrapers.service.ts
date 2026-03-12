@@ -1,7 +1,8 @@
+import type { Db } from "@open-gikai/db";
+import { scraper_jobs, scraper_job_logs } from "@open-gikai/db";
 import { ORPCError } from "@orpc/server";
 import { asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db, scraper_jobs, scraper_job_logs } from "@open-gikai/db";
 import type {
   scrapersListJobsSchema,
   scrapersCreateJobSchema,
@@ -9,11 +10,6 @@ import type {
   scrapersCancelJobSchema,
   scrapersGetJobLogsSchema,
 } from "./_schemas";
-
-function generateId(): string {
-  return crypto.randomUUID();
-}
-
 export interface ScraperJob {
   id: string;
   source: string;
@@ -52,24 +48,25 @@ function rowToJob(row: typeof scraper_jobs.$inferSelect): ScraperJob {
     source: row.source,
     status: row.status,
     config: row.config,
-    processedItems: row.processed_items,
-    totalItems: row.total_items ?? null,
-    totalInserted: row.total_inserted,
-    totalSkipped: row.total_skipped,
-    errorMessage: row.error_message ?? null,
-    createdAt: row.created_at,
-    startedAt: row.started_at ?? null,
-    completedAt: row.completed_at ?? null,
+    processedItems: row.processedItems,
+    totalItems: row.totalItems ?? null,
+    totalInserted: row.totalInserted,
+    totalSkipped: row.totalSkipped,
+    errorMessage: row.errorMessage ?? null,
+    createdAt: row.createdAt,
+    startedAt: row.startedAt ?? null,
+    completedAt: row.completedAt ?? null,
   };
 }
 
 export async function listJobs(
+  db: Db,
   input: z.infer<typeof scrapersListJobsSchema>
 ): Promise<ListJobsResponse> {
   const rows = await db
     .select()
     .from(scraper_jobs)
-    .orderBy(desc(scraper_jobs.created_at))
+    .orderBy(desc(scraper_jobs.createdAt))
     .limit(input.limit)
     .offset(input.offset);
 
@@ -82,14 +79,12 @@ export async function listJobs(
 }
 
 export async function createJob(
+  db: Db,
   input: z.infer<typeof scrapersCreateJobSchema>
 ): Promise<ScraperJob> {
-  const id = generateId();
-
   const [row] = await db
     .insert(scraper_jobs)
     .values({
-      id,
       source: input.source,
       status: "pending",
       config: input.config,
@@ -106,6 +101,7 @@ export async function createJob(
 }
 
 export async function getJob(
+  db: Db,
   input: z.infer<typeof scrapersGetJobSchema>
 ): Promise<ScraperJob> {
   const [row] = await db
@@ -123,6 +119,7 @@ export async function getJob(
 }
 
 export async function cancelJob(
+  db: Db,
   input: z.infer<typeof scrapersCancelJobSchema>
 ): Promise<ScraperJob> {
   const [existing] = await db
@@ -136,7 +133,11 @@ export async function cancelJob(
     });
   }
 
-  if (existing.status === "completed" || existing.status === "failed" || existing.status === "cancelled") {
+  if (
+    existing.status === "completed" ||
+    existing.status === "failed" ||
+    existing.status === "cancelled"
+  ) {
     throw new ORPCError("BAD_REQUEST", {
       message: `ステータスが ${existing.status} のジョブはキャンセルできません`,
     });
@@ -144,7 +145,7 @@ export async function cancelJob(
 
   const [row] = await db
     .update(scraper_jobs)
-    .set({ status: "cancelled", completed_at: new Date() })
+    .set({ status: "cancelled", completedAt: new Date() })
     .where(eq(scraper_jobs.id, input.jobId))
     .returning();
 
@@ -158,23 +159,24 @@ export async function cancelJob(
 }
 
 export async function getJobLogs(
+  db: Db,
   input: z.infer<typeof scrapersGetJobLogsSchema>
 ): Promise<GetJobLogsResponse> {
   const rows = await db
     .select()
     .from(scraper_job_logs)
-    .where(eq(scraper_job_logs.job_id, input.jobId))
-    .orderBy(asc(scraper_job_logs.created_at))
+    .where(eq(scraper_job_logs.jobId, input.jobId))
+    .orderBy(asc(scraper_job_logs.createdAt))
     .limit(input.limit)
     .offset(input.offset);
 
   return {
     logs: rows.map((row) => ({
       id: row.id,
-      jobId: row.job_id,
+      jobId: row.jobId,
       level: row.level,
       message: row.message,
-      createdAt: row.created_at,
+      createdAt: row.createdAt,
     })),
   };
 }

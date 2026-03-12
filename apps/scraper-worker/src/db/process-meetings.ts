@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { meetings, statements } from "@open-gikai/db/schema";
-import type { Db } from "../db";
+import type { Db } from "@open-gikai/db";
 
 async function generateEmbedding(
   text: string,
@@ -46,7 +46,7 @@ export async function processPendingMeetings(
   );
 
   for (const meeting of pendingMeetings) {
-    const content = meeting.raw_text.trim();
+    const content = meeting.rawText.trim();
 
     if (!content) {
       await db
@@ -72,18 +72,16 @@ export async function processPendingMeetings(
       await db
         .insert(statements)
         .values({
-          id: crypto.randomUUID(),
-          meeting_id: meeting.id,
+          meetingId: meeting.id,
           kind: "speech",
-          speaker_name: null,
-          speaker_role: null,
+          speakerName: null,
+          speakerRole: null,
           content,
-          content_hash: contentHash,
-          start_offset: 0,
-          end_offset: content.length,
-          page_hint: null,
+          contentHash,
+          startOffset: 0,
+          endOffset: content.length,
+          pageHint: null,
           embedding,
-          created_at: new Date(),
         })
         .onConflictDoNothing();
     } catch (err) {

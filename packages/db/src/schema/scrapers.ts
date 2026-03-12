@@ -1,5 +1,24 @@
-import { pgTable, text, integer, timestamp, index, jsonb } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  integer,
+  timestamp,
+  index,
+  jsonb,
+  pgEnum,
+} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { createId } from "@paralleldrive/cuid2";
+
+export const scraperJobStatusEnum = pgEnum("scraper_job_status", [
+  "pending",
+  "queued",
+  "running",
+  "completed",
+  "failed",
+  "cancelled",
+]);
+export type ScraperJobStatus = (typeof scraperJobStatusEnum.enumValues)[number];
 
 /**
  * スクレイパージョブ管理テーブル。
@@ -8,35 +27,40 @@ import { relations } from "drizzle-orm";
 export const scraper_jobs = pgTable(
   "scraper_jobs",
   {
-    id: text("id").primaryKey(),
+    id: text()
+      .$defaultFn(() => createId())
+      .primaryKey(),
     /** スクレイパーの種類 */
-    source: text("source").notNull(), // "ndl" | "local" | "kagoshima-api"
+    source: text().notNull(), // "ndl" | "local" | "kagoshima-api"
     /** ジョブの状態 */
-    status: text("status").notNull().default("pending"), // "pending" | "running" | "completed" | "failed" | "cancelled"
+    status: scraperJobStatusEnum("status").notNull().default("pending"),
     /** スクレイパー設定 (例: { from, until, prefecture, municipality, year }) */
-    config: jsonb("config").notNull(),
+    config: jsonb().notNull(),
     /** 処理済みアイテム数 */
-    processed_items: integer("processed_items").notNull().default(0),
+    processedItems: integer().notNull().default(0),
     /** 総アイテム数 (判明次第更新) */
-    total_items: integer("total_items"),
+    totalItems: integer(),
     /** DB に挿入した件数 */
-    total_inserted: integer("total_inserted").notNull().default(0),
+    totalInserted: integer().notNull().default(0),
     /** 重複でスキップした件数 */
-    total_skipped: integer("total_skipped").notNull().default(0),
+    totalSkipped: integer().notNull().default(0),
     /** エラーメッセージ (失敗時のみ) */
-    error_message: text("error_message"),
+    errorMessage: text(),
     /** ジョブ作成日時 */
-    created_at: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp().defaultNow().notNull(),
     /** 処理開始日時 */
-    started_at: timestamp("started_at"),
+    startedAt: timestamp(),
     /** 処理完了日時 */
-    completed_at: timestamp("completed_at"),
+    completedAt: timestamp(),
   },
   (table) => [
     index("scraper_jobs_status_idx").on(table.status),
-    index("scraper_jobs_created_at_idx").on(table.created_at),
+    index("scraper_jobs_created_at_idx").on(table.createdAt),
   ]
 );
+
+export const logLevelEnum = pgEnum("log_level", ["info", "warn", "error"]);
+export type LogLevel = (typeof logLevelEnum.enumValues)[number];
 
 /**
  * スクレイパージョブのログテーブル。
@@ -45,18 +69,20 @@ export const scraper_jobs = pgTable(
 export const scraper_job_logs = pgTable(
   "scraper_job_logs",
   {
-    id: text("id").primaryKey(),
-    job_id: text("job_id")
+    id: text()
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    jobId: text()
       .notNull()
       .references(() => scraper_jobs.id, { onDelete: "cascade" }),
     /** ログレベル */
-    level: text("level").notNull(), // "info" | "warn" | "error"
-    message: text("message").notNull(),
-    created_at: timestamp("created_at").defaultNow().notNull(),
+    level: logLevelEnum("level").notNull(),
+    message: text().notNull(),
+    createdAt: timestamp().defaultNow().notNull(),
   },
   (table) => [
-    index("scraper_job_logs_job_id_idx").on(table.job_id),
-    index("scraper_job_logs_created_at_idx").on(table.created_at),
+    index("scraper_job_logs_job_id_idx").on(table.jobId),
+    index("scraper_job_logs_created_at_idx").on(table.createdAt),
   ]
 );
 
@@ -64,9 +90,12 @@ export const scraperJobsRelations = relations(scraper_jobs, ({ many }) => ({
   logs: many(scraper_job_logs),
 }));
 
-export const scraperJobLogsRelations = relations(scraper_job_logs, ({ one }) => ({
-  job: one(scraper_jobs, {
-    fields: [scraper_job_logs.job_id],
-    references: [scraper_jobs.id],
-  }),
-}));
+export const scraperJobLogsRelations = relations(
+  scraper_job_logs,
+  ({ one }) => ({
+    job: one(scraper_jobs, {
+      fields: [scraper_job_logs.jobId],
+      references: [scraper_jobs.id],
+    }),
+  })
+);

@@ -10,6 +10,7 @@ import {
 import { relations, sql } from "drizzle-orm";
 import { meetings } from "./meetings";
 import { statement_policy_tags } from "./policy-tags";
+import { createId } from "@paralleldrive/cuid2";
 
 /**
  * pgvector 拡張用のカスタム型。
@@ -64,44 +65,46 @@ const tsvector = () =>
 export const statements = pgTable(
   "statements",
   {
-    id: text("id").primaryKey(),
+    id: text()
+      .$defaultFn(() => createId())
+      .primaryKey(),
     // どの会議の発言か（meetings テーブルへの外部キー。会議削除時に発言も削除）
-    meeting_id: text("meeting_id")
+    meetingId: text()
       .notNull()
       .references(() => meetings.id, { onDelete: "cascade" }),
     // 発言の種別（例: 質問、答弁、一般発言 など）
-    kind: text("kind").notNull(),
-    speaker_name: text("speaker_name"),
-    speaker_role: text("speaker_role"),
+    kind: text().notNull(),
+    speakerName: text(),
+    speakerRole: text(),
     // 発言の本文
-    content: text("content").notNull(),
+    content: text().notNull(),
     // 重複取り込み防止用のコンテンツハッシュ
-    content_hash: text("content_hash").notNull(),
+    contentHash: text().notNull(),
     // 原文ドキュメント内での位置（文字オフセット）
-    start_offset: integer("start_offset"),
-    end_offset: integer("end_offset"),
+    startOffset: integer(),
+    endOffset: integer(),
     // 参照元ページのヒント（例: "p.12"）
-    page_hint: text("page_hint"),
+    pageHint: text(),
     // AI 埋め込みベクトル（意味的類似度検索に使用）
     embedding: vector("embedding", 1536),
     // 全文検索用インデックス（content から自動生成される仮想カラム）
-    content_tsv: tsvector().generatedAlwaysAs(
+    contentTsv: tsvector().generatedAlwaysAs(
       sql`to_tsvector('simple', coalesce(content, ''))`
     ),
-    created_at: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp().defaultNow().notNull(),
   },
   (table) => [
     // 同じ会議内での発言重複を防ぐユニーク制約
     uniqueIndex("statements_meeting_id_content_hash_idx").on(
-      table.meeting_id,
-      table.content_hash
+      table.meetingId,
+      table.contentHash
     ),
     // 会議 ID での絞り込みを高速化
-    index("statements_meeting_id_idx").on(table.meeting_id),
+    index("statements_meeting_id_idx").on(table.meetingId),
     // 発言種別での絞り込みを高速化
     index("statements_kind_idx").on(table.kind),
     // 発言者名での絞り込みを高速化
-    index("statements_speaker_name_idx").on(table.speaker_name),
+    index("statements_speaker_name_idx").on(table.speakerName),
   ]
 );
 
@@ -109,7 +112,7 @@ export const statements = pgTable(
 export const statementsRelations = relations(statements, ({ one, many }) => ({
   // 発言は1つの会議に属する（多対1）
   meeting: one(meetings, {
-    fields: [statements.meeting_id],
+    fields: [statements.meetingId],
     references: [meetings.id],
   }),
   // 発言には複数の政策タグが付く（1対多）

@@ -24,7 +24,6 @@
     "build": "turbo build",
     "check-types": "turbo check-types",
     "dev:web": "turbo -F web dev",
-    "db:push": "turbo -F @open-gikai/db db:push",
     "db:studio": "turbo -F @open-gikai/db db:studio",
     "db:generate": "turbo -F @open-gikai/db db:generate",
     "db:migrate": "turbo -F @open-gikai/db db:migrate",

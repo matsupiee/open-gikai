@@ -13,13 +13,13 @@
     }
   },
   "scripts": {
-    "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@open-gikai/env": "workspace:*",
+    "@paralleldrive/cuid2": "^3.3.0",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
     "pg": "^8.17.1",

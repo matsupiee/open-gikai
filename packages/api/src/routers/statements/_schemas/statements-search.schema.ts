@@ -1,3 +1,4 @@
+import { assemblyLevelEnum } from "@open-gikai/db/schema";
 import { z } from "zod";
 
 export const statementsSearchSchema = z.object({
@@ -9,7 +10,7 @@ export const statementsSearchSchema = z.object({
   heldOnTo: z.string().optional(),
   prefecture: z.string().optional(),
   municipality: z.string().optional(),
-  assemblyLevel: z.enum(["national", "prefectural", "municipal"]).optional(),
+  assemblyLevel: z.enum(assemblyLevelEnum.enumValues).optional(),
   limit: z.number().int().min(1).max(50).default(20),
   cursor: z.string().optional(),
 });

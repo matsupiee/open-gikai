@@ -2,6 +2,8 @@
  * ローカル開発用スクレイパー実行スクリプト。
  * Cloudflare Queue の代わりにインメモリキューを使ってジョブを同期的に処理する。
  *
+ * インメモリキュー=DBや外部サービスを使わず、プロセスのRAMだけで管理するジョブキュー。
+ *
  * 使い方:
  *   bun run run:local
  *
@@ -12,14 +14,14 @@
  */
 import { eq } from "drizzle-orm";
 import { scraper_jobs } from "@open-gikai/db/schema";
-import { createDb } from "./db";
-import { updateJobStatus } from "./job-logger";
+import { createDb } from "@open-gikai/db";
 import type { ScraperQueueMessage } from "./types";
-import { handleStartJob } from "./handlers/start-job";
-import { handleKagoshimaCouncil } from "./handlers/kagoshima";
-import { handleNdlPage } from "./handlers/ndl";
-import { handleLocalTarget } from "./handlers/local";
-import { processPendingMeetings } from "./handlers/process-meetings";
+import { handleStartJob } from "../handlers/start-job";
+import { handleKagoshimaCouncil } from "../handlers/kagoshima";
+import { handleNdlPage } from "../handlers/ndl";
+import { handleLocalTarget } from "../handlers/local";
+import { processPendingMeetings } from "../db/process-meetings";
+import { updateScraperJobStatus } from "../db/job-logger";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) {
@@ -75,7 +77,9 @@ class LocalQueue {
           errorMessage
         );
         if ("jobId" in msg) {
-          await updateJobStatus(db, msg.jobId, "failed", { errorMessage });
+          await updateScraperJobStatus(db, msg.jobId, "failed", {
+            errorMessage,
+          });
         }
       }
     }

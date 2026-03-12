@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@open-gikai/db": "workspace:*",
-    "@open-gikai/scraper": "workspace:*",
+    "cheerio": "^1.0.0",
     "drizzle-orm": "^0.45.1",
     "pg": "^8.17.1"
   },
