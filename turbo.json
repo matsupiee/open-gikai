@@ -28,6 +28,10 @@
       "cache": false,
       "persistent": true
     },
+    "scrape:local": {
+      "cache": false,
+      "persistent": false
+    },
     "deploy": {
       "cache": false
     },

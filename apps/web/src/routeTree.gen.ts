@@ -17,7 +17,6 @@ import { Route as AdminScrapersIndexRouteImport } from './routes/admin/scrapers/
 import { Route as authSignUpIndexRouteImport } from './routes/(auth)/sign-up/index'
 import { Route as authSignInIndexRouteImport } from './routes/(auth)/sign-in/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
-import { Route as ApiIngestMeetingsRouteImport } from './routes/api/ingest/meetings'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AdminScrapersJobIdRouteImport } from './routes/admin/scrapers/$jobId'
 
@@ -61,11 +60,6 @@ const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
   path: '/api/rpc/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiIngestMeetingsRoute = ApiIngestMeetingsRouteImport.update({
-  id: '/api/ingest/meetings',
-  path: '/api/ingest/meetings',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -84,7 +78,6 @@ export interface FileRoutesByFullPath {
   '/search/': typeof SearchIndexRoute
   '/admin/scrapers/$jobId': typeof AdminScrapersJobIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/ingest/meetings': typeof ApiIngestMeetingsRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/sign-in/': typeof authSignInIndexRoute
   '/sign-up/': typeof authSignUpIndexRoute
@@ -96,7 +89,6 @@ export interface FileRoutesByTo {
   '/search': typeof SearchIndexRoute
   '/admin/scrapers/$jobId': typeof AdminScrapersJobIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/ingest/meetings': typeof ApiIngestMeetingsRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/sign-in': typeof authSignInIndexRoute
   '/sign-up': typeof authSignUpIndexRoute
@@ -110,7 +102,6 @@ export interface FileRoutesById {
   '/search/': typeof SearchIndexRoute
   '/admin/scrapers/$jobId': typeof AdminScrapersJobIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/ingest/meetings': typeof ApiIngestMeetingsRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/(auth)/sign-in/': typeof authSignInIndexRoute
   '/(auth)/sign-up/': typeof authSignUpIndexRoute
@@ -125,7 +116,6 @@ export interface FileRouteTypes {
     | '/search/'
     | '/admin/scrapers/$jobId'
     | '/api/auth/$'
-    | '/api/ingest/meetings'
     | '/api/rpc/$'
     | '/sign-in/'
     | '/sign-up/'
@@ -137,7 +127,6 @@ export interface FileRouteTypes {
     | '/search'
     | '/admin/scrapers/$jobId'
     | '/api/auth/$'
-    | '/api/ingest/meetings'
     | '/api/rpc/$'
     | '/sign-in'
     | '/sign-up'
@@ -150,7 +139,6 @@ export interface FileRouteTypes {
     | '/search/'
     | '/admin/scrapers/$jobId'
     | '/api/auth/$'
-    | '/api/ingest/meetings'
     | '/api/rpc/$'
     | '/(auth)/sign-in/'
     | '/(auth)/sign-up/'
@@ -164,7 +152,6 @@ export interface RootRouteChildren {
   SearchIndexRoute: typeof SearchIndexRoute
   AdminScrapersJobIdRoute: typeof AdminScrapersJobIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  ApiIngestMeetingsRoute: typeof ApiIngestMeetingsRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   authSignInIndexRoute: typeof authSignInIndexRoute
   authSignUpIndexRoute: typeof authSignUpIndexRoute
@@ -229,13 +216,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRpcSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/ingest/meetings': {
-      id: '/api/ingest/meetings'
-      path: '/api/ingest/meetings'
-      fullPath: '/api/ingest/meetings'
-      preLoaderRoute: typeof ApiIngestMeetingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -260,7 +240,6 @@ const rootRouteChildren: RootRouteChildren = {
   SearchIndexRoute: SearchIndexRoute,
   AdminScrapersJobIdRoute: AdminScrapersJobIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  ApiIngestMeetingsRoute: ApiIngestMeetingsRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   authSignInIndexRoute: authSignInIndexRoute,
   authSignUpIndexRoute: authSignUpIndexRoute,

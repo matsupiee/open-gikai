@@ -30,7 +30,7 @@
     "deploy": "turbo -F @open-gikai/infra deploy",
     "destroy": "turbo -F @open-gikai/infra destroy",
     "check": "oxlint && oxfmt --write",
-    "scraper:run": "cd apps/scraper-worker && bun --env-file ../web/.env src/local-runner.ts"
+    "scrape:local": "turbo -F @open-gikai/scraper-worker scrape:local"
   },
   "dependencies": {
     "@open-gikai/env": "workspace:*",
