@@ -7,7 +7,11 @@ import {
   handleDiscussnetList,
   handleDiscussnetMeeting,
 } from "./handlers/discussnet";
-import { updateScraperJobStatus } from "./db/job-logger";
+import {
+  handleDiscussnetSspSchedule,
+  handleDiscussnetSspMinute,
+} from "./handlers/discussnet-ssp";
+import { updateScraperJobStatus } from "./utils/job-logger";
 
 export default {
   /**
@@ -63,6 +67,12 @@ export default {
             break;
           case "discussnet-meeting":
             await handleDiscussnetMeeting(db, msg);
+            break;
+          case "discussnet-ssp-schedule":
+            await handleDiscussnetSspSchedule(db, env.SCRAPER_QUEUE, msg);
+            break;
+          case "discussnet-ssp-minute":
+            await handleDiscussnetSspMinute(db, msg);
             break;
           default: {
             const _exhaustive: never = msg;

@@ -1,6 +1,6 @@
 import type { Db } from "@open-gikai/db";
 import { meetings } from "@open-gikai/db/schema";
-import type { MeetingData } from "../utils/types";
+import type { MeetingData } from "./types";
 
 /**
  * MeetingData 配列を DB に upsert する。

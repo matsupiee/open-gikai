@@ -52,7 +52,7 @@ function AdminDashboard() {
                 <div className="flex items-center gap-3">
                   <StatusBadge status={job.status} />
                   <span className="font-mono text-xs text-muted-foreground">
-                    {job.source}
+                    {job.municipalityId}
                   </span>
                 </div>
                 <a

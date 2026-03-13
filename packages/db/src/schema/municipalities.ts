@@ -12,7 +12,8 @@ import { createId } from "@paralleldrive/cuid2";
 import { scraper_jobs } from "./scrapers";
 
 export const systemTypeEnum = pgEnum("system_type", [
-  "discussnet", // NTT-AT / 会議録研究所（全国最多）
+  "discussnet", // NTT-AT / 会議録研究所（全国最多）・従来 ASP 版
+  "discussnet_ssp", // NTT-AT DiscussNet SSP（SaaS 版: ssp.kaigiroku.net）
   "dbsearch", // 大和速記情報センター
   "sophia", // 神戸綜合速記
   "voices", // フューチャーイン

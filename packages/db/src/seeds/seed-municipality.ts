@@ -50,9 +50,7 @@ async function seed() {
 
   const db = drizzle(DATABASE_URL as string, { casing: "snake_case" });
 
-  console.log(
-    `[seed] ${municipalityList.length} 件の DiscussNet 自治体を登録します`
-  );
+  console.log(`[seed] ${municipalityList.length} 件の自治体を登録します`);
 
   let inserted = 0;
   let skipped = 0;
@@ -65,7 +63,9 @@ async function seed() {
         code: m.code,
         name: displayName,
         prefecture: m.prefecture,
-        systemType: "discussnet",
+        systemType: m.baseUrl.includes("ssp.kaigiroku.net")
+          ? "discussnet_ssp"
+          : "discussnet",
         baseUrl: m.baseUrl,
         enabled: true,
       })
@@ -76,6 +76,7 @@ async function seed() {
           prefecture: sql`excluded.prefecture`,
           baseUrl: sql`excluded.base_url`,
           enabled: sql`excluded.enabled`,
+          systemType: sql`excluded.system_type`,
         },
       })
       .returning({ id: municipalities.id, code: municipalities.code });

@@ -95,7 +95,7 @@ function JobDetailPage() {
       </div>
 
       <div className="rounded border border-border bg-card p-4 grid gap-3 sm:grid-cols-2 text-sm">
-        <Field label="ソース" value={job.source} />
+        <Field label="自治体ID" value={job.municipalityId} />
         <Field label="ステータス" value={<StatusBadge status={job.status} />} />
         <Field label="挿入件数" value={job.totalInserted.toLocaleString()} />
         <Field label="スキップ件数" value={job.totalSkipped.toLocaleString()} />

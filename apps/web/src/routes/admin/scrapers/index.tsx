@@ -12,14 +12,6 @@ export const Route = createFileRoute("/admin/scrapers/")({
   component: ScrapersPage,
 });
 
-type Source = "ndl" | "kagoshima" | "local";
-
-const SOURCE_LABELS: Record<Source, string> = {
-  ndl: "国会議事録 (NDL)",
-  kagoshima: "鹿児島市議会",
-  local: "ローカル自治体",
-};
-
 function ScrapersPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
@@ -70,7 +62,7 @@ function ScrapersPage() {
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
               <tr>
-                <th className="px-4 py-2 text-left">ソース</th>
+                <th className="px-4 py-2 text-left">自治体</th>
                 <th className="px-4 py-2 text-left">ステータス</th>
                 <th className="px-4 py-2 text-left">挿入</th>
                 <th className="px-4 py-2 text-left">スキップ</th>
@@ -84,7 +76,7 @@ function ScrapersPage() {
                   key={job.id}
                   className="border-b last:border-0 hover:bg-muted/20"
                 >
-                  <td className="px-4 py-2 font-mono">{job.source}</td>
+                  <td className="px-4 py-2 font-mono">{job.municipalityId}</td>
                   <td className="px-4 py-2">
                     <StatusBadge status={job.status} />
                   </td>
@@ -145,29 +137,19 @@ function CreateJobForm({
   onSubmit: (payload: Parameters<typeof client.scrapers.createJob>[0]) => void;
   isSubmitting: boolean;
 }) {
-  const [source, setSource] = useState<Source>("ndl");
-  const [from, setFrom] = useState("2024-01-01");
-  const [until, setUntil] = useState("2024-12-31");
-  const [year, setYear] = useState("");
-  const [limit, setLimit] = useState("");
+  const currentYear = new Date().getFullYear();
+  const [municipalityId, setMunicipalityId] = useState("");
+  const [year, setYear] = useState(String(currentYear));
+
+  const { data: municipalities = [], isLoading: municipalitiesLoading } =
+    useQuery(
+      orpc.scrapers.listMunicipalities.queryOptions({ input: {} })
+    );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const limitNum = limit ? parseInt(limit, 10) : undefined;
-
-    if (source === "ndl") {
-      onSubmit({ source: "ndl", config: { from, until, limit: limitNum } });
-    } else if (source === "kagoshima") {
-      onSubmit({
-        source: "kagoshima",
-        config: {
-          year: year ? parseInt(year, 10) : undefined,
-          limit: limitNum,
-        },
-      });
-    } else {
-      onSubmit({ source: "local", config: { targets: [], limit: limitNum } });
-    }
+    if (!municipalityId) return;
+    onSubmit({ municipalityId, year: parseInt(year, 10) });
   };
 
   return (
@@ -177,86 +159,48 @@ function CreateJobForm({
     >
       <h2 className="font-semibold text-sm">新規ジョブ作成</h2>
 
-      <div className="grid gap-3 sm:grid-cols-4">
-        <div>
-          <Label htmlFor="source" className="text-xs">
-            ソース
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="sm:col-span-2">
+          <Label htmlFor="municipality" className="text-xs">
+            自治体
           </Label>
           <select
-            id="source"
-            value={source}
-            onChange={(e) => setSource(e.target.value as Source)}
+            id="municipality"
+            value={municipalityId}
+            onChange={(e) => setMunicipalityId(e.target.value)}
+            required
+            disabled={municipalitiesLoading}
             className="mt-1 w-full rounded border border-input bg-background px-3 py-2 text-sm"
           >
-            {(Object.keys(SOURCE_LABELS) as Source[]).map((s) => (
-              <option key={s} value={s}>
-                {SOURCE_LABELS[s]}
+            <option value="">
+              {municipalitiesLoading ? "読み込み中..." : "自治体を選択"}
+            </option>
+            {municipalities.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.prefecture} {m.name}
               </option>
             ))}
           </select>
         </div>
 
-        {source === "ndl" && (
-          <>
-            <div>
-              <Label htmlFor="from" className="text-xs">
-                開始日
-              </Label>
-              <Input
-                id="from"
-                type="date"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="until" className="text-xs">
-                終了日
-              </Label>
-              <Input
-                id="until"
-                type="date"
-                value={until}
-                onChange={(e) => setUntil(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-          </>
-        )}
-
-        {source === "kagoshima" && (
-          <div>
-            <Label htmlFor="year" className="text-xs">
-              年度 (任意)
-            </Label>
-            <Input
-              id="year"
-              type="number"
-              placeholder="例: 2024"
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-              className="mt-1"
-            />
-          </div>
-        )}
-
         <div>
-          <Label htmlFor="limit" className="text-xs">
-            上限件数 (任意)
+          <Label htmlFor="year" className="text-xs">
+            年
           </Label>
           <Input
-            id="limit"
+            id="year"
             type="number"
-            placeholder="無制限"
-            value={limit}
-            onChange={(e) => setLimit(e.target.value)}
+            min={2000}
+            max={2100}
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            required
             className="mt-1"
           />
         </div>
       </div>
 
-      <Button type="submit" disabled={isSubmitting} size="sm">
+      <Button type="submit" disabled={isSubmitting || !municipalityId} size="sm">
         {isSubmitting ? "作成中..." : "ジョブ作成"}
       </Button>
     </form>

@@ -13,7 +13,7 @@
  * 3. 生成された meetings を statements に変換（OPENAI_API_KEY があれば embedding も生成）
  */
 import { eq } from "drizzle-orm";
-import { scraper_jobs } from "@open-gikai/db/schema";
+import { municipalities, scraper_jobs } from "@open-gikai/db/schema";
 import { createDb } from "@open-gikai/db";
 import type { ScraperQueueMessage } from "./types";
 import { dispatchJob } from "../handlers/dispatch-job";
@@ -21,8 +21,12 @@ import {
   handleDiscussnetList,
   handleDiscussnetMeeting,
 } from "../handlers/discussnet";
-import { processPendingMeetings } from "../db/process-meetings";
-import { updateScraperJobStatus } from "../db/job-logger";
+import {
+  handleDiscussnetSspSchedule,
+  handleDiscussnetSspMinute,
+} from "../handlers/discussnet-ssp";
+import { processPendingMeetings } from "./process-meetings";
+import { updateScraperJobStatus } from "./job-logger";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) {
@@ -64,6 +68,12 @@ class LocalQueue {
           case "discussnet-meeting":
             await handleDiscussnetMeeting(db, msg);
             break;
+          case "discussnet-ssp-schedule":
+            await handleDiscussnetSspSchedule(db, q, msg);
+            break;
+          case "discussnet-ssp-minute":
+            await handleDiscussnetSspMinute(db, msg);
+            break;
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);
@@ -85,8 +95,12 @@ async function main() {
   console.log("[local-runner] Starting...");
 
   const pendingJobs = await db
-    .select({ id: scraper_jobs.id })
+    .select()
     .from(scraper_jobs)
+    .innerJoin(
+      municipalities,
+      eq(scraper_jobs.municipalityId, municipalities.id)
+    )
     .where(eq(scraper_jobs.status, "pending"))
     .limit(10);
 
@@ -97,7 +111,7 @@ async function main() {
 
     const queue = new LocalQueue();
     for (const job of pendingJobs) {
-      await dispatchJob(db, queue, job.id);
+      await dispatchJob(db, queue, job);
     }
     await queue.processAll();
     console.log("[local-runner] Scraping complete.");

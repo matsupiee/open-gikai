@@ -1,5 +1,5 @@
 import type { Db } from "@open-gikai/db";
-import { scraper_jobs, scraper_job_logs } from "@open-gikai/db";
+import { scraper_jobs, scraper_job_logs, municipalities } from "@open-gikai/db";
 import { ORPCError } from "@orpc/server";
 import { asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -9,6 +9,7 @@ import type {
   scrapersGetJobSchema,
   scrapersCancelJobSchema,
   scrapersGetJobLogsSchema,
+  scrapersListMunicipalitiesSchema,
 } from "./_schemas";
 export interface ScraperJob {
   id: string;
@@ -40,6 +41,13 @@ export interface ListJobsResponse {
 
 export interface GetJobLogsResponse {
   logs: ScraperJobLog[];
+}
+
+export interface Municipality {
+  id: string;
+  code: string;
+  name: string;
+  prefecture: string;
 }
 
 function rowToJob(row: typeof scraper_jobs.$inferSelect): ScraperJob {
@@ -156,6 +164,24 @@ export async function cancelJob(
   }
 
   return rowToJob(row);
+}
+
+export async function listMunicipalities(
+  db: Db,
+  _input: z.infer<typeof scrapersListMunicipalitiesSchema>
+): Promise<Municipality[]> {
+  const rows = await db
+    .select({
+      id: municipalities.id,
+      code: municipalities.code,
+      name: municipalities.name,
+      prefecture: municipalities.prefecture,
+    })
+    .from(municipalities)
+    .where(eq(municipalities.enabled, true))
+    .orderBy(asc(municipalities.code));
+
+  return rows;
 }
 
 export async function getJobLogs(

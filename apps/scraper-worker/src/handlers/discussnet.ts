@@ -7,8 +7,8 @@
  */
 
 import type { Db } from "@open-gikai/db";
-import { createJobLogger, addJobStats } from "../db/job-logger";
-import { saveMeetings } from "../db/save-meetings";
+import { createJobLogger, addJobStats } from "../utils/job-logger";
+import { saveMeetings } from "../utils/save-meetings";
 import {
   buildListUrl,
   detectNextPageUrl,
@@ -29,9 +29,8 @@ export async function handleDiscussnetList(
 ): Promise<void> {
   const logger = createJobLogger(db, msg.jobId);
 
-  const listUrl = msg.page === 1
-    ? buildListUrl(msg.baseUrl, msg.year)
-    : msg.baseUrl; // ページ 2 以降は baseUrl に次ページ URL が入る
+  const listUrl =
+    msg.page === 1 ? buildListUrl(msg.baseUrl, msg.year) : msg.baseUrl; // ページ 2 以降は baseUrl に次ページ URL が入る
 
   await logger(
     "info",

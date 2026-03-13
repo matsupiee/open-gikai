@@ -30,7 +30,7 @@ export interface LocalScraperTarget {
  */
 export type ScraperQueueMessage =
   | {
-      /** DiscussNet: 自治体の議事録一覧ページを取得するメッセージ */
+      /** DiscussNet (ASP版): 自治体の議事録一覧ページを取得するメッセージ */
       type: "discussnet-list";
       jobId: string;
       municipalityId: string;
@@ -41,13 +41,53 @@ export type ScraperQueueMessage =
       page: number;
     }
   | {
-      /** DiscussNet: 個別議事録ページを取得・保存するメッセージ */
+      /** DiscussNet (ASP版): 個別議事録ページを取得・保存するメッセージ */
       type: "discussnet-meeting";
       jobId: string;
       municipalityId: string;
       municipalityName: string;
       prefecture: string;
       meetingUrl: string;
+    }
+  | {
+      /**
+       * DiscussNet SSP (SaaS版): council_id ごとに schedule 一覧を取得するメッセージ。
+       * POST /dnp/search/minutes/get_schedule で schedule_id 一覧を取得し、
+       * 各 schedule_id を discussnet-ssp-minute としてキューに投入する。
+       */
+      type: "discussnet-ssp-schedule";
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      prefecture: string;
+      /** テナントスラッグ（URL パスから抽出: /tenant/{slug}/） */
+      tenantSlug: string;
+      /** テナント数値 ID（tenant.js から取得） */
+      tenantId: number;
+      /** 会議 ID */
+      councilId: number;
+      /** 会議名（例: "令和７年第４回定例会"） */
+      councilName: string;
+    }
+  | {
+      /**
+       * DiscussNet SSP (SaaS版): schedule_id ごとに議事録本文を取得・保存するメッセージ。
+       * POST /dnp/search/minutes/get_minute で本文を取得して DB に保存する。
+       */
+      type: "discussnet-ssp-minute";
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      prefecture: string;
+      tenantSlug: string;
+      tenantId: number;
+      councilId: number;
+      councilName: string;
+      scheduleId: number;
+      /** schedule 名（例: "11月27日－01号"） */
+      scheduleName: string;
+      /** member_list HTML: 開催日抽出に使用 */
+      memberList: string;
     };
 
 /** Cloudflare Worker の環境変数（bindings） */

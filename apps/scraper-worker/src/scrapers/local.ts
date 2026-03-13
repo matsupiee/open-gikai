@@ -14,7 +14,7 @@ interface LocalScraperConfig {
   limit?: number;
 }
 import { delay } from "../utils/delay";
-import { createScraperJobLog } from "../db/job-logger";
+import { createScraperJobLog } from "../utils/job-logger";
 import type { LogLevel } from "@open-gikai/db/schema";
 
 async function fetchHtml(url: string): Promise<string | null> {
