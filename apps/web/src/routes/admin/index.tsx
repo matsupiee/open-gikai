@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
 import { orpc } from "@/lib/orpc/orpc";
+import { Badge } from "@/shared/_components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/_components/ui/card";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -30,42 +32,43 @@ function AdminDashboard() {
         <StatCard label="失敗" value={failed} color="text-red-600" />
       </div>
 
-      <div className="rounded border border-border bg-card p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold">最近のジョブ</h2>
-          <a
-            href="/admin/scrapers"
-            className="text-sm text-primary hover:underline"
-          >
-            すべて表示 →
-          </a>
-        </div>
-        {jobs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">ジョブがありません</p>
-        ) : (
-          <div className="space-y-2">
-            {jobs.map((job) => (
-              <div
-                key={job.id}
-                className="flex items-center justify-between text-sm py-2 border-b last:border-0"
-              >
-                <div className="flex items-center gap-3">
-                  <StatusBadge status={job.status} />
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {job.municipalityId}
-                  </span>
-                </div>
-                <a
-                  href={`/admin/scrapers/${job.id}`}
-                  className="text-primary hover:underline text-xs"
-                >
-                  詳細
-                </a>
-              </div>
-            ))}
+      <Card>
+        <CardHeader className="border-b pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle>最近のジョブ</CardTitle>
+            <a href="/admin/scrapers" className="text-sm text-primary hover:underline">
+              すべて表示 →
+            </a>
           </div>
-        )}
-      </div>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {jobs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">ジョブがありません</p>
+          ) : (
+            <div className="space-y-2">
+              {jobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="flex items-center justify-between text-sm py-2 border-b last:border-0"
+                >
+                  <div className="flex items-center gap-3">
+                    <StatusBadge status={job.status} />
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {job.municipalityId}
+                    </span>
+                  </div>
+                  <a
+                    href={`/admin/scrapers/${job.id}`}
+                    className="text-primary hover:underline text-xs"
+                  >
+                    詳細
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -80,28 +83,26 @@ function StatCard({
   color?: string;
 }) {
   return (
-    <div className="rounded border border-border bg-card p-4">
-      <div className={`text-2xl font-bold ${color}`}>{value}</div>
-      <div className="text-xs text-muted-foreground mt-1">{label}</div>
-    </div>
+    <Card>
+      <CardContent>
+        <div className={`text-2xl font-bold ${color}`}>{value}</div>
+        <div className="text-xs text-muted-foreground mt-1">{label}</div>
+      </CardContent>
+    </Card>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    pending: "bg-gray-100 text-gray-700",
-    running: "bg-blue-100 text-blue-700",
-    completed: "bg-green-100 text-green-700",
-    failed: "bg-red-100 text-red-700",
-    cancelled: "bg-yellow-100 text-yellow-700",
+  const cls: Record<string, string> = {
+    pending: "bg-gray-100 text-gray-700 border-gray-200",
+    running: "bg-blue-100 text-blue-700 border-blue-200",
+    completed: "bg-green-100 text-green-700 border-green-200",
+    failed: "bg-red-100 text-red-700 border-red-200",
+    cancelled: "bg-yellow-100 text-yellow-700 border-yellow-200",
   };
   return (
-    <span
-      className={`rounded px-2 py-0.5 text-xs font-medium ${
-        colors[status] ?? "bg-gray-100 text-gray-700"
-      }`}
-    >
+    <Badge variant="outline" className={cls[status] ?? "bg-gray-100 text-gray-700 border-gray-200"}>
       {status}
-    </span>
+    </Badge>
   );
 }

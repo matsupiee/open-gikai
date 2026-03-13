@@ -1,5 +1,7 @@
 import { Button } from "@/shared/_components/ui/button";
 import { Input } from "@/shared/_components/ui/input";
+import { Label } from "@/shared/_components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/shared/_components/ui/native-select";
 
 interface SearchFiltersProps {
   kind: string;
@@ -40,7 +42,7 @@ export function SearchFilters({
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium">開催日（から）</label>
+          <Label className="text-xs">開催日（から）</Label>
           <Input
             type="date"
             value={heldOnFrom}
@@ -50,7 +52,7 @@ export function SearchFilters({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium">開催日（まで）</label>
+          <Label className="text-xs">開催日（まで）</Label>
           <Input
             type="date"
             value={heldOnTo}
@@ -60,21 +62,21 @@ export function SearchFilters({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium">発言種別</label>
-          <select
+          <Label className="text-xs">発言種別</Label>
+          <NativeSelect
             value={kind}
             onChange={(e) => setKind(e.target.value)}
-            className="h-8 rounded-none border border-input bg-transparent px-2.5 py-1 text-xs"
+            className="w-full"
           >
-            <option value="">すべて</option>
-            <option value="question">質問</option>
-            <option value="answer">答弁</option>
-            <option value="remark">発言</option>
-          </select>
+            <NativeSelectOption value="">すべて</NativeSelectOption>
+            <NativeSelectOption value="question">質問</NativeSelectOption>
+            <NativeSelectOption value="answer">答弁</NativeSelectOption>
+            <NativeSelectOption value="remark">発言</NativeSelectOption>
+          </NativeSelect>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium">都道府県名</label>
+          <Label className="text-xs">都道府県名</Label>
           <Input
             type="text"
             placeholder="東京都"
@@ -85,7 +87,7 @@ export function SearchFilters({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium">自治体名</label>
+          <Label className="text-xs">自治体名</Label>
           <Input
             type="text"
             placeholder="千代田区"
@@ -96,17 +98,17 @@ export function SearchFilters({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium">議会レベル</label>
-          <select
+          <Label className="text-xs">議会レベル</Label>
+          <NativeSelect
             value={assemblyLevel}
             onChange={(e) => setAssemblyLevel(e.target.value)}
-            className="h-8 rounded-none border border-input bg-transparent px-2.5 py-1 text-xs"
+            className="w-full"
           >
-            <option value="">すべて</option>
-            <option value="national">国会</option>
-            <option value="prefectural">都道府県</option>
-            <option value="municipal">市区町村</option>
-          </select>
+            <NativeSelectOption value="">すべて</NativeSelectOption>
+            <NativeSelectOption value="national">国会</NativeSelectOption>
+            <NativeSelectOption value="prefectural">都道府県</NativeSelectOption>
+            <NativeSelectOption value="municipal">市区町村</NativeSelectOption>
+          </NativeSelect>
         </div>
       </div>
 

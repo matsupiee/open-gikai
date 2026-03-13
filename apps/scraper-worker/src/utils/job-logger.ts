@@ -51,13 +51,25 @@ export async function updateScraperJobStatus(
     .where(eq(scraper_jobs.id, jobId));
 }
 
+export interface JobLogger {
+  info(message: string): Promise<void>;
+  warn(message: string): Promise<void>;
+  error(message: string): Promise<void>;
+}
+
 /**
  * ジョブ ID に紐付く Logger を生成する。
  * ハンドラーから createScraperJobLog を呼び出すラッパー。
  */
-export function createJobLogger(db: Db, jobId: string) {
-  return (level: LogLevel, message: string) =>
+export function createJobLogger(db: Db, jobId: string): JobLogger {
+  const log = (level: LogLevel, message: string) =>
     createScraperJobLog(db, { jobId, level, message });
+
+  return {
+    info: (message: string) => log("info", message),
+    warn: (message: string) => log("warn", message),
+    error: (message: string) => log("error", message),
+  };
 }
 
 /** updateScraperJobStatus のエイリアス（start-job で使用） */

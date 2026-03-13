@@ -1,25 +1,10 @@
-import { eq, inArray } from "drizzle-orm";
-import { municipalities, scraper_jobs, system_types } from "@open-gikai/db/schema";
+import { inArray } from "drizzle-orm";
+import { scraper_jobs } from "@open-gikai/db/schema";
 import { createDb } from "@open-gikai/db";
 import type { Env, ScraperQueueMessage } from "./utils/types";
 import { dispatchJob } from "./handlers/dispatch-job";
-import {
-  handleDiscussnetList,
-  handleDiscussnetMeeting,
-} from "./handlers/discussnet";
-import {
-  handleDiscussnetSspSchedule,
-  handleDiscussnetSspMinute,
-} from "./handlers/discussnet-ssp";
-import {
-  handleDbsearchList,
-  handleDbsearchDetail,
-} from "./handlers/dbsearch";
-import {
-  handleKensakusystemList,
-  handleKensakusystemDetail,
-} from "./handlers/kensakusystem";
-import { updateScraperJobStatus } from "./utils/job-logger";
+import { handleQueueMessage, handleMessageError } from "./utils/handle-message";
+import { fetchPendingJobs } from "./utils/jobs";
 
 export default {
   /**
@@ -32,19 +17,7 @@ export default {
   ): Promise<void> {
     const db = createDb(env.DATABASE_URL);
 
-    const pendingJobs = await db
-      .select()
-      .from(scraper_jobs)
-      .innerJoin(
-        municipalities,
-        eq(scraper_jobs.municipalityId, municipalities.id)
-      )
-      .leftJoin(
-        system_types,
-        eq(municipalities.systemTypeId, system_types.id)
-      )
-      .where(eq(scraper_jobs.status, "pending"))
-      .limit(10);
+    const pendingJobs = await fetchPendingJobs(db);
 
     if (pendingJobs.length === 0) return;
 
@@ -60,7 +33,7 @@ export default {
   },
 
   /**
-   * Queue コンシューマー: discussnet-list / discussnet-meeting を処理する。
+   * Queue コンシューマー: キューメッセージを処理する。
    */
   async queue(
     batch: MessageBatch<unknown>,
@@ -73,51 +46,10 @@ export default {
       const msg = message.body as ScraperQueueMessage;
 
       try {
-        switch (msg.type) {
-          case "discussnet-list":
-            await handleDiscussnetList(db, env.SCRAPER_QUEUE, msg);
-            break;
-          case "discussnet-meeting":
-            await handleDiscussnetMeeting(db, msg);
-            break;
-          case "discussnet-ssp-schedule":
-            await handleDiscussnetSspSchedule(db, env.SCRAPER_QUEUE, msg);
-            break;
-          case "discussnet-ssp-minute":
-            await handleDiscussnetSspMinute(db, msg);
-            break;
-          case "dbsearch-list":
-            await handleDbsearchList(db, env.SCRAPER_QUEUE, msg);
-            break;
-          case "dbsearch-detail":
-            await handleDbsearchDetail(db, msg);
-            break;
-          case "kensakusystem-list":
-            await handleKensakusystemList(db, env.SCRAPER_QUEUE, msg);
-            break;
-          case "kensakusystem-detail":
-            await handleKensakusystemDetail(db, msg);
-            break;
-          default: {
-            const _exhaustive: never = msg;
-            console.warn(`[scraper-worker] unknown message type:`, _exhaustive);
-          }
-        }
+        await handleQueueMessage(db, env.SCRAPER_QUEUE, msg);
         message.ack();
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[scraper-worker] handler error for type=${msg.type}:`,
-          errorMessage
-        );
-
-        // ジョブをエラー終了させる
-        if ("jobId" in msg) {
-          await updateScraperJobStatus(db, msg.jobId, "failed", {
-            errorMessage,
-          });
-        }
-
+        await handleMessageError(db, msg, err);
         // retryOnThrow のデフォルト動作 (再キュー) を避けるため ack する
         // ackするとメッセージがキューから削除されて再実行されない
         message.ack();

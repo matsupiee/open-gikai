@@ -4,9 +4,25 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { client, orpc } from "@/lib/orpc/orpc";
+import { Badge } from "@/shared/_components/ui/badge";
 import { Button } from "@/shared/_components/ui/button";
 import { Input } from "@/shared/_components/ui/input";
 import { Label } from "@/shared/_components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/_components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/shared/_components/ui/table";
 
 export const Route = createFileRoute("/admin/scrapers/")({
   component: ScrapersPage,
@@ -59,48 +75,53 @@ function ScrapersPage() {
             ジョブがありません
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
-              <tr>
-                <th className="px-4 py-2 text-left">自治体</th>
-                <th className="px-4 py-2 text-left">ステータス</th>
-                <th className="px-4 py-2 text-left">挿入</th>
-                <th className="px-4 py-2 text-left">スキップ</th>
-                <th className="px-4 py-2 text-left">作成日時</th>
-                <th className="px-4 py-2" />
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-4">自治体</TableHead>
+                <TableHead className="px-4">システム</TableHead>
+                <TableHead className="px-4">ステータス</TableHead>
+                <TableHead className="px-4">挿入</TableHead>
+                <TableHead className="px-4">スキップ</TableHead>
+                <TableHead className="px-4">作成日時</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {jobs.map((job) => (
-                <tr
+                <TableRow
                   key={job.id}
-                  className="border-b last:border-0 hover:bg-muted/20"
+                  className="cursor-pointer"
+                  onClick={() => {
+                    window.location.href = `/admin/scrapers/${job.id}`;
+                  }}
                 >
-                  <td className="px-4 py-2 font-mono">{job.municipalityId}</td>
-                  <td className="px-4 py-2">
+                  <TableCell className="px-4">
+                    <span className="text-muted-foreground">
+                      {job.prefecture}
+                    </span>
+                    <span className="ml-1">
+                      {job.municipalityName || job.municipalityId}
+                    </span>
+                  </TableCell>
+                  <TableCell className="px-4 text-muted-foreground">
+                    {job.systemTypeDescription ?? "—"}
+                  </TableCell>
+                  <TableCell className="px-4">
                     <StatusBadge status={job.status} />
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="px-4 text-muted-foreground">
                     {job.totalInserted}
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="px-4 text-muted-foreground">
                     {job.totalSkipped}
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="px-4 text-muted-foreground">
                     {new Date(job.createdAt).toLocaleString("ja-JP")}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <a
-                      href={`/admin/scrapers/${job.id}`}
-                      className="text-primary hover:underline text-xs"
-                    >
-                      詳細
-                    </a>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
         {total > PAGE_SIZE && (
           <div className="flex justify-between items-center px-4 py-3 border-t text-sm">
@@ -130,6 +151,12 @@ function ScrapersPage() {
   );
 }
 
+/** コンボボックスの選択状態を明示的に表す型 */
+type MunicipalitySelection =
+  | { kind: "idle" }
+  | { kind: "searching"; query: string }
+  | { kind: "selected"; id: string; label: string };
+
 function CreateJobForm({
   onSubmit,
   isSubmitting,
@@ -138,19 +165,59 @@ function CreateJobForm({
   isSubmitting: boolean;
 }) {
   const currentYear = new Date().getFullYear();
-  const [municipalityId, setMunicipalityId] = useState("");
-  const [year, setYear] = useState(String(currentYear));
+  const [selection, setSelection] = useState<MunicipalitySelection>({
+    kind: "idle",
+  });
+  const [year, setYear] = useState(currentYear);
 
   const { data: municipalities = [], isLoading: municipalitiesLoading } =
-    useQuery(
-      orpc.scrapers.listMunicipalities.queryOptions({ input: {} })
+    useQuery(orpc.scrapers.listMunicipalities.queryOptions({ input: {} }));
+
+  const query = selection.kind === "searching" ? selection.query : "";
+  const filtered =
+    selection.kind === "searching" && query.trim()
+      ? municipalities.filter((m) => {
+          const text = `${m.prefecture}${m.name}`;
+          const terms = query.trim().split(/\s+/);
+          return terms.every((term) => text.includes(term));
+        })
+      : [];
+
+  const inputValue =
+    selection.kind === "selected"
+      ? selection.label
+      : selection.kind === "searching"
+      ? selection.query
+      : "";
+
+  const handleInputChange = (value: string) => {
+    setSelection(
+      value ? { kind: "searching", query: value } : { kind: "idle" }
     );
+  };
+
+  const handleSelect = (m: {
+    id: string;
+    prefecture: string;
+    name: string;
+  }) => {
+    setSelection({
+      kind: "selected",
+      id: m.id,
+      label: `${m.prefecture} ${m.name}`,
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!municipalityId) return;
-    onSubmit({ municipalityId, year: parseInt(year, 10) });
+    if (selection.kind !== "selected") return;
+    onSubmit({ municipalityId: selection.id, year });
   };
+
+  const yearOptions = Array.from(
+    { length: currentYear - 2000 + 1 },
+    (_, i) => currentYear - i
+  );
 
   return (
     <form
@@ -159,48 +226,104 @@ function CreateJobForm({
     >
       <h2 className="font-semibold text-sm">新規ジョブ作成</h2>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="sm:col-span-2">
-          <Label htmlFor="municipality" className="text-xs">
+      <div className="flex gap-8">
+        <div className="space-y-1 flex-shrink-0 w-80">
+          <Label htmlFor="municipality-search" className="text-xs">
             自治体
           </Label>
-          <select
-            id="municipality"
-            value={municipalityId}
-            onChange={(e) => setMunicipalityId(e.target.value)}
-            required
-            disabled={municipalitiesLoading}
-            className="mt-1 w-full rounded border border-input bg-background px-3 py-2 text-sm"
-          >
-            <option value="">
-              {municipalitiesLoading ? "読み込み中..." : "自治体を選択"}
-            </option>
-            {municipalities.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.prefecture} {m.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <div className="relative flex w-full cursor-text rounded-md border border-input bg-background text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+              <Input
+                id="municipality-search"
+                placeholder="都道府県・市区町村名で絞り込み"
+                value={inputValue}
+                onChange={(e) => handleInputChange(e.target.value)}
+                onBlur={() => {
+                  // 少し遅らせてクリックイベントが先に発火するようにする
+                  setTimeout(() => {
+                    if (selection.kind === "searching") {
+                      setSelection({ kind: "idle" });
+                    }
+                  }, 150);
+                }}
+                disabled={
+                  municipalitiesLoading || selection.kind === "selected"
+                }
+                className={`border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 pr-7 ${
+                  selection.kind === "selected"
+                    ? "text-green-600 font-medium"
+                    : ""
+                }`}
+              />
+              {selection.kind === "selected" && (
+                <button
+                  type="button"
+                  onClick={() => setSelection({ kind: "idle" })}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="選択解除"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            {selection.kind === "searching" && query.trim() && (
+              <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-input bg-popover text-popover-foreground shadow-md">
+                {filtered.length === 0 ? (
+                  <li className="px-2 py-4 text-center text-xs text-muted-foreground">
+                    該当なし
+                  </li>
+                ) : (
+                  filtered.map((m) => (
+                    <li
+                      key={m.id}
+                      onMouseDown={(e) => {
+                        e.preventDefault(); // blur を発火させない
+                        handleSelect(m);
+                      }}
+                      className="cursor-pointer px-2 py-2 text-xs hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <span>{m.prefecture} {m.name}</span>
+                      {m.systemTypeDescription && (
+                        <span className="ml-2 text-muted-foreground">
+                          {m.systemTypeDescription}
+                        </span>
+                      )}
+                    </li>
+                  ))
+                )}
+              </ul>
+            )}
+          </div>
         </div>
 
         <div>
           <Label htmlFor="year" className="text-xs">
             年
           </Label>
-          <Input
-            id="year"
-            type="number"
-            min={2000}
-            max={2100}
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            required
-            className="mt-1"
-          />
+
+          <Select
+            value={String(year)}
+            onValueChange={(v) => setYear(Number(v))}
+          >
+            <SelectTrigger id="year" className="mt-1 w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {yearOptions.map((y) => (
+                <SelectItem key={y} value={String(y)}>
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      <Button type="submit" disabled={isSubmitting || !municipalityId} size="sm">
+      <Button
+        type="submit"
+        disabled={isSubmitting || selection.kind !== "selected"}
+        size="sm"
+      >
         {isSubmitting ? "作成中..." : "ジョブ作成"}
       </Button>
     </form>
@@ -208,20 +331,19 @@ function CreateJobForm({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    pending: "bg-gray-100 text-gray-700",
-    running: "bg-blue-100 text-blue-700",
-    completed: "bg-green-100 text-green-700",
-    failed: "bg-red-100 text-red-700",
-    cancelled: "bg-yellow-100 text-yellow-700",
+  const cls: Record<string, string> = {
+    pending: "bg-gray-100 text-gray-700 border-gray-200",
+    running: "bg-blue-100 text-blue-700 border-blue-200",
+    completed: "bg-green-100 text-green-700 border-green-200",
+    failed: "bg-red-100 text-red-700 border-red-200",
+    cancelled: "bg-yellow-100 text-yellow-700 border-yellow-200",
   };
   return (
-    <span
-      className={`rounded px-2 py-0.5 text-xs font-medium ${
-        colors[status] ?? "bg-gray-100 text-gray-700"
-      }`}
+    <Badge
+      variant="outline"
+      className={cls[status] ?? "bg-gray-100 text-gray-700 border-gray-200"}
     >
       {status}
-    </span>
+    </Badge>
   );
 }

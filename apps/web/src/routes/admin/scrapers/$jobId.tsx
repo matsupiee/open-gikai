@@ -4,7 +4,9 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { client, orpc } from "@/lib/orpc/orpc";
+import { Badge } from "@/shared/_components/ui/badge";
 import { Button } from "@/shared/_components/ui/button";
+import { Progress } from "@/shared/_components/ui/progress";
 
 export const Route = createFileRoute("/admin/scrapers/$jobId")({
   component: JobDetailPage,
@@ -132,12 +134,7 @@ function JobDetailPage() {
       </div>
 
       {progress !== null && isRunning && (
-        <div className="rounded-full bg-muted h-2">
-          <div
-            className="rounded-full bg-blue-500 h-2 transition-all"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+        <Progress value={progress} />
       )}
 
       <div className="rounded border border-border bg-black">
@@ -191,20 +188,16 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    pending: "bg-gray-100 text-gray-700",
-    running: "bg-blue-100 text-blue-700",
-    completed: "bg-green-100 text-green-700",
-    failed: "bg-red-100 text-red-700",
-    cancelled: "bg-yellow-100 text-yellow-700",
+  const cls: Record<string, string> = {
+    pending: "bg-gray-100 text-gray-700 border-gray-200",
+    running: "bg-blue-100 text-blue-700 border-blue-200",
+    completed: "bg-green-100 text-green-700 border-green-200",
+    failed: "bg-red-100 text-red-700 border-red-200",
+    cancelled: "bg-yellow-100 text-yellow-700 border-yellow-200",
   };
   return (
-    <span
-      className={`rounded px-2 py-0.5 text-xs font-medium ${
-        colors[status] ?? "bg-gray-100 text-gray-700"
-      }`}
-    >
+    <Badge variant="outline" className={cls[status] ?? "bg-gray-100 text-gray-700 border-gray-200"}>
       {status}
-    </span>
+    </Badge>
   );
 }

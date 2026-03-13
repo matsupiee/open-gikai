@@ -21,36 +21,15 @@ export interface LocalScraperTarget {
 
 /**
  * Cloudflare Queue に投入するメッセージの型定義。
- * discussnet-list / discussnet-meeting は scheduled の dispatchJob から投入される。
  */
 export type ScraperQueueMessage =
-  | {
-      /** DiscussNet (ASP版): 自治体の議事録一覧ページを取得するメッセージ */
-      type: "discussnet-list";
-      jobId: string;
-      municipalityId: string;
-      municipalityName: string;
-      prefecture: string;
-      baseUrl: string;
-      year?: number;
-      page: number;
-    }
-  | {
-      /** DiscussNet (ASP版): 個別議事録ページを取得・保存するメッセージ */
-      type: "discussnet-meeting";
-      jobId: string;
-      municipalityId: string;
-      municipalityName: string;
-      prefecture: string;
-      meetingUrl: string;
-    }
   | {
       /**
        * DiscussNet SSP (SaaS版): council_id ごとに schedule 一覧を取得するメッセージ。
        * POST /dnp/search/minutes/get_schedule で schedule_id 一覧を取得し、
-       * 各 schedule_id を discussnet-ssp-minute としてキューに投入する。
+       * 各 schedule_id を discussnet-ssp:minute としてキューに投入する。
        */
-      type: "discussnet-ssp-schedule";
+      type: "discussnet-ssp:schedule";
       jobId: string;
       municipalityId: string;
       municipalityName: string;
@@ -69,7 +48,7 @@ export type ScraperQueueMessage =
        * DiscussNet SSP (SaaS版): schedule_id ごとに議事録本文を取得・保存するメッセージ。
        * POST /dnp/search/minutes/get_minute で本文を取得して DB に保存する。
        */
-      type: "discussnet-ssp-minute";
+      type: "discussnet-ssp:minute";
       jobId: string;
       municipalityId: string;
       municipalityName: string;
@@ -86,7 +65,7 @@ export type ScraperQueueMessage =
     }
   | {
       /** dbsr.jp: 議事録一覧ページから ID 一覧を取得するメッセージ */
-      type: "dbsearch-list";
+      type: "dbsearch:list";
       jobId: string;
       municipalityId: string;
       municipalityName: string;
@@ -95,7 +74,7 @@ export type ScraperQueueMessage =
     }
   | {
       /** dbsr.jp: 議事録詳細ページを取得・保存するメッセージ */
-      type: "dbsearch-detail";
+      type: "dbsearch:detail";
       jobId: string;
       municipalityId: string;
       municipalityName: string;
@@ -106,7 +85,7 @@ export type ScraperQueueMessage =
     }
   | {
       /** kensakusystem.jp: 議事録一覧ページから一覧を取得するメッセージ */
-      type: "kensakusystem-list";
+      type: "kensakusystem:list";
       jobId: string;
       municipalityId: string;
       municipalityName: string;
@@ -114,7 +93,7 @@ export type ScraperQueueMessage =
     }
   | {
       /** kensakusystem.jp: 議事録詳細ページを取得・保存するメッセージ */
-      type: "kensakusystem-detail";
+      type: "kensakusystem:detail";
       jobId: string;
       municipalityId: string;
       municipalityName: string;

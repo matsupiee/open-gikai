@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { Badge } from "@/shared/_components/ui/badge";
+import { Button } from "@/shared/_components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/_components/ui/card";
 
 import type { Statement } from "../_hooks/useSearch";
@@ -22,9 +24,9 @@ export function StatementCard({ statement, showSimilarity }: StatementCardProps)
         <div className="flex flex-col gap-2">
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="text-sm font-semibold">{statement.meetingTitle}</CardTitle>
-            <span className={`rounded px-2 py-1 text-xs font-medium ${getKindColor(statement.kind)}`}>
+            <Badge className={getKindColor(statement.kind)}>
               {getKindLabel(statement.kind)}
-            </span>
+            </Badge>
           </div>
           <div className="text-xs text-muted-foreground flex flex-wrap gap-2">
             <span>{statement.heldOn}</span>
@@ -38,12 +40,14 @@ export function StatementCard({ statement, showSimilarity }: StatementCardProps)
         <div className="flex flex-col gap-3">
           <p className="text-xs leading-relaxed">{displayContent}</p>
           {isTruncated && (
-            <button
+            <Button
+              variant="link"
+              size="sm"
               onClick={() => setExpanded(!expanded)}
-              className="text-xs text-primary hover:underline text-left"
+              className="h-auto p-0 text-xs justify-start"
             >
               {expanded ? "非表示" : "続きを見る"}
-            </button>
+            </Button>
           )}
           {showSimilarity && statement.similarity !== undefined && (
             <div className="text-xs text-muted-foreground">

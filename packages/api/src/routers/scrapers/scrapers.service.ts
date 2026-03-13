@@ -1,5 +1,5 @@
 import type { Db } from "@open-gikai/db";
-import { scraper_jobs, scraper_job_logs, municipalities } from "@open-gikai/db";
+import { scraper_jobs, scraper_job_logs, municipalities, system_types } from "@open-gikai/db";
 import { ORPCError } from "@orpc/server";
 import { asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -14,6 +14,9 @@ import type {
 export interface ScraperJob {
   id: string;
   municipalityId: string;
+  municipalityName: string;
+  prefecture: string;
+  systemTypeDescription: string | null;
   status: string;
   year: number;
   processedItems: number;
@@ -48,12 +51,21 @@ export interface Municipality {
   code: string;
   name: string;
   prefecture: string;
+  systemTypeDescription: string | null;
 }
 
-function rowToJob(row: typeof scraper_jobs.$inferSelect): ScraperJob {
+function rowToJob(
+  row: typeof scraper_jobs.$inferSelect,
+  municipalityName = "",
+  prefecture = "",
+  systemTypeDescription: string | null = null
+): ScraperJob {
   return {
     id: row.id,
     municipalityId: row.municipalityId,
+    municipalityName,
+    prefecture,
+    systemTypeDescription,
     status: row.status,
     year: row.year,
     processedItems: row.processedItems,
@@ -71,17 +83,27 @@ export async function listJobs(
   db: Db,
   input: z.infer<typeof scrapersListJobsSchema>
 ): Promise<ListJobsResponse> {
-  const rows = await db
-    .select()
-    .from(scraper_jobs)
-    .orderBy(desc(scraper_jobs.createdAt))
-    .limit(input.limit)
-    .offset(input.offset);
-
-  const countResult = await db.$count(scraper_jobs);
+  const [rows, countResult] = await Promise.all([
+    db
+      .select({
+        job: scraper_jobs,
+        municipalityName: municipalities.name,
+        prefecture: municipalities.prefecture,
+        systemTypeDescription: system_types.description,
+      })
+      .from(scraper_jobs)
+      .leftJoin(municipalities, eq(scraper_jobs.municipalityId, municipalities.id))
+      .leftJoin(system_types, eq(municipalities.systemTypeId, system_types.id))
+      .orderBy(desc(scraper_jobs.createdAt))
+      .limit(input.limit)
+      .offset(input.offset),
+    db.$count(scraper_jobs),
+  ]);
 
   return {
-    jobs: rows.map(rowToJob),
+    jobs: rows.map((r) =>
+      rowToJob(r.job, r.municipalityName ?? "", r.prefecture ?? "", r.systemTypeDescription ?? null)
+    ),
     total: countResult,
   };
 }
@@ -176,8 +198,10 @@ export async function listMunicipalities(
       code: municipalities.code,
       name: municipalities.name,
       prefecture: municipalities.prefecture,
+      systemTypeDescription: system_types.description,
     })
     .from(municipalities)
+    .leftJoin(system_types, eq(municipalities.systemTypeId, system_types.id))
     .where(eq(municipalities.enabled, true))
     .orderBy(asc(municipalities.code));
 

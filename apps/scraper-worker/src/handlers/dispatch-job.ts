@@ -1,7 +1,14 @@
-import { municipalities, scraper_jobs, system_types } from "@open-gikai/db/schema";
+import {
+  municipalities,
+  scraper_jobs,
+  system_types,
+} from "@open-gikai/db/schema";
 import type { Db } from "@open-gikai/db";
 import { createJobLogger, updateJobStatus } from "../utils/job-logger";
-import { fetchTenantId, fetchCouncils } from "../scrapers/discussnet-ssp";
+import {
+  fetchTenantId,
+  fetchCouncils,
+} from "../system-types/discussnet-ssp/schedule/scraper";
 import type { ScraperQueueMessage } from "../utils/types";
 
 /**
@@ -21,58 +28,28 @@ export async function dispatchJob(
   const logger = createJobLogger(db, scraper_jobs.id);
 
   await updateJobStatus(db, scraper_jobs.id, "running");
-  await logger(
-    "info",
-    `ジョブ開始: municipality=${municipalities.name} systemType=${systemType?.name ?? "未設定"}`
+  await logger.info(
+    `ジョブ開始: municipality=${municipalities.name} systemType=${
+      systemType?.name ?? "未設定"
+    }`
   );
 
+  if (!municipalities.baseUrl) {
+    await logger.error(
+      `baseUrl が未設定: municipalityId=${scraper_jobs.municipalityId}`
+    );
+    await updateJobStatus(db, scraper_jobs.id, "failed", {
+      errorMessage: `baseUrl が未設定: municipalityId=${scraper_jobs.municipalityId}`,
+    });
+    return;
+  }
+
   switch (systemType?.name) {
-    case "discussnet": {
-      if (!municipalities.baseUrl) {
-        await logger(
-          "error",
-          `DiscussNet: ${municipalities.name} の baseUrl が未設定です`
-        );
-        await updateJobStatus(db, scraper_jobs.id, "failed", {
-          errorMessage: `baseUrl が未設定: municipalityId=${scraper_jobs.municipalityId}`,
-        });
-        return;
-      }
-
-      await logger(
-        "info",
-        `DiscussNet: ${municipalities.name} の議事録一覧をキューに投入します`
-      );
-      await queue.send({
-        type: "discussnet-list",
-        jobId: scraper_jobs.id,
-        municipalityId: municipalities.id,
-        municipalityName: municipalities.name,
-        prefecture: municipalities.prefecture,
-        baseUrl: municipalities.baseUrl,
-        year: scraper_jobs.year,
-        page: 1,
-      });
-      break;
-    }
-
     case "discussnet_ssp": {
-      if (!municipalities.baseUrl) {
-        await logger(
-          "error",
-          `DiscussNet SSP: ${municipalities.name} の baseUrl が未設定です`
-        );
-        await updateJobStatus(db, scraper_jobs.id, "failed", {
-          errorMessage: `baseUrl が未設定: municipalityId=${scraper_jobs.municipalityId}`,
-        });
-        return;
-      }
-
       // baseUrl: https://ssp.kaigiroku.net/tenant/{slug}/MinuteSearch.html
       const slugMatch = municipalities.baseUrl.match(/\/tenant\/([^/]+)\//);
       if (!slugMatch?.[1]) {
-        await logger(
-          "error",
+        await logger.error(
           `DiscussNet SSP: ${municipalities.name} の baseUrl からテナントスラッグを抽出できません: ${municipalities.baseUrl}`
         );
         await updateJobStatus(db, scraper_jobs.id, "failed", {
@@ -84,8 +61,7 @@ export async function dispatchJob(
 
       const tenantId = await fetchTenantId(tenantSlug);
       if (!tenantId) {
-        await logger(
-          "error",
+        await logger.error(
           `DiscussNet SSP: ${municipalities.name} の tenantId を取得できません (slug=${tenantSlug})`
         );
         await updateJobStatus(db, scraper_jobs.id, "failed", {
@@ -95,23 +71,22 @@ export async function dispatchJob(
       }
 
       const councils = await fetchCouncils(tenantId, scraper_jobs.year);
+
       if (councils.length === 0) {
-        await logger(
-          "warn",
+        await logger.warn(
           `DiscussNet SSP: ${municipalities.name} に対象 council が見つかりません (tenantId=${tenantId} year=${scraper_jobs.year})`
         );
         await updateJobStatus(db, scraper_jobs.id, "completed");
         return;
       }
 
-      await logger(
-        "info",
+      await logger.info(
         `DiscussNet SSP: ${municipalities.name} の ${councils.length} 件の council をキューに投入します`
       );
 
       for (const council of councils) {
         await queue.send({
-          type: "discussnet-ssp-schedule",
+          type: "discussnet-ssp:schedule",
           jobId: scraper_jobs.id,
           municipalityId: municipalities.id,
           municipalityName: municipalities.name,
@@ -126,23 +101,11 @@ export async function dispatchJob(
     }
 
     case "dbsearch": {
-      if (!municipalities.baseUrl) {
-        await logger(
-          "error",
-          `dbsr.jp: ${municipalities.name} の baseUrl が未設定です`
-        );
-        await updateJobStatus(db, scraper_jobs.id, "failed", {
-          errorMessage: `baseUrl が未設定: municipalityId=${scraper_jobs.municipalityId}`,
-        });
-        return;
-      }
-
-      await logger(
-        "info",
+      await logger.info(
         `dbsr.jp: ${municipalities.name} の議事録一覧をキューに投入します`
       );
       await queue.send({
-        type: "dbsearch-list",
+        type: "dbsearch:list",
         jobId: scraper_jobs.id,
         municipalityId: municipalities.id,
         municipalityName: municipalities.name,
@@ -153,23 +116,11 @@ export async function dispatchJob(
     }
 
     case "kensakusystem": {
-      if (!municipalities.baseUrl) {
-        await logger(
-          "error",
-          `kensakusystem: ${municipalities.name} の baseUrl が未設定です`
-        );
-        await updateJobStatus(db, scraper_jobs.id, "failed", {
-          errorMessage: `baseUrl が未設定: municipalityId=${scraper_jobs.municipalityId}`,
-        });
-        return;
-      }
-
-      await logger(
-        "info",
+      await logger.info(
         `kensakusystem: ${municipalities.name} の議事録一覧をキューに投入します`
       );
       await queue.send({
-        type: "kensakusystem-list",
+        type: "kensakusystem:list",
         jobId: scraper_jobs.id,
         municipalityId: municipalities.id,
         municipalityName: municipalities.name,
@@ -179,8 +130,7 @@ export async function dispatchJob(
     }
 
     default: {
-      await logger(
-        "error",
+      await logger.error(
         `未対応の systemType: ${systemType?.name ?? "null"}`
       );
       await updateJobStatus(db, scraper_jobs.id, "failed", {
