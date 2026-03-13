@@ -6,6 +6,7 @@ import {
   scrapersCancelJobSchema,
   scrapersGetJobLogsSchema,
   scrapersListMunicipalitiesSchema,
+  scrapersReprocessStatementsSchema,
 } from "./_schemas";
 import {
   listJobs,
@@ -14,6 +15,7 @@ import {
   cancelJob,
   getJobLogs,
   listMunicipalities,
+  reprocessStatements,
 } from "./scrapers.service";
 
 export const scrapersRouter = {
@@ -40,4 +42,8 @@ export const scrapersRouter = {
   listMunicipalities: protectedProcedure
     .input(scrapersListMunicipalitiesSchema)
     .handler(({ input, context }) => listMunicipalities(context.db, input)),
+
+  reprocessStatements: protectedProcedure
+    .input(scrapersReprocessStatementsSchema)
+    .handler(({ input, context }) => reprocessStatements(context.db, input)),
 };

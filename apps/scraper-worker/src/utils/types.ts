@@ -71,6 +71,7 @@ export type ScraperQueueMessage =
       municipalityName: string;
       prefecture: string;
       baseUrl: string;
+      year: number;
     }
   | {
       /** dbsr.jp: 議事録詳細ページを取得・保存するメッセージ */

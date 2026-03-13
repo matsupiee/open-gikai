@@ -20,10 +20,10 @@ export async function handleDbsearchList(
   const logger = createJobLogger(db, msg.jobId);
 
   await logger.info(
-    `dbsr.jp [${msg.municipalityName}] 議事録一覧取得中: ${msg.baseUrl}`
+    `dbsr.jp [${msg.municipalityName}] 議事録一覧取得中: ${msg.baseUrl} (${msg.year}年)`
   );
 
-  const records = await fetchMeetingList(msg.baseUrl);
+  const records = await fetchMeetingList(msg.baseUrl, msg.year);
 
   if (!records || records.length === 0) {
     await logger.warn(

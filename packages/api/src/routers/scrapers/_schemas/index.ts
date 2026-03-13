@@ -4,3 +4,4 @@ export { scrapersGetJobSchema } from "./scrapers-get-job.schema";
 export { scrapersCancelJobSchema } from "./scrapers-cancel-job.schema";
 export { scrapersGetJobLogsSchema } from "./scrapers-get-job-logs.schema";
 export { scrapersListMunicipalitiesSchema } from "./scrapers-list-municipalities.schema";
+export { scrapersReprocessStatementsSchema } from "./scrapers-reprocess-statements.schema";

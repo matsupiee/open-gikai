@@ -53,6 +53,15 @@ function ScrapersPage() {
     onError: (err) => toast.error(`エラー: ${err.message}`),
   });
 
+  const reprocessMutation = useMutation({
+    mutationFn: (input: Parameters<typeof client.scrapers.reprocessStatements>[0]) =>
+      client.scrapers.reprocessStatements(input),
+    onSuccess: (data) => {
+      toast.success(`${data.reprocessedCount} 件の会議を再分割キューに追加しました`);
+    },
+    onError: (err) => toast.error(`エラー: ${err.message}`),
+  });
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
       <h1 className="text-2xl font-bold">スクレイパー管理</h1>
@@ -60,6 +69,11 @@ function ScrapersPage() {
       <CreateJobForm
         onSubmit={(payload) => createMutation.mutate(payload)}
         isSubmitting={createMutation.isPending}
+      />
+
+      <ReprocessStatementsForm
+        onSubmit={(payload) => reprocessMutation.mutate(payload)}
+        isSubmitting={reprocessMutation.isPending}
       />
 
       <div className="rounded border border-border bg-card">
@@ -80,6 +94,7 @@ function ScrapersPage() {
               <TableRow>
                 <TableHead className="px-4">自治体</TableHead>
                 <TableHead className="px-4">システム</TableHead>
+                <TableHead className="px-4">年度</TableHead>
                 <TableHead className="px-4">ステータス</TableHead>
                 <TableHead className="px-4">挿入</TableHead>
                 <TableHead className="px-4">スキップ</TableHead>
@@ -105,6 +120,9 @@ function ScrapersPage() {
                   </TableCell>
                   <TableCell className="px-4 text-muted-foreground">
                     {job.systemTypeDescription ?? "—"}
+                  </TableCell>
+                  <TableCell className="px-4 text-muted-foreground">
+                    {job.year}年度
                   </TableCell>
                   <TableCell className="px-4">
                     <StatusBadge status={job.status} />
@@ -325,6 +343,136 @@ function CreateJobForm({
         size="sm"
       >
         {isSubmitting ? "作成中..." : "ジョブ作成"}
+      </Button>
+    </form>
+  );
+}
+
+function ReprocessStatementsForm({
+  onSubmit,
+  isSubmitting,
+}: {
+  onSubmit: (payload: Parameters<typeof client.scrapers.reprocessStatements>[0]) => void;
+  isSubmitting: boolean;
+}) {
+  const [selection, setSelection] = useState<MunicipalitySelection>({ kind: "idle" });
+
+  const { data: municipalities = [], isLoading: municipalitiesLoading } =
+    useQuery(orpc.scrapers.listMunicipalities.queryOptions({ input: {} }));
+
+  const query = selection.kind === "searching" ? selection.query : "";
+  const filtered =
+    selection.kind === "searching" && query.trim()
+      ? municipalities.filter((m) => {
+          const text = `${m.prefecture}${m.name}`;
+          const terms = query.trim().split(/\s+/);
+          return terms.every((term) => text.includes(term));
+        })
+      : [];
+
+  const inputValue =
+    selection.kind === "selected"
+      ? selection.label
+      : selection.kind === "searching"
+      ? selection.query
+      : "";
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selection.kind !== "selected") return;
+    onSubmit({ municipalityId: selection.id });
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="rounded border border-border bg-card p-4 space-y-4"
+    >
+      <div>
+        <h2 className="font-semibold text-sm">発言再分割</h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          自治体を選択して実行すると、既存の発言データを削除してraw_textから再分割します。scraper-workerが次回起動時に処理します。
+        </p>
+      </div>
+
+      <div className="space-y-1 w-80">
+        <Label className="text-xs">自治体</Label>
+        <div className="relative">
+          <div className="relative flex w-full cursor-text rounded-md border border-input bg-background text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+            <Input
+              placeholder="都道府県・市区町村名で絞り込み"
+              value={inputValue}
+              onChange={(e) =>
+                setSelection(
+                  e.target.value
+                    ? { kind: "searching", query: e.target.value }
+                    : { kind: "idle" }
+                )
+              }
+              onBlur={() => {
+                setTimeout(() => {
+                  if (selection.kind === "searching") {
+                    setSelection({ kind: "idle" });
+                  }
+                }, 150);
+              }}
+              disabled={municipalitiesLoading || selection.kind === "selected"}
+              className={`border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 pr-7 ${
+                selection.kind === "selected" ? "text-green-600 font-medium" : ""
+              }`}
+            />
+            {selection.kind === "selected" && (
+              <button
+                type="button"
+                onClick={() => setSelection({ kind: "idle" })}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="選択解除"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {selection.kind === "searching" && query.trim() && (
+            <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-input bg-popover text-popover-foreground shadow-md">
+              {filtered.length === 0 ? (
+                <li className="px-2 py-4 text-center text-xs text-muted-foreground">
+                  該当なし
+                </li>
+              ) : (
+                filtered.map((m) => (
+                  <li
+                    key={m.id}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setSelection({
+                        kind: "selected",
+                        id: m.id,
+                        label: `${m.prefecture} ${m.name}`,
+                      });
+                    }}
+                    className="cursor-pointer px-2 py-2 text-xs hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <span>{m.prefecture} {m.name}</span>
+                    {m.systemTypeDescription && (
+                      <span className="ml-2 text-muted-foreground">
+                        {m.systemTypeDescription}
+                      </span>
+                    )}
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      <Button
+        type="submit"
+        variant="destructive"
+        disabled={isSubmitting || selection.kind !== "selected"}
+        size="sm"
+      >
+        {isSubmitting ? "処理中..." : "発言を再分割"}
       </Button>
     </form>
   );

@@ -1,7 +1,8 @@
 import type { Db } from "@open-gikai/db";
 import { scraper_jobs, scraper_job_logs, municipalities, system_types } from "@open-gikai/db";
+import { meetings, statements } from "@open-gikai/db/schema";
 import { ORPCError } from "@orpc/server";
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import type {
   scrapersListJobsSchema,
@@ -10,6 +11,7 @@ import type {
   scrapersCancelJobSchema,
   scrapersGetJobLogsSchema,
   scrapersListMunicipalitiesSchema,
+  scrapersReprocessStatementsSchema,
 } from "./_schemas";
 export interface ScraperJob {
   id: string;
@@ -206,6 +208,36 @@ export async function listMunicipalities(
     .orderBy(asc(municipalities.code));
 
   return rows;
+}
+
+export interface ReprocessStatementsResponse {
+  reprocessedCount: number;
+}
+
+export async function reprocessStatements(
+  db: Db,
+  input: z.infer<typeof scrapersReprocessStatementsSchema>
+): Promise<ReprocessStatementsResponse> {
+  const targetMeetings = await db
+    .select({ id: meetings.id })
+    .from(meetings)
+    .where(eq(meetings.municipalityId, input.municipalityId));
+
+  if (targetMeetings.length === 0) {
+    return { reprocessedCount: 0 };
+  }
+
+  const meetingIds = targetMeetings.map((m) => m.id);
+
+  await db.transaction(async (tx) => {
+    await tx.delete(statements).where(inArray(statements.meetingId, meetingIds));
+    await tx
+      .update(meetings)
+      .set({ status: "pending" })
+      .where(eq(meetings.municipalityId, input.municipalityId));
+  });
+
+  return { reprocessedCount: targetMeetings.length };
 }
 
 export async function getJobLogs(

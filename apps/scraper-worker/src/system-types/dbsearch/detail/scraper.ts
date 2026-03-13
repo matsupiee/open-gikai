@@ -65,22 +65,31 @@ function extractBodyText(html: string): string {
 }
 
 function extractTitle(html: string): string | null {
-  let match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  if (match?.[1]) {
-    const title = match[1].trim();
-    if (title && title.length > 0) return title;
+  // dbsr.jp の詳細ページは <p class="view__title"> にタイトルがある
+  const viewTitleMatch = html.match(
+    /class="view__title">([^<]+)<\/p>/
+  );
+  if (viewTitleMatch?.[1]) {
+    const title = viewTitleMatch[1].replace(/\s+/g, " ").trim();
+    if (title.length > 0) return title;
   }
 
-  match = html.match(/<h[12][^>]*>([^<]+)<\/h[12]>/i);
-  if (match?.[1]) {
-    const title = match[1].trim();
-    if (title && title.length > 0) return title;
+  // フォールバック: <title> タグ
+  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  if (titleMatch?.[1]) {
+    const title = titleMatch[1].replace(/\s+/g, " ").trim();
+    if (title.length > 0) return title;
   }
 
   return null;
 }
 
 function extractDate(html: string, rawText: string): string | null {
+  // dbsr.jp の詳細ページは <time>2025-12-18</time> に日付がある
+  const timeMatch = html.match(/<time>(\d{4}-\d{2}-\d{2})<\/time>/);
+  if (timeMatch?.[1]) return timeMatch[1];
+
+  // フォールバック: 和暦・西暦テキストから日付を抽出
   const searchText = normalizeFullWidth(html + " " + rawText);
 
   const wareki: Record<string, number> = {

@@ -111,6 +111,7 @@ export async function dispatchJob(
         municipalityName: municipalities.name,
         prefecture: municipalities.prefecture,
         baseUrl: municipalities.baseUrl,
+        year: scraper_jobs.year,
       });
       break;
     }
