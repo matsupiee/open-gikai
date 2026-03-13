@@ -1,5 +1,5 @@
 import { eq, inArray } from "drizzle-orm";
-import { municipalities, scraper_jobs } from "@open-gikai/db/schema";
+import { municipalities, scraper_jobs, system_types } from "@open-gikai/db/schema";
 import { createDb } from "@open-gikai/db";
 import type { Env, ScraperQueueMessage } from "./utils/types";
 import { dispatchJob } from "./handlers/dispatch-job";
@@ -11,6 +11,14 @@ import {
   handleDiscussnetSspSchedule,
   handleDiscussnetSspMinute,
 } from "./handlers/discussnet-ssp";
+import {
+  handleDbsearchList,
+  handleDbsearchDetail,
+} from "./handlers/dbsearch";
+import {
+  handleKensakusystemList,
+  handleKensakusystemDetail,
+} from "./handlers/kensakusystem";
 import { updateScraperJobStatus } from "./utils/job-logger";
 
 export default {
@@ -30,6 +38,10 @@ export default {
       .innerJoin(
         municipalities,
         eq(scraper_jobs.municipalityId, municipalities.id)
+      )
+      .leftJoin(
+        system_types,
+        eq(municipalities.systemTypeId, system_types.id)
       )
       .where(eq(scraper_jobs.status, "pending"))
       .limit(10);
@@ -73,6 +85,18 @@ export default {
             break;
           case "discussnet-ssp-minute":
             await handleDiscussnetSspMinute(db, msg);
+            break;
+          case "dbsearch-list":
+            await handleDbsearchList(db, env.SCRAPER_QUEUE, msg);
+            break;
+          case "dbsearch-detail":
+            await handleDbsearchDetail(db, msg);
+            break;
+          case "kensakusystem-list":
+            await handleKensakusystemList(db, env.SCRAPER_QUEUE, msg);
+            break;
+          case "kensakusystem-detail":
+            await handleKensakusystemDetail(db, msg);
             break;
           default: {
             const _exhaustive: never = msg;

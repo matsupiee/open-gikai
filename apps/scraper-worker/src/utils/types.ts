@@ -83,6 +83,45 @@ export type ScraperQueueMessage =
       scheduleName: string;
       /** member_list HTML: 開催日抽出に使用 */
       memberList: string;
+    }
+  | {
+      /** dbsr.jp: 議事録一覧ページから ID 一覧を取得するメッセージ */
+      type: "dbsearch-list";
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      prefecture: string;
+      baseUrl: string;
+    }
+  | {
+      /** dbsr.jp: 議事録詳細ページを取得・保存するメッセージ */
+      type: "dbsearch-detail";
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      prefecture: string;
+      baseUrl: string;
+      meetingId: string;
+      detailUrl: string;
+    }
+  | {
+      /** kensakusystem.jp: 議事録一覧ページから一覧を取得するメッセージ */
+      type: "kensakusystem-list";
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      baseUrl: string;
+    }
+  | {
+      /** kensakusystem.jp: 議事録詳細ページを取得・保存するメッセージ */
+      type: "kensakusystem-detail";
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      slug: string;
+      title: string;
+      heldOn: string;
+      detailUrl: string;
     };
 
 /** Cloudflare Worker の環境変数（bindings） */

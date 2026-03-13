@@ -8,6 +8,20 @@
       "when": 1773370338145,
       "tag": "0000_thick_maria_hill",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773371637356,
+      "tag": "0001_clear_marrow",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773383940108,
+      "tag": "0002_sour_doctor_faustus",
+      "breakpoints": true
     }
   ]
 }

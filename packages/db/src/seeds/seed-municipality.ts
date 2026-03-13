@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { municipalities } from "../schema/municipalities";
+import { system_types, SYSTEM_TYPES_SEED } from "../schema/system-types";
+import type { SystemType } from "../schema/system-types";
 
 dotenv.config({
   path: "../../apps/web/.env", // packages/dbから見た相対pathを書く
@@ -41,6 +43,13 @@ function parseCsv(filePath: string): MunicipalityRecord[] {
   });
 }
 
+function detectSystemType(baseUrl: string): SystemType {
+  if (baseUrl.includes("ssp.kaigiroku.net")) return "discussnet_ssp";
+  if (baseUrl.includes("dbsr.jp")) return "dbsearch";
+  if (baseUrl.includes("kensakusystem.jp")) return "kensakusystem";
+  return "custom_html";
+}
+
 // --- シード ---
 
 async function seed() {
@@ -50,6 +59,21 @@ async function seed() {
 
   const db = drizzle(DATABASE_URL as string, { casing: "snake_case" });
 
+  // 1. system_types を先に upsert する
+  console.log(`[seed] system_types を ${SYSTEM_TYPES_SEED.length} 件 upsert します`);
+  await db
+    .insert(system_types)
+    .values(SYSTEM_TYPES_SEED)
+    .onConflictDoUpdate({
+      target: system_types.name,
+      set: { description: sql`excluded.description` },
+    });
+
+  // 2. name → id のマップを構築する
+  const systemTypeRows = await db.select({ id: system_types.id, name: system_types.name }).from(system_types);
+  const systemTypeIdByName = new Map(systemTypeRows.map((r) => [r.name, r.id]));
+
+  // 3. municipalities を upsert する
   console.log(`[seed] ${municipalityList.length} 件の自治体を登録します`);
 
   let inserted = 0;
@@ -57,15 +81,16 @@ async function seed() {
 
   for (const m of municipalityList) {
     const displayName = m.name || m.prefecture; // 都道府県行は都道府県名を name に
+    const typeName = detectSystemType(m.baseUrl);
+    const systemTypeId = systemTypeIdByName.get(typeName) ?? null;
+
     const result = await db
       .insert(municipalities)
       .values({
         code: m.code,
         name: displayName,
         prefecture: m.prefecture,
-        systemType: m.baseUrl.includes("ssp.kaigiroku.net")
-          ? "discussnet_ssp"
-          : "custom_html",
+        systemTypeId,
         baseUrl: m.baseUrl,
         enabled: true,
       })
@@ -76,7 +101,7 @@ async function seed() {
           prefecture: sql`excluded.prefecture`,
           baseUrl: sql`excluded.base_url`,
           enabled: sql`excluded.enabled`,
-          systemType: sql`excluded.system_type`,
+          systemTypeId: sql`excluded.system_type_id`,
         },
       })
       .returning({ id: municipalities.id, code: municipalities.code });

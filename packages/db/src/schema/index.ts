@@ -4,3 +4,4 @@ export * from "./municipalities";
 export * from "./statements";
 export * from "./policy-tags";
 export * from "./scrapers";
+export * from "./system-types";

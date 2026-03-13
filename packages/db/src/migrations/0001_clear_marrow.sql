@@ -1,0 +1,1 @@
+ALTER TYPE "public"."system_type" ADD VALUE 'kensakusystem' BEFORE 'sophia';

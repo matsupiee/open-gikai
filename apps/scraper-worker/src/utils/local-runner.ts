@@ -13,7 +13,7 @@
  * 3. 生成された meetings を statements に変換（OPENAI_API_KEY があれば embedding も生成）
  */
 import { eq } from "drizzle-orm";
-import { municipalities, scraper_jobs } from "@open-gikai/db/schema";
+import { municipalities, scraper_jobs, system_types } from "@open-gikai/db/schema";
 import { createDb } from "@open-gikai/db";
 import type { ScraperQueueMessage } from "./types";
 import { dispatchJob } from "../handlers/dispatch-job";
@@ -100,6 +100,10 @@ async function main() {
     .innerJoin(
       municipalities,
       eq(scraper_jobs.municipalityId, municipalities.id)
+    )
+    .leftJoin(
+      system_types,
+      eq(municipalities.systemTypeId, system_types.id)
     )
     .where(eq(scraper_jobs.status, "pending"))
     .limit(10);

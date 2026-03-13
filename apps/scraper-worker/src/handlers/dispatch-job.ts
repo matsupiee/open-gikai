@@ -1,4 +1,4 @@
-import { municipalities, scraper_jobs } from "@open-gikai/db/schema";
+import { municipalities, scraper_jobs, system_types } from "@open-gikai/db/schema";
 import type { Db } from "@open-gikai/db";
 import { createJobLogger, updateJobStatus } from "../utils/job-logger";
 import { fetchTenantId, fetchCouncils } from "../scrapers/discussnet-ssp";
@@ -14,18 +14,19 @@ export async function dispatchJob(
   job: {
     scraper_jobs: typeof scraper_jobs.$inferSelect;
     municipalities: typeof municipalities.$inferSelect;
+    system_types: typeof system_types.$inferSelect | null;
   }
 ): Promise<void> {
-  const { scraper_jobs, municipalities } = job;
+  const { scraper_jobs, municipalities, system_types: systemType } = job;
   const logger = createJobLogger(db, scraper_jobs.id);
 
   await updateJobStatus(db, scraper_jobs.id, "running");
   await logger(
     "info",
-    `ジョブ開始: municipality=${municipalities.name} systemType=${municipalities.systemType}`
+    `ジョブ開始: municipality=${municipalities.name} systemType=${systemType?.name ?? "未設定"}`
   );
 
-  switch (municipalities.systemType) {
+  switch (systemType?.name) {
     case "discussnet": {
       if (!municipalities.baseUrl) {
         await logger(
@@ -124,13 +125,66 @@ export async function dispatchJob(
       break;
     }
 
+    case "dbsearch": {
+      if (!municipalities.baseUrl) {
+        await logger(
+          "error",
+          `dbsr.jp: ${municipalities.name} の baseUrl が未設定です`
+        );
+        await updateJobStatus(db, scraper_jobs.id, "failed", {
+          errorMessage: `baseUrl が未設定: municipalityId=${scraper_jobs.municipalityId}`,
+        });
+        return;
+      }
+
+      await logger(
+        "info",
+        `dbsr.jp: ${municipalities.name} の議事録一覧をキューに投入します`
+      );
+      await queue.send({
+        type: "dbsearch-list",
+        jobId: scraper_jobs.id,
+        municipalityId: municipalities.id,
+        municipalityName: municipalities.name,
+        prefecture: municipalities.prefecture,
+        baseUrl: municipalities.baseUrl,
+      });
+      break;
+    }
+
+    case "kensakusystem": {
+      if (!municipalities.baseUrl) {
+        await logger(
+          "error",
+          `kensakusystem: ${municipalities.name} の baseUrl が未設定です`
+        );
+        await updateJobStatus(db, scraper_jobs.id, "failed", {
+          errorMessage: `baseUrl が未設定: municipalityId=${scraper_jobs.municipalityId}`,
+        });
+        return;
+      }
+
+      await logger(
+        "info",
+        `kensakusystem: ${municipalities.name} の議事録一覧をキューに投入します`
+      );
+      await queue.send({
+        type: "kensakusystem-list",
+        jobId: scraper_jobs.id,
+        municipalityId: municipalities.id,
+        municipalityName: municipalities.name,
+        baseUrl: municipalities.baseUrl,
+      });
+      break;
+    }
+
     default: {
       await logger(
         "error",
-        `未対応の systemType: ${municipalities.systemType}`
+        `未対応の systemType: ${systemType?.name ?? "null"}`
       );
       await updateJobStatus(db, scraper_jobs.id, "failed", {
-        errorMessage: `未対応の systemType: ${municipalities.systemType}`,
+        errorMessage: `未対応の systemType: ${systemType?.name ?? "null"}`,
       });
     }
   }
