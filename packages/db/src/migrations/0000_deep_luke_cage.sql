@@ -1,5 +1,4 @@
 CREATE EXTENSION vector;
-CREATE TYPE "public"."system_type" AS ENUM('discussnet', 'discussnet_ssp', 'dbsearch', 'sophia', 'voices', 'custom_html', 'pdf');--> statement-breakpoint
 CREATE TYPE "public"."log_level" AS ENUM('info', 'warn', 'error');--> statement-breakpoint
 CREATE TYPE "public"."scraper_job_status" AS ENUM('pending', 'queued', 'running', 'completed', 'failed', 'cancelled');--> statement-breakpoint
 CREATE TABLE "accounts" (
@@ -72,7 +71,7 @@ CREATE TABLE "municipalities" (
 	"code" text NOT NULL,
 	"name" text NOT NULL,
 	"prefecture" text NOT NULL,
-	"system_type" "system_type" NOT NULL,
+	"system_type_id" text,
 	"base_url" text,
 	"enabled" boolean DEFAULT true NOT NULL,
 	CONSTRAINT "municipalities_code_unique" UNIQUE("code")
@@ -132,9 +131,19 @@ CREATE TABLE "scraper_jobs" (
 	"completed_at" timestamp
 );
 --> statement-breakpoint
+CREATE TABLE "system_types" (
+	"id" text PRIMARY KEY NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"name" text NOT NULL,
+	"description" text NOT NULL,
+	CONSTRAINT "system_types_name_unique" UNIQUE("name")
+);
+--> statement-breakpoint
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "meetings" ADD CONSTRAINT "meetings_municipality_id_municipalities_id_fk" FOREIGN KEY ("municipality_id") REFERENCES "public"."municipalities"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "municipalities" ADD CONSTRAINT "municipalities_system_type_id_system_types_id_fk" FOREIGN KEY ("system_type_id") REFERENCES "public"."system_types"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "statements" ADD CONSTRAINT "statements_meeting_id_meetings_id_fk" FOREIGN KEY ("meeting_id") REFERENCES "public"."meetings"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "statement_policy_tags" ADD CONSTRAINT "statement_policy_tags_statement_id_statements_id_fk" FOREIGN KEY ("statement_id") REFERENCES "public"."statements"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "statement_policy_tags" ADD CONSTRAINT "statement_policy_tags_tag_id_policy_tags_id_fk" FOREIGN KEY ("tag_id") REFERENCES "public"."policy_tags"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -149,8 +158,8 @@ CREATE INDEX "meetings_meeting_type_held_on_index" ON "meetings" USING btree ("m
 CREATE INDEX "meetings_municipality_id_held_on_index" ON "meetings" USING btree ("municipality_id","held_on");--> statement-breakpoint
 CREATE UNIQUE INDEX "municipalities_code_index" ON "municipalities" USING btree ("code");--> statement-breakpoint
 CREATE INDEX "municipalities_prefecture_index" ON "municipalities" USING btree ("prefecture");--> statement-breakpoint
-CREATE INDEX "municipalities_system_type_index" ON "municipalities" USING btree ("system_type");--> statement-breakpoint
-CREATE INDEX "municipalities_enabled_system_type_index" ON "municipalities" USING btree ("enabled","system_type");--> statement-breakpoint
+CREATE INDEX "municipalities_system_type_id_index" ON "municipalities" USING btree ("system_type_id");--> statement-breakpoint
+CREATE INDEX "municipalities_enabled_system_type_id_index" ON "municipalities" USING btree ("enabled","system_type_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "statements_meeting_id_content_hash_index" ON "statements" USING btree ("meeting_id","content_hash");--> statement-breakpoint
 CREATE INDEX "statements_meeting_id_index" ON "statements" USING btree ("meeting_id");--> statement-breakpoint
 CREATE INDEX "statements_kind_index" ON "statements" USING btree ("kind");--> statement-breakpoint
@@ -161,4 +170,5 @@ CREATE INDEX "scraper_job_logs_job_id_index" ON "scraper_job_logs" USING btree (
 CREATE INDEX "scraper_job_logs_created_at_index" ON "scraper_job_logs" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "scraper_jobs_status_index" ON "scraper_jobs" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "scraper_jobs_created_at_index" ON "scraper_jobs" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX "scraper_jobs_municipality_id_index" ON "scraper_jobs" USING btree ("municipality_id");
+CREATE INDEX "scraper_jobs_municipality_id_index" ON "scraper_jobs" USING btree ("municipality_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "system_types_name_index" ON "system_types" USING btree ("name");

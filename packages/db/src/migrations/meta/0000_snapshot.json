@@ -1,5 +1,5 @@
 {
-  "id": "8a315a70-a2d6-4217-a634-1734f309689c",
+  "id": "75444fa4-6ad7-4eab-ae4f-73b86d20bab4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -584,12 +584,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "system_type": {
-          "name": "system_type",
-          "type": "system_type",
-          "typeSchema": "public",
+        "system_type_id": {
+          "name": "system_type_id",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "base_url": {
           "name": "base_url",
@@ -636,11 +635,11 @@
           "method": "btree",
           "with": {}
         },
-        "municipalities_system_type_index": {
-          "name": "municipalities_system_type_index",
+        "municipalities_system_type_id_index": {
+          "name": "municipalities_system_type_id_index",
           "columns": [
             {
-              "expression": "system_type",
+              "expression": "system_type_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -651,8 +650,8 @@
           "method": "btree",
           "with": {}
         },
-        "municipalities_enabled_system_type_index": {
-          "name": "municipalities_enabled_system_type_index",
+        "municipalities_enabled_system_type_id_index": {
+          "name": "municipalities_enabled_system_type_id_index",
           "columns": [
             {
               "expression": "enabled",
@@ -661,7 +660,7 @@
               "nulls": "last"
             },
             {
-              "expression": "system_type",
+              "expression": "system_type_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -673,7 +672,21 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "municipalities_system_type_id_system_types_id_fk": {
+          "name": "municipalities_system_type_id_system_types_id_fk",
+          "tableFrom": "municipalities",
+          "tableTo": "system_types",
+          "columnsFrom": [
+            "system_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "municipalities_code_unique": {
@@ -1261,22 +1274,78 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "public.system_types": {
+      "name": "system_types",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "system_types_name_index": {
+          "name": "system_types_name_index",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "system_types_name_unique": {
+          "name": "system_types_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {
-    "public.system_type": {
-      "name": "system_type",
-      "schema": "public",
-      "values": [
-        "discussnet",
-        "discussnet_ssp",
-        "dbsearch",
-        "sophia",
-        "voices",
-        "custom_html",
-        "pdf"
-      ]
-    },
     "public.log_level": {
       "name": "log_level",
       "schema": "public",
