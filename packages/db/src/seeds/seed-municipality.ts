@@ -65,7 +65,7 @@ async function seed() {
         prefecture: m.prefecture,
         systemType: m.baseUrl.includes("ssp.kaigiroku.net")
           ? "discussnet_ssp"
-          : "discussnet",
+          : "custom_html",
         baseUrl: m.baseUrl,
         enabled: true,
       })
@@ -83,7 +83,6 @@ async function seed() {
 
     if (result.length > 0) {
       inserted++;
-      console.log(`  ✓ ${m.name} (${m.code}) - ${m.prefecture}`);
     } else {
       skipped++;
     }

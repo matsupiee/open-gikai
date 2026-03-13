@@ -1,5 +1,5 @@
 {
-  "id": "b3c467f8-7bff-4d15-8043-0207a0b13258",
+  "id": "8a315a70-a2d6-4217-a634-1734f309689c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -385,6 +385,18 @@
           "notNull": true,
           "default": "now()"
         },
+        "scraped_at": {
+          "name": "scraped_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "municipality_id": {
+          "name": "municipality_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "title": {
           "name": "title",
           "type": "text",
@@ -409,25 +421,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "assembly_level": {
-          "name": "assembly_level",
-          "type": "assembly_level",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "prefecture": {
-          "name": "prefecture",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "municipality": {
-          "name": "municipality",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "external_id": {
           "name": "external_id",
           "type": "text",
@@ -446,20 +439,14 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'pending'"
-        },
-        "scraped_at": {
-          "name": "scraped_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
-        "meetings_assembly_level_external_id_index": {
-          "name": "meetings_assembly_level_external_id_index",
+        "meetings_municipality_id_external_id_index": {
+          "name": "meetings_municipality_id_external_id_index",
           "columns": [
             {
-              "expression": "assembly_level",
+              "expression": "municipality_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -512,53 +499,11 @@
           "method": "btree",
           "with": {}
         },
-        "meetings_assembly_level_held_on_index": {
-          "name": "meetings_assembly_level_held_on_index",
+        "meetings_municipality_id_held_on_index": {
+          "name": "meetings_municipality_id_held_on_index",
           "columns": [
             {
-              "expression": "assembly_level",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "held_on",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "meetings_prefecture_held_on_index": {
-          "name": "meetings_prefecture_held_on_index",
-          "columns": [
-            {
-              "expression": "prefecture",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "held_on",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "meetings_municipality_held_on_index": {
-          "name": "meetings_municipality_held_on_index",
-          "columns": [
-            {
-              "expression": "municipality",
+              "expression": "municipality_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -576,7 +521,21 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "meetings_municipality_id_municipalities_id_fk": {
+          "name": "meetings_municipality_id_municipalities_id_fk",
+          "tableFrom": "meetings",
+          "tableTo": "municipalities",
+          "columnsFrom": [
+            "municipality_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1305,20 +1264,12 @@
     }
   },
   "enums": {
-    "public.assembly_level": {
-      "name": "assembly_level",
-      "schema": "public",
-      "values": [
-        "national",
-        "prefectural",
-        "municipal"
-      ]
-    },
     "public.system_type": {
       "name": "system_type",
       "schema": "public",
       "values": [
         "discussnet",
+        "discussnet_ssp",
         "dbsearch",
         "sophia",
         "voices",

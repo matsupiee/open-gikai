@@ -80,8 +80,7 @@ export async function handleDiscussnetSspMinute(
     msg.councilId,
     msg.councilName,
     { scheduleId: msg.scheduleId, name: msg.scheduleName, memberList: msg.memberList },
-    msg.municipalityName,
-    msg.prefecture
+    msg.municipalityId
   );
 
   if (!meetingData) {

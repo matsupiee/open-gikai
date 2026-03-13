@@ -14,8 +14,8 @@ export interface Statement {
   createdAt: Date;
   meetingTitle: string;
   heldOn: string;
-  prefecture: string | null;
-  municipality: string | null;
+  prefecture: string;
+  municipality: string;
   sourceUrl: string | null;
   similarity?: number;
 }
@@ -28,7 +28,6 @@ type SubmittedQuery = {
   heldOnTo?: string;
   prefecture?: string;
   municipality?: string;
-  assemblyLevel?: string;
   semanticQuery?: string;
   topK?: number;
 } | null;
@@ -42,7 +41,6 @@ export function useSearch() {
   const [heldOnTo, setHeldOnTo] = useState("");
   const [prefecture, setPrefecture] = useState("");
   const [municipality, setMunicipality] = useState("");
-  const [assemblyLevel, setAssemblyLevel] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState<SubmittedQuery>(null);
 
   const keywordQuery = useQuery({
@@ -62,11 +60,6 @@ export function useSearch() {
               heldOnTo: submittedQuery.heldOnTo || undefined,
               prefecture: submittedQuery.prefecture || undefined,
               municipality: submittedQuery.municipality || undefined,
-              assemblyLevel: (submittedQuery.assemblyLevel || undefined) as
-                | "national"
-                | "prefectural"
-                | "municipal"
-                | undefined,
             }
           : {},
     }),
@@ -83,11 +76,6 @@ export function useSearch() {
               filters: {
                 prefecture: submittedQuery.prefecture || undefined,
                 municipality: submittedQuery.municipality || undefined,
-                assemblyLevel: (submittedQuery.assemblyLevel || undefined) as
-                  | "national"
-                  | "prefectural"
-                  | "municipal"
-                  | undefined,
                 heldOnFrom: submittedQuery.heldOnFrom || undefined,
                 heldOnTo: submittedQuery.heldOnTo || undefined,
               },
@@ -107,11 +95,6 @@ export function useSearch() {
               filters: {
                 prefecture: submittedQuery.prefecture || undefined,
                 municipality: submittedQuery.municipality || undefined,
-                assemblyLevel: (submittedQuery.assemblyLevel || undefined) as
-                  | "national"
-                  | "prefectural"
-                  | "municipal"
-                  | undefined,
                 heldOnFrom: submittedQuery.heldOnFrom || undefined,
                 heldOnTo: submittedQuery.heldOnTo || undefined,
               },
@@ -152,7 +135,6 @@ export function useSearch() {
       heldOnTo: heldOnTo || undefined,
       prefecture: prefecture || undefined,
       municipality: municipality || undefined,
-      assemblyLevel: assemblyLevel || undefined,
       topK: 10,
     });
   };
@@ -165,7 +147,6 @@ export function useSearch() {
     setHeldOnTo("");
     setPrefecture("");
     setMunicipality("");
-    setAssemblyLevel("");
     setSubmittedQuery(null);
   };
 
@@ -186,8 +167,6 @@ export function useSearch() {
     setPrefecture,
     municipality,
     setMunicipality,
-    assemblyLevel,
-    setAssemblyLevel,
     statements,
     isLoading,
     hasSearched,

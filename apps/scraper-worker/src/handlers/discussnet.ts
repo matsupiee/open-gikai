@@ -108,8 +108,8 @@ export async function handleDiscussnetMeeting(
   const meetingData = parseMeetingPage(
     html,
     msg.meetingUrl,
-    msg.municipalityName,
-    msg.prefecture
+    msg.municipalityId,
+    msg.municipalityName
   );
 
   if (!meetingData) {

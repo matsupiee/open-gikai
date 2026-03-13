@@ -89,14 +89,12 @@ async function extractMeetingData(
     }
 
     return {
+      municipalityId: target.municipalityId,
       title,
       meetingType: "plenary",
       heldOn,
       sourceUrl: url,
-      assemblyLevel: target.assemblyLevel,
-      prefecture: target.prefecture,
-      municipality: target.municipality,
-      externalId: `local_${target.municipality}_${heldOn}`.replace(/\s+/g, "_"),
+      externalId: `local_${target.municipalityName}_${heldOn}`.replace(/\s+/g, "_"),
       rawText: content,
     };
   } catch {
@@ -146,13 +144,13 @@ export async function scrapeLocal(
 
       await logger(
         "info",
-        `Local: ${target.municipality} — ${links.length} 件のリンクを検出`
+        `Local: ${target.municipalityName} — ${links.length} 件のリンクを検出`
       );
 
       if (links.length === 0) {
         await logger(
           "warn",
-          `Local: ${target.municipality} — リンクが見つかりません`
+          `Local: ${target.municipalityName} — リンクが見つかりません`
         );
         continue;
       }
@@ -167,12 +165,12 @@ export async function scrapeLocal(
 
       await logger(
         "info",
-        `Local: ${target.municipality} 処理完了 (累計: ${results.length} 件)`
+        `Local: ${target.municipalityName} 処理完了 (累計: ${results.length} 件)`
       );
     } catch (err) {
       await logger(
         "error",
-        `Local: ${target.municipality} でエラーが発生しました — ${String(err)}`
+        `Local: ${target.municipalityName} でエラーが発生しました — ${String(err)}`
       );
     }
 

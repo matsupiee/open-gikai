@@ -177,8 +177,7 @@ export async function fetchMinuteData(
   councilId: number,
   councilName: string,
   schedule: SspSchedule,
-  municipalityName: string,
-  prefecture: string
+  municipalityId: string
 ): Promise<MeetingData | null> {
   const data = await postJson<MinuteApiResponse>("minutes/get_minute", {
     tenant_id: tenantId,
@@ -208,13 +207,11 @@ export async function fetchMinuteData(
   );
 
   return {
+    municipalityId,
     title,
     meetingType: detectMeetingType(councilName),
     heldOn,
     sourceUrl,
-    assemblyLevel: "municipal",
-    prefecture,
-    municipality: municipalityName,
     externalId,
     rawText,
   };

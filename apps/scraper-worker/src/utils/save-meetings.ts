@@ -15,13 +15,11 @@ export async function saveMeetings(
 
   const now = new Date();
   const rows = records.map((m) => ({
+    municipalityId: m.municipalityId,
     title: m.title,
     meetingType: m.meetingType,
     heldOn: m.heldOn,
     sourceUrl: m.sourceUrl,
-    assemblyLevel: m.assemblyLevel,
-    prefecture: m.prefecture,
-    municipality: m.municipality,
     externalId: m.externalId,
     rawText: m.rawText,
     status: "pending" as const,

@@ -10,6 +10,7 @@ import {
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
 import { scraper_jobs } from "./scrapers";
+import { meetings } from "./meetings";
 
 export const systemTypeEnum = pgEnum("system_type", [
   "discussnet", // NTT-AT / 会議録研究所（全国最多）・従来 ASP 版
@@ -62,5 +63,6 @@ export const municipalitiesRelations = relations(
   municipalities,
   ({ many }) => ({
     scraperJobs: many(scraper_jobs),
+    meetings: many(meetings),
   })
 );

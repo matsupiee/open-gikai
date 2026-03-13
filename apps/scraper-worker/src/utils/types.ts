@@ -1,22 +1,17 @@
-import type { AssemblyLevel } from "@open-gikai/db/schema";
-
 export interface MeetingData {
+  municipalityId: string;
   title: string;
   meetingType: string;
   heldOn: string; // YYYY-MM-DD
   sourceUrl: string | null;
-  assemblyLevel: AssemblyLevel;
-  prefecture: string | null;
-  municipality: string | null;
   externalId: string | null;
   rawText: string;
 }
 
 /** ローカル自治体スクレイパーのターゲット設定 */
 export interface LocalScraperTarget {
-  prefecture: string;
-  municipality: string;
-  assemblyLevel: "prefectural" | "municipal";
+  municipalityId: string;
+  municipalityName: string;
   baseUrl: string;
   listSelector: string;
   contentSelector: string;

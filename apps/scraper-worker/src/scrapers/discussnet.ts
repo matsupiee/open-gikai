@@ -88,8 +88,8 @@ export function buildListUrl(baseUrl: string, year?: number): string {
 export function parseMeetingPage(
   html: string,
   url: string,
-  municipalityName: string,
-  prefecture: string
+  municipalityId: string,
+  municipalityName: string
 ): MeetingData | null {
   const $ = load(html);
 
@@ -118,13 +118,11 @@ export function parseMeetingPage(
   const externalId = `discussnet_${municipalityName}_${kaigiKey}`;
 
   return {
+    municipalityId,
     title,
     meetingType,
     heldOn,
     sourceUrl: url,
-    assemblyLevel: "municipal",
-    prefecture,
-    municipality: municipalityName,
     externalId,
     rawText,
   };

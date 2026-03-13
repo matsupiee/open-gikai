@@ -1,5 +1,5 @@
 import type { Db } from "@open-gikai/db";
-import { meetings, statements } from "@open-gikai/db";
+import { meetings, municipalities, statements } from "@open-gikai/db";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq, gte, ilike, lte, lt, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -20,8 +20,8 @@ export interface SearchResult {
   createdAt: Date;
   meetingTitle: string;
   heldOn: string;
-  prefecture: string | null;
-  municipality: string | null;
+  prefecture: string;
+  municipality: string;
   sourceUrl: string | null;
 }
 
@@ -53,13 +53,10 @@ function buildMeetingFilters(input: z.infer<typeof statementsSearchSchema>) {
     conditions.push(lte(meetings.heldOn, input.heldOnTo));
   }
   if (input.prefecture) {
-    conditions.push(eq(meetings.prefecture, input.prefecture));
+    conditions.push(eq(municipalities.prefecture, input.prefecture));
   }
   if (input.municipality) {
-    conditions.push(eq(meetings.municipality, input.municipality));
-  }
-  if (input.assemblyLevel) {
-    conditions.push(eq(meetings.assemblyLevel, input.assemblyLevel));
+    conditions.push(eq(municipalities.name, input.municipality));
   }
 
   return conditions;
@@ -99,12 +96,13 @@ export async function searchStatements(
       createdAt: statements.createdAt,
       meetingTitle: meetings.title,
       heldOn: meetings.heldOn,
-      prefecture: meetings.prefecture,
-      municipality: meetings.municipality,
+      prefecture: municipalities.prefecture,
+      municipality: municipalities.name,
       sourceUrl: meetings.sourceUrl,
     })
     .from(statements)
-    .innerJoin(meetings, eq(statements.meetingId, meetings.id));
+    .innerJoin(meetings, eq(statements.meetingId, meetings.id))
+    .innerJoin(municipalities, eq(meetings.municipalityId, municipalities.id));
 
   const allConditions = [...statementFilters, ...meetingFilters];
 
@@ -160,17 +158,10 @@ export async function semanticSearchStatements(
       meetingConditions.push(lte(meetings.heldOn, input.filters.heldOnTo));
     }
     if (input.filters?.prefecture) {
-      meetingConditions.push(eq(meetings.prefecture, input.filters.prefecture));
+      meetingConditions.push(eq(municipalities.prefecture, input.filters.prefecture));
     }
     if (input.filters?.municipality) {
-      meetingConditions.push(
-        eq(meetings.municipality, input.filters.municipality)
-      );
-    }
-    if (input.filters?.assemblyLevel) {
-      meetingConditions.push(
-        eq(meetings.assemblyLevel, input.filters.assemblyLevel)
-      );
+      meetingConditions.push(eq(municipalities.name, input.filters.municipality));
     }
 
     const allConditions = [
@@ -188,15 +179,16 @@ export async function semanticSearchStatements(
         createdAt: statements.createdAt,
         meetingTitle: meetings.title,
         heldOn: meetings.heldOn,
-        prefecture: meetings.prefecture,
-        municipality: meetings.municipality,
+        prefecture: municipalities.prefecture,
+        municipality: municipalities.name,
         sourceUrl: meetings.sourceUrl,
         similarity: sql<number>`1 - (${statements.embedding} <=> ${sql.raw(
           `'${embeddingStr}'::vector`
         )})`,
       })
       .from(statements)
-      .innerJoin(meetings, eq(statements.meetingId, meetings.id));
+      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
+      .innerJoin(municipalities, eq(meetings.municipalityId, municipalities.id));
 
     const results = await query
       .where(and(...allConditions))

@@ -7,7 +7,6 @@ export const statementsSemanticSearchSchema = z.object({
     .object({
       prefecture: z.string().optional(),
       municipality: z.string().optional(),
-      assemblyLevel: z.enum(["national", "prefectural", "municipal"]).optional(),
       heldOnFrom: z.string().optional(),
       heldOnTo: z.string().optional(),
     })
