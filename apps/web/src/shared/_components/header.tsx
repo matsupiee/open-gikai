@@ -3,7 +3,11 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import UserMenu from "./user-menu";
 import { FileSearch } from "lucide-react";
 
-const links = [{ to: "/search", label: "答弁検索" }] as const;
+const links = [
+  { to: "/search", label: "答弁検索" },
+  { to: "/meetings", label: "会議一覧" },
+  { to: "/municipalities", label: "自治体一覧" },
+] as const;
 
 export default function Header() {
   const { location } = useRouterState();

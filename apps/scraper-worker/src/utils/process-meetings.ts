@@ -29,15 +29,50 @@ async function generateEmbedding(
 
 /**
  * rawText を発言単位に分割する。
- * 鹿児島などのスクレイパーは複数のminuteを "\n\n---\n\n" で結合しているため、
- * そのセパレータで分割する。セパレータがなければ全体を1件とみなす。
+ *
+ * 1. "\n\n---\n\n" セパレータがある場合: そのセパレータで分割（鹿児島等）
+ * 2. セパレータがない場合: 行頭の ○◎◆ 発言者マーカーで発言者ごとに分割
+ *    （議会会議録のように「○氏名役職　発言内容」形式のテキスト）
+ *    ※ 最初の発言者マーカーより前のヘッダー行はスキップする
  */
 function splitIntoStatements(rawText: string): string[] {
-  const parts = rawText
-    .split("\n\n---\n\n")
-    .map((p) => p.trim())
-    .filter(Boolean);
-  return parts.length > 0 ? parts : [rawText.trim()];
+  if (rawText.includes("\n\n---\n\n")) {
+    const parts = rawText
+      .split("\n\n---\n\n")
+      .map((p) => p.trim())
+      .filter(Boolean);
+    return parts.length > 0 ? parts : [rawText.trim()];
+  }
+
+  // 発言者マーカー（○◎◆）で始まる行で分割
+  const speakerLinePattern = /^[○◎◆]/;
+  const lines = rawText.split("\n");
+
+  const statements: string[] = [];
+  let currentLines: string[] = [];
+  let foundFirstSpeaker = false;
+
+  for (const line of lines) {
+    if (speakerLinePattern.test(line)) {
+      if (foundFirstSpeaker && currentLines.length > 0) {
+        const statement = currentLines.join("\n").trim();
+        if (statement) statements.push(statement);
+      }
+      currentLines = [line];
+      foundFirstSpeaker = true;
+    } else if (foundFirstSpeaker) {
+      currentLines.push(line);
+    }
+    // foundFirstSpeaker が false の間はヘッダー行をスキップ
+  }
+
+  // 最後のブロックを追加
+  if (foundFirstSpeaker && currentLines.length > 0) {
+    const statement = currentLines.join("\n").trim();
+    if (statement) statements.push(statement);
+  }
+
+  return statements.length > 0 ? statements : [rawText.trim()];
 }
 
 /**
@@ -78,7 +113,8 @@ function parseSpeaker(text: string): {
   speakerName: string | null;
   speakerRole: string | null;
 } {
-  const match = text.match(/^[○◎◆]([^（　\s]+)(?:（([^）]+)）)?[　\s]/);
+  // 末尾のスペース/全角スペースは任意（dbsr.jp は ◯役職（氏名）content で空白なし）
+  const match = text.match(/^[○◎◆]([^（　\s]+)(?:（([^）]+)）)?[　\s]?/);
   if (!match) return { speakerName: null, speakerRole: null };
 
   const nameAndRole = match[1] ?? "";

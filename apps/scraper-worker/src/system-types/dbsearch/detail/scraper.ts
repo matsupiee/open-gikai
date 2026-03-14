@@ -54,14 +54,94 @@ export async function fetchMeetingDetail(
 
 // --- 内部ユーティリティ ---
 
+/**
+ * dbsr.jp の議事録本文を抽出する。
+ *
+ * 優先: <ul class="voice__list"> の各 <li> を発言単位として抽出し
+ *       "\n\n---\n\n" セパレータで結合する（splitIntoStatements で分割可能）。
+ * フォールバック: タグを除去した生テキスト。
+ */
 function extractBodyText(html: string): string {
+  const structured = extractVoiceList(html);
+  if (structured) return structured;
+
+  // フォールバック: <br> を改行に変換してからタグを除去
   return html
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
     .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<[^>]+>/g, " ")
-    .replace(/&[a-z]+;/gi, " ")
-    .replace(/\s+/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&[a-z]+;/gi, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n[ \t]+/g, "\n")
     .trim();
+}
+
+/**
+ * dbsr.jp の <ul class="voice__list"> から発言ブロックを抽出する。
+ * 各 <li> の <p class="js-textwrap-container"> が1発言に対応する。
+ * 発言が見つからなければ null を返す。
+ */
+function extractVoiceList(html: string): string | null {
+  const voiceListMatch = html.match(
+    /<ul\s[^>]*class="[^"]*voice__list[^"]*"[^>]*>([\s\S]*?)<\/ul>/i
+  );
+  if (!voiceListMatch) return null;
+
+  const voiceListHtml = voiceListMatch[1] ?? "";
+  const statements: string[] = [];
+
+  // 各 <li> を処理
+  const liPattern = /<li\b[^>]*>([\s\S]*?)<\/li>/gi;
+  let liMatch;
+  while ((liMatch = liPattern.exec(voiceListHtml)) !== null) {
+    const liHtml = liMatch[1] ?? "";
+
+    // 発言本文は <p class="js-textwrap-container"> に格納されている
+    const pMatch = liHtml.match(
+      /<p\s[^>]*class="[^"]*js-textwrap-container[^"]*"[^>]*>([\s\S]*?)<\/p>/i
+    );
+    if (!pMatch) continue;
+
+    let content = pMatch[1] ?? "";
+
+    // 印刷用の番号 <span class="visible-print-block"> を除去
+    content = content.replace(
+      /<span\s[^>]*class="[^"]*visible-print-block[^"]*"[^>]*>[\s\S]*?<\/span>/gi,
+      ""
+    );
+
+    // <br> → 改行
+    content = content.replace(/<br\s*\/?>/gi, "\n");
+
+    // 残りのタグを除去
+    content = content.replace(/<[^>]+>/g, "");
+
+    // HTML エンティティのデコード
+    content = content
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&[a-z]+;/gi, "");
+
+    // 空白の正規化（行内スペースを圧縮、空行を削除）
+    content = content
+      .split("\n")
+      .map((line) => line.replace(/[ \t]+/g, " ").trim())
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+
+    if (content) statements.push(content);
+  }
+
+  if (statements.length === 0) return null;
+  return statements.join("\n\n---\n\n");
 }
 
 function extractTitle(html: string): string | null {

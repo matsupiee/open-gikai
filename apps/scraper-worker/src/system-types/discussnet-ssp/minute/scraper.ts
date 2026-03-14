@@ -13,6 +13,7 @@ interface MinuteItem {
   title: string;
   body: string;
   minute_type: string;
+  /** 2=名簿(メンバーリスト), 3=議題, 4=議長発言, 5=質問, 6=答弁, etc. */
   minute_type_code: number;
 }
 
@@ -40,13 +41,16 @@ export async function fetchMinuteData(
   if (!data?.tenant_minutes) return null;
 
   const bodyItems = data.tenant_minutes.filter(
-    (m) => m.body && m.body.length > 10
+    // minute_type_code=2 は名簿（出席者リスト等）のため除外する。
+    // API は既に発言単位でデータを分割して返すため、"\n\n---\n\n" で結合して
+    // process-meetings.ts の splitIntoStatements に正しく分割させる。
+    (m) => m.body && m.body.length > 10 && m.minute_type_code !== 2
   );
   if (bodyItems.length === 0) return null;
 
   const rawText = bodyItems
     .map((m) => extractTextFromBody(m.body))
-    .join("\n\n");
+    .join("\n\n---\n\n");
   if (!rawText.trim()) return null;
 
   const heldOn = extractDateFromMemberList(schedule.memberList);
