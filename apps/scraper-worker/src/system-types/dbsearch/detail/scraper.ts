@@ -164,6 +164,8 @@ function classifyKind(speakerRole: string | null): string {
   if (!speakerRole) return "remark";
   if (speakerRole.endsWith("議員") || speakerRole.endsWith("委員"))
     return "question";
+  // 「７番」「１７番」のような議席番号表記の議員
+  if (/^[0-9０-９]+番$/.test(speakerRole)) return "question";
   if (speakerRole === "議長" || speakerRole.endsWith("委員長")) return "remark";
   // 行政側役職の完全一致・部分一致
   for (const role of ANSWER_ROLES) {
