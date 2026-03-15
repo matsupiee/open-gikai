@@ -21,7 +21,6 @@ export async function saveMeetings(
     heldOn: m.heldOn,
     sourceUrl: m.sourceUrl,
     externalId: m.externalId,
-    rawText: m.rawText,
     status: "pending" as const,
     scrapedAt: now,
   }));

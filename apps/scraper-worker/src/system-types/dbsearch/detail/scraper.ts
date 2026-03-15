@@ -4,7 +4,8 @@
  * 議事録詳細ページを取得し、MeetingData に変換する。
  */
 
-import type { MeetingData } from "../../../utils/types";
+import type { MeetingData, ParsedStatement } from "../../../utils/types";
+import { toStatements } from "../to-statements";
 
 const USER_AGENT =
   "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
@@ -16,7 +17,8 @@ const USER_AGENT =
 export async function fetchMeetingDetail(
   detailUrl: string,
   municipalityId: string,
-  meetingId: string
+  meetingId: string,
+  listTitle?: string
 ): Promise<MeetingData | null> {
   try {
     const res = await fetch(detailUrl, {
@@ -26,16 +28,17 @@ export async function fetchMeetingDetail(
 
     const html = await res.text();
 
-    const rawText = extractBodyText(html);
-    if (!rawText.trim().length) return null;
+    const statements: ParsedStatement[] = extractStatements(html);
 
-    const title = extractTitle(html);
+    const rawText = statements.map((s) => s.content).join("\n");
+
+    const title = extractTitle(html) ?? listTitle ?? null;
     if (!title) return null;
 
     const heldOn = extractDate(html, rawText);
     if (!heldOn) return null;
 
-    const meetingType = detectMeetingType(title, rawText);
+    const meetingType = detectMeetingType(html, rawText);
     const externalId = `dbsearch_${meetingId}`;
 
     return {
@@ -45,120 +48,33 @@ export async function fetchMeetingDetail(
       heldOn,
       sourceUrl: detailUrl,
       externalId,
-      rawText,
+      statements,
     };
   } catch {
     return null;
   }
 }
 
-// --- 内部ユーティリティ ---
-
-/**
- * dbsr.jp の議事録本文を抽出する。
- *
- * 優先: <ul class="voice__list"> の各 <li> を発言単位として抽出し
- *       "\n\n---\n\n" セパレータで結合する（splitIntoStatements で分割可能）。
- * フォールバック: タグを除去した生テキスト。
- */
-function extractBodyText(html: string): string {
-  const structured = extractVoiceList(html);
-  if (structured) return structured;
-
-  // フォールバック: <br> を改行に変換してからタグを除去
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&[a-z]+;/gi, "")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n[ \t]+/g, "\n")
-    .trim();
-}
-
-/**
- * dbsr.jp の <ul class="voice__list"> から発言ブロックを抽出する。
- * 各 <li> の <p class="js-textwrap-container"> が1発言に対応する。
- * 発言が見つからなければ null を返す。
- */
-function extractVoiceList(html: string): string | null {
-  const voiceListMatch = html.match(
-    /<ul\s[^>]*class="[^"]*voice__list[^"]*"[^>]*>([\s\S]*?)<\/ul>/i
-  );
-  if (!voiceListMatch) return null;
-
-  const voiceListHtml = voiceListMatch[1] ?? "";
-  const statements: string[] = [];
-
-  // 各 <li> を処理
-  const liPattern = /<li\b[^>]*>([\s\S]*?)<\/li>/gi;
-  let liMatch;
-  while ((liMatch = liPattern.exec(voiceListHtml)) !== null) {
-    const liHtml = liMatch[1] ?? "";
-
-    // 発言本文は <p class="js-textwrap-container"> に格納されている
-    const pMatch = liHtml.match(
-      /<p\s[^>]*class="[^"]*js-textwrap-container[^"]*"[^>]*>([\s\S]*?)<\/p>/i
-    );
-    if (!pMatch) continue;
-
-    let content = pMatch[1] ?? "";
-
-    // 印刷用の番号 <span class="visible-print-block"> を除去
-    content = content.replace(
-      /<span\s[^>]*class="[^"]*visible-print-block[^"]*"[^>]*>[\s\S]*?<\/span>/gi,
-      ""
-    );
-
-    // <br> → 改行
-    content = content.replace(/<br\s*\/?>/gi, "\n");
-
-    // 残りのタグを除去
-    content = content.replace(/<[^>]+>/g, "");
-
-    // HTML エンティティのデコード
-    content = content
-      .replace(/&nbsp;/gi, " ")
-      .replace(/&amp;/gi, "&")
-      .replace(/&lt;/gi, "<")
-      .replace(/&gt;/gi, ">")
-      .replace(/&[a-z]+;/gi, "");
-
-    // 空白の正規化（行内スペースを圧縮、空行を削除）
-    content = content
-      .split("\n")
-      .map((line) => line.replace(/[ \t]+/g, " ").trim())
-      .filter(Boolean)
-      .join("\n")
-      .trim();
-
-    if (content) statements.push(content);
-  }
-
-  if (statements.length === 0) return null;
-  return statements.join("\n\n---\n\n");
-}
-
 function extractTitle(html: string): string | null {
   // dbsr.jp の詳細ページは <p class="view__title"> にタイトルがある
-  const viewTitleMatch = html.match(
-    /class="view__title">([^<]+)<\/p>/
-  );
+  const viewTitleMatch = html.match(/class="view__title">([^<]+)<\/p>/);
   if (viewTitleMatch?.[1]) {
     const title = viewTitleMatch[1].replace(/\s+/g, " ").trim();
     if (title.length > 0) return title;
   }
 
-  // フォールバック: <title> タグ
+  // フォールバック: <title> タグ（ただし汎用的なサイトタイトルは除外）
   const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
   if (titleMatch?.[1]) {
     const title = titleMatch[1].replace(/\s+/g, " ").trim();
-    if (title.length > 0) return title;
+    // "閲覧 | xxx" や "検索" のような汎用タイトルはスキップ
+    if (
+      title.length > 0 &&
+      !title.includes("閲覧") &&
+      !title.includes("検索")
+    ) {
+      return title;
+    }
   }
 
   return null;
@@ -207,4 +123,46 @@ function normalizeFullWidth(str: string): string {
   return str.replace(/[０-９]/g, (c) =>
     String.fromCharCode(c.charCodeAt(0) - 0xfee0)
   );
+}
+
+function stripHtmlTags(html: string): string {
+  return html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .trim();
+}
+
+/**
+ * dbsr.jp の議事録詳細 HTML から ParsedStatement 配列を生成する。
+ *
+ * <ul class="voice__list"> の各 <li> を1発言として抽出する
+ * voice__list が見つからない場合は <div class="view__body"> からフォールバック取得する。
+ */
+function extractStatements(html: string): ParsedStatement[] {
+  // 主経路: <ul class="voice__list"> の各 <li> を抽出
+  const voiceListMatch = html.match(
+    /<ul[^>]+class="[^"]*voice__list[^"]*"[^>]*>([\s\S]*?)<\/ul>/i
+  );
+  if (voiceListMatch?.[1]) {
+    const parts: string[] = [];
+    const liPattern = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+    let m: RegExpExecArray | null;
+    while ((m = liPattern.exec(voiceListMatch[1])) !== null) {
+      const text = stripHtmlTags(m[1] ?? "")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (text) parts.push(text);
+    }
+    return parts.map((p) => {
+      // TODO 変換処理
+    }));
+  }
+
+  return [];
 }

@@ -31,7 +31,6 @@ export const meetings = pgTable(
     heldOn: date().notNull(),
     sourceUrl: text(),
     externalId: text(),
-    rawText: text().notNull(),
     status: text().notNull().default("pending"),
   },
   (table) => [

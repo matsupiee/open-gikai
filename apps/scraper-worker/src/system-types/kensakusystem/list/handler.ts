@@ -63,11 +63,21 @@ export async function handleKensakusystemList(
     return;
   }
 
+  const yearPrefix = String(msg.year);
+  const filtered = schedules.filter((s) => s.heldOn.startsWith(yearPrefix));
+
   await logger.info(
-    `kensakusystem [${msg.municipalityName}] ${schedules.length} 件の議事録を検出`
+    `kensakusystem [${msg.municipalityName}] ${filtered.length} 件の議事録を検出 (${schedules.length} 件中 ${msg.year} 年分)`
   );
 
-  for (const schedule of schedules) {
+  if (filtered.length === 0) {
+    await logger.warn(
+      `kensakusystem [${msg.municipalityName}] ${msg.year} 年の議事録が見つかりません`
+    );
+    return;
+  }
+
+  for (const schedule of filtered) {
     await queue.send({
       type: "kensakusystem:detail",
       jobId: msg.jobId,

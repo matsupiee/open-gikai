@@ -12,7 +12,6 @@ import { applyStatementsToMeeting } from "../../../utils/apply-statements";
 import { delay } from "../../../utils/delay";
 import type { ScraperQueueMessage } from "../../../utils/types";
 import { fetchMinuteData } from "./scraper";
-import { toStatements } from "../to-statements";
 
 const INTER_REQUEST_DELAY_MS = 1000;
 
@@ -54,7 +53,7 @@ export async function handleDiscussnetSspMinute(
   }
 
   if (insertedIds[0]) {
-    const parsedStatements = toStatements(meetingData.rawText);
+    const parsedStatements = meetingData.statements;
     await applyStatementsToMeeting(db, insertedIds[0], parsedStatements, openaiApiKey);
   }
 

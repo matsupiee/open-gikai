@@ -126,6 +126,7 @@ export async function dispatchJob(
         municipalityId: municipalities.id,
         municipalityName: municipalities.name,
         baseUrl: municipalities.baseUrl,
+        year: scraper_jobs.year,
       });
       break;
     }

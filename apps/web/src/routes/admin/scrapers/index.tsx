@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { Copy } from "lucide-react";
 import { toast } from "sonner";
 
 import { client, orpc } from "@/lib/orpc/orpc";
@@ -111,12 +112,27 @@ function ScrapersPage() {
                   }}
                 >
                   <TableCell className="px-4">
-                    <span className="text-muted-foreground">
-                      {job.prefecture}
-                    </span>
-                    <span className="ml-1">
-                      {job.municipalityName || job.municipalityId}
-                    </span>
+                    <div className="flex items-center gap-1 group">
+                      <span className="text-muted-foreground">
+                        {job.prefecture}
+                      </span>
+                      <span className="ml-1">
+                        {job.municipalityName || job.municipalityId}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const name = job.municipalityName || job.municipalityId;
+                          navigator.clipboard.writeText(name);
+                          toast.success(`"${name}" をコピーしました`);
+                        }}
+                        className="ml-1 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity"
+                        aria-label="自治体名をコピー"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </button>
+                    </div>
                   </TableCell>
                   <TableCell className="px-4 text-muted-foreground">
                     {job.systemTypeDescription ?? "—"}
@@ -391,7 +407,7 @@ function ReprocessStatementsForm({
       <div>
         <h2 className="font-semibold text-sm">発言再分割</h2>
         <p className="text-xs text-muted-foreground mt-1">
-          自治体を選択して実行すると、既存の発言データを削除してraw_textから再分割します。scraper-workerが次回起動時に処理します。
+          自治体を選択して実行すると、既存の発言データを削除して再スクレイピングします。scraper-workerが次回起動時に処理します。
         </p>
       </div>
 

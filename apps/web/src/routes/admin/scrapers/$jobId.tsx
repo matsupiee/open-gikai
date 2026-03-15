@@ -69,14 +69,20 @@ function JobDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">ジョブ詳細</h1>
-          <p className="text-xs text-muted-foreground font-mono mt-1">
-            {job.id}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div>
+        <a
+          href="/admin/scrapers"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3"
+        >
+          ← 一覧へ
+        </a>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">ジョブ詳細</h1>
+            <p className="text-xs text-muted-foreground font-mono mt-1">
+              {job.id}
+            </p>
+          </div>
           {isRunning && (
             <Button
               variant="outline"
@@ -87,12 +93,6 @@ function JobDetailPage() {
               キャンセル
             </Button>
           )}
-          <a
-            href="/admin/scrapers"
-            className="text-sm text-muted-foreground hover:underline"
-          >
-            ← 一覧へ
-          </a>
         </div>
       </div>
 

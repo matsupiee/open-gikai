@@ -19,7 +19,7 @@ export interface MeetingData {
   heldOn: string; // YYYY-MM-DD
   sourceUrl: string | null;
   externalId: string | null;
-  rawText: string;
+  statements: ParsedStatement[];
 }
 
 /** ローカル自治体スクレイパーのターゲット設定 */
@@ -97,6 +97,8 @@ export type ScraperQueueMessage =
       baseUrl: string;
       meetingId: string;
       detailUrl: string;
+      /** 一覧ページから取得したタイトル（詳細ページにタイトルがない場合のフォールバック） */
+      listTitle?: string;
     }
   | {
       /** kensakusystem.jp: 議事録一覧ページから一覧を取得するメッセージ */
@@ -105,6 +107,7 @@ export type ScraperQueueMessage =
       municipalityId: string;
       municipalityName: string;
       baseUrl: string;
+      year: number;
     }
   | {
       /** kensakusystem.jp: 議事録詳細ページを取得・保存するメッセージ */

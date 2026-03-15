@@ -46,6 +46,7 @@ export async function handleDbsearchList(
       baseUrl: msg.baseUrl,
       meetingId: record.id,
       detailUrl: record.url,
+      listTitle: record.title,
     });
   }
 

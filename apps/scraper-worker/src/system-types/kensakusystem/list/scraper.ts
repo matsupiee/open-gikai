@@ -268,15 +268,25 @@ export async function fetchFromSapphire(
 }
 
 /**
- * CGI (Search2.exe) インターフェースから議事録一覧を取得
+ * CGI (Search2.exe) インターフェースから議事録一覧を取得。
+ *
+ * Search2.exe?sTarget=2 のような全文検索フォームページの場合、
+ * 日付つき See.exe リンクが直接ないため、ページ内の See.exe メニューリンクを
+ * 辿って sapphire フロー（treedepth ナビゲーション）にフォールバックする。
  */
 export async function fetchFromCgi(
   baseUrl: string
 ): Promise<KensakusystemSchedule[] | null> {
   const html = await fetchWithEncoding(baseUrl);
   if (!html) return null;
+
   const schedules = extractSeeLinks(html, baseUrl);
-  return schedules.length > 0 ? schedules : null;
+  if (schedules.length > 0) return schedules;
+
+  // 日付つき See.exe リンクが見つからない場合（例: Search2.exe?sTarget=2 の検索フォームページ）:
+  // ページ内に See.exe ツリービューへのメニューリンクがある可能性がある。
+  // sapphire フロー（treedepth ナビゲーション）で再試行する。
+  return fetchFromSapphire(baseUrl);
 }
 
 /**
