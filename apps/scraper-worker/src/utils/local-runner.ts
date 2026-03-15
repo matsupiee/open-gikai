@@ -19,7 +19,6 @@ import type { ScraperQueueMessage } from "./types";
 import { dispatchJob } from "../handlers/dispatch-job";
 import { handleQueueMessage, handleMessageError } from "./handle-message";
 import { fetchPendingJobs } from "./jobs";
-import { processPendingMeetings } from "./process-meetings";
 import { updateScraperJobStatus } from "./job-logger";
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -91,9 +90,6 @@ async function main() {
       }
     }
   }
-
-  console.log("[local-runner] Processing pending meetings → statements...");
-  await processPendingMeetings(db, process.env.OPENAI_API_KEY);
 
   console.log("[local-runner] Done.");
   process.exit(0);
