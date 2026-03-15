@@ -10,9 +10,16 @@ import { getKindColor, getKindLabel } from "../_utils/helpers";
 interface StatementCardProps {
   statement: Statement;
   showSimilarity: boolean;
+  onCite?: (statement: Statement) => void;
+  isCited?: boolean;
 }
 
-export function StatementCard({ statement, showSimilarity }: StatementCardProps) {
+export function StatementCard({
+  statement,
+  showSimilarity,
+  onCite,
+  isCited,
+}: StatementCardProps) {
   const [expanded, setExpanded] = useState(false);
   const isTruncated = statement.content.length > 200;
   const displayContent =
@@ -54,16 +61,29 @@ export function StatementCard({ statement, showSimilarity }: StatementCardProps)
               類似度: {Math.round(statement.similarity * 100)}%
             </div>
           )}
-          {statement.sourceUrl && (
-            <a
-              href={statement.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary hover:underline"
-            >
-              元の議事録を見る
-            </a>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {onCite && (
+              <Button
+                variant={isCited ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => onCite(statement)}
+                disabled={isCited}
+                className="h-7 text-xs"
+              >
+                {isCited ? "引用済み" : "引用する"}
+              </Button>
+            )}
+            {statement.sourceUrl && (
+              <a
+                href={statement.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline"
+              >
+                元の議事録を見る
+              </a>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -9,42 +9,14 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 import { meetings } from "./meetings";
+import { statement_chunks } from "./statement-chunks";
 import { statement_policy_tags } from "./policy-tags";
 import { createId } from "@paralleldrive/cuid2";
 
 /**
- * pgvector 拡張用のカスタム型。
- * AI による埋め込みベクトル（浮動小数点数の配列）を PostgreSQL の vector 型で格納する。
- * JS の number[] ←→ PostgreSQL の "[0.1, 0.2, ...]" 文字列を相互変換する。
- *
- * ベクトル類似検索に使う
- */
-const vector = (name: string, dimensions: number = 1536) =>
-  customType<{ data: number[]; driverData: string }>({
-    dataType() {
-      return `vector(${dimensions})`;
-    },
-    // JS の number[] → PostgreSQL の文字列形式 "[x, y, ...]"
-    toDriver(value: number[]): string {
-      return `[${value.join(",")}]`;
-    },
-    // PostgreSQL の文字列 "[x, y, ...]" → JS の number[]
-    fromDriver(value: string): number[] {
-      return value
-        .replace(/[\[\]]/g, "")
-        .split(",")
-        .map((v) => parseFloat(v.trim()))
-        .filter((v) => !isNaN(v));
-    },
-  })(name);
-
-/**
  * 全文検索用のカスタム型。
- * PostgreSQL の tsvector 型にマッピングする。
+ * PostgreSQL の tsvector(text search = 全文検索) 型にマッピングする。
  * content カラムの内容から自動生成され、手動更新は不要。
- *
- * 全文検索に使う
- * ts = text search
  *
  * 余計な単語を削除して意味のある単語だけを検索用インデックス形式で保存する
  *
@@ -88,10 +60,10 @@ export const statements = pgTable(
     // 原文ドキュメント内での位置（文字オフセット）
     startOffset: integer(),
     endOffset: integer(),
-    // 参照元ページのヒント（例: "p.12"）
-    pageHint: text(),
-    // AI 埋め込みベクトル（意味的類似度検索に使用）
-    embedding: vector("embedding", 1536),
+    // 属するチャンク（手続き系発言は null）
+    chunkId: text().references(() => statement_chunks.id, {
+      onDelete: "set null",
+    }),
     // 全文検索用インデックス（content から自動生成される仮想カラム）
     contentTsv: tsvector().generatedAlwaysAs(
       sql`to_tsvector('simple', coalesce(content, ''))`
@@ -115,6 +87,11 @@ export const statementsRelations = relations(statements, ({ one, many }) => ({
   meeting: one(meetings, {
     fields: [statements.meetingId],
     references: [meetings.id],
+  }),
+  // 発言は1つのチャンクに属する（手続き系は null）
+  chunk: one(statement_chunks, {
+    fields: [statements.chunkId],
+    references: [statement_chunks.id],
   }),
   // 発言には複数の政策タグが付く（1対多）
   policy_tags: many(statement_policy_tags),

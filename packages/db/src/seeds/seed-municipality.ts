@@ -25,6 +25,10 @@ interface MunicipalityRecord {
   name: string;
   /** 議事録検索URL（municipality-url.csv 由来） */
   baseUrl: string;
+  /** 人口（住民基本台帳ベース、null = 未設定） */
+  population: number | null;
+  /** 人口データの基準年（null = 未設定） */
+  populationYear: number | null;
 }
 
 function parseCsv(filePath: string): MunicipalityRecord[] {
@@ -39,15 +43,23 @@ function parseCsv(filePath: string): MunicipalityRecord[] {
     const prefecture = cols[1]?.replace(/"/g, "").trim() ?? "";
     const name = cols[2]?.replace(/"/g, "").trim() ?? "";
     const baseUrl = (cols[5]?.replace(/"/g, "").trim() ?? "") || "";
-    return { code, prefecture, name, baseUrl };
+    const populationRaw = cols[6]?.replace(/"/g, "").trim();
+    const populationYearRaw = cols[7]?.replace(/"/g, "").trim();
+    const population = populationRaw
+      ? parseInt(populationRaw, 10) || null
+      : null;
+    const populationYear = populationYearRaw
+      ? parseInt(populationYearRaw, 10) || null
+      : null;
+    return { code, prefecture, name, baseUrl, population, populationYear };
   });
 }
 
-function detectSystemType(baseUrl: string): SystemType {
+function detectSystemType(baseUrl: string): SystemType | null {
   if (baseUrl.includes("ssp.kaigiroku.net")) return "discussnet_ssp";
   if (baseUrl.includes("dbsr.jp")) return "dbsearch";
   if (baseUrl.includes("kensakusystem.jp")) return "kensakusystem";
-  return "custom_html";
+  return null;
 }
 
 // --- シード ---
@@ -60,7 +72,9 @@ async function seed() {
   const db = drizzle(DATABASE_URL as string, { casing: "snake_case" });
 
   // 1. system_types を先に upsert する
-  console.log(`[seed] system_types を ${SYSTEM_TYPES_SEED.length} 件 upsert します`);
+  console.log(
+    `[seed] system_types を ${SYSTEM_TYPES_SEED.length} 件 upsert します`
+  );
   await db
     .insert(system_types)
     .values(SYSTEM_TYPES_SEED)
@@ -70,7 +84,9 @@ async function seed() {
     });
 
   // 2. name → id のマップを構築する
-  const systemTypeRows = await db.select({ id: system_types.id, name: system_types.name }).from(system_types);
+  const systemTypeRows = await db
+    .select({ id: system_types.id, name: system_types.name })
+    .from(system_types);
   const systemTypeIdByName = new Map(systemTypeRows.map((r) => [r.name, r.id]));
 
   // 3. municipalities を upsert する
@@ -82,7 +98,7 @@ async function seed() {
   for (const m of municipalityList) {
     const displayName = m.name || m.prefecture; // 都道府県行は都道府県名を name に
     const typeName = detectSystemType(m.baseUrl);
-    const systemTypeId = systemTypeIdByName.get(typeName) ?? null;
+    const systemTypeId = systemTypeIdByName.get(typeName ?? "");
 
     const result = await db
       .insert(municipalities)
@@ -93,6 +109,8 @@ async function seed() {
         systemTypeId,
         baseUrl: m.baseUrl,
         enabled: true,
+        population: m.population,
+        populationYear: m.populationYear,
       })
       .onConflictDoUpdate({
         target: municipalities.code,
@@ -102,6 +120,8 @@ async function seed() {
           baseUrl: sql`excluded.base_url`,
           enabled: sql`excluded.enabled`,
           systemTypeId: sql`excluded.system_type_id`,
+          population: sql`excluded.population`,
+          populationYear: sql`excluded.population_year`,
         },
       })
       .returning({ id: municipalities.id, code: municipalities.code });

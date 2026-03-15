@@ -1,3 +1,17 @@
+/**
+ * rawText から解析された1発言分のデータ。
+ * 各 system type の to-statements.ts が生成し、apply-statements.ts が DB に挿入する。
+ */
+export interface ParsedStatement {
+  kind: string;
+  speakerName: string | null;
+  speakerRole: string | null;
+  content: string;
+  contentHash: string;
+  startOffset: number;
+  endOffset: number;
+}
+
 export interface MeetingData {
   municipalityId: string;
   title: string;
@@ -108,4 +122,5 @@ export type ScraperQueueMessage =
 export interface Env {
   DATABASE_URL: string;
   SCRAPER_QUEUE: Queue<ScraperQueueMessage>;
+  OPENAI_API_KEY?: string;
 }

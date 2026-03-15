@@ -1,6 +1,6 @@
 import type { Db } from "@open-gikai/db";
-import { meetings, municipalities } from "@open-gikai/db";
-import { and, asc, count, eq, gt, ilike, or } from "drizzle-orm";
+import { meetings, municipalities, system_types } from "@open-gikai/db";
+import { and, asc, count, eq, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type { municipalitiesListSchema } from "./_schemas";
@@ -11,12 +11,14 @@ export interface MunicipalityListItem {
   name: string;
   prefecture: string;
   baseUrl: string | null;
+  population: number | null;
   meetingCount: number;
+  systemTypeDescription: string | null;
 }
 
 export interface MunicipalitiesListResponse {
   municipalities: MunicipalityListItem[];
-  nextCursor: string | null;
+  total: number;
 }
 
 export async function listMunicipalities(
@@ -24,6 +26,7 @@ export async function listMunicipalities(
   input: z.infer<typeof municipalitiesListSchema>
 ): Promise<MunicipalitiesListResponse> {
   const limit = input.limit ?? 50;
+  const offset = input.offset ?? 0;
   const conditions = [eq(municipalities.enabled, true)];
 
   if (input.query) {
@@ -38,29 +41,50 @@ export async function listMunicipalities(
       );
     }
   }
-  if (input.cursor) conditions.push(gt(municipalities.code, input.cursor));
 
-  const results = await db
-    .select({
-      id: municipalities.id,
-      code: municipalities.code,
-      name: municipalities.name,
-      prefecture: municipalities.prefecture,
-      baseUrl: municipalities.baseUrl,
-      meetingCount: count(meetings.id),
-    })
-    .from(municipalities)
-    .leftJoin(meetings, eq(meetings.municipalityId, municipalities.id))
-    .where(and(...conditions))
-    .groupBy(municipalities.id, municipalities.code, municipalities.name, municipalities.prefecture, municipalities.baseUrl)
-    .orderBy(asc(municipalities.prefecture), asc(municipalities.code))
-    .limit(limit + 1);
+  const where = and(...conditions);
 
-  const hasMore = results.length > limit;
-  const list = hasMore ? results.slice(0, limit) : results;
+  const orderBy =
+    input.sortBy === "population"
+      ? [sql`${municipalities.population} DESC NULLS LAST`, asc(municipalities.code)]
+      : [asc(municipalities.prefecture), asc(municipalities.code)];
+
+  const [results, [countRow]] = await Promise.all([
+    db
+      .select({
+        id: municipalities.id,
+        code: municipalities.code,
+        name: municipalities.name,
+        prefecture: municipalities.prefecture,
+        baseUrl: municipalities.baseUrl,
+        population: municipalities.population,
+        meetingCount: count(meetings.id),
+        systemTypeDescription: system_types.description,
+      })
+      .from(municipalities)
+      .leftJoin(meetings, eq(meetings.municipalityId, municipalities.id))
+      .leftJoin(system_types, eq(system_types.id, municipalities.systemTypeId))
+      .where(where)
+      .groupBy(
+        municipalities.id,
+        municipalities.code,
+        municipalities.name,
+        municipalities.prefecture,
+        municipalities.baseUrl,
+        municipalities.population,
+        system_types.description
+      )
+      .orderBy(...orderBy)
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ total: count() })
+      .from(municipalities)
+      .where(where),
+  ]);
 
   return {
-    municipalities: list as MunicipalityListItem[],
-    nextCursor: hasMore ? list[list.length - 1]!.code : null,
+    municipalities: results as MunicipalityListItem[],
+    total: countRow?.total ?? 0,
   };
 }

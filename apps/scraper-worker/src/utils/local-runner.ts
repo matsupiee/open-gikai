@@ -55,7 +55,7 @@ class LocalQueue {
       const q = this as unknown as Queue<ScraperQueueMessage>;
 
       try {
-        await handleQueueMessage(db, q, msg);
+        await handleQueueMessage(db, q, msg, process.env.OPENAI_API_KEY);
       } catch (err) {
         await handleMessageError(db, msg, err);
       }

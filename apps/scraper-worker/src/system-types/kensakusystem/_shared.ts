@@ -78,3 +78,122 @@ export async function fetchWithEncoding(url: string): Promise<string | null> {
     return null;
   }
 }
+
+/** POST して Shift-JIS → UTF-8 に変換 */
+export async function fetchWithEncodingPost(
+  url: string,
+  body: string
+): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+    });
+    if (!res.ok) return null;
+
+    const buffer = await res.arrayBuffer();
+    const decoder = new TextDecoder("shift_jis");
+    return decoder.decode(buffer);
+  } catch {
+    return null;
+  }
+}
+
+/** Raw bytes として GET 取得 */
+export async function fetchRawBytes(url: string): Promise<Uint8Array | null> {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": USER_AGENT },
+    });
+    if (!res.ok) return null;
+    return new Uint8Array(await res.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
+/** Raw bytes として POST 取得 */
+export async function fetchRawBytesPost(
+  url: string,
+  body: string
+): Promise<Uint8Array | null> {
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+    });
+    if (!res.ok) return null;
+    return new Uint8Array(await res.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
+/** Shift-JIS バイト列を UTF-8 文字列にデコード */
+export function decodeShiftJis(bytes: Uint8Array): string {
+  return new TextDecoder("shift_jis").decode(bytes);
+}
+
+/** Uint8Array をパーセントエンコード (POST body 用) */
+export function percentEncodeBytes(bytes: Uint8Array): string {
+  let result = "";
+  for (const byte of bytes) {
+    result += "%" + byte.toString(16).toUpperCase().padStart(2, "0");
+  }
+  return result;
+}
+
+/**
+ * Shift-JIS raw bytes から `document.viewtree.treedepth.value='...'` の
+ * 値部分の raw バイト列を全て抽出する。
+ *
+ * Shift-JIS 2バイト文字を正しくスキップすることで、
+ * 日本語文字の第2バイトが `'` (0x27) に誤マッチするのを防ぐ。
+ */
+export function extractTreedepthRawBytes(rawBytes: Uint8Array): Uint8Array[] {
+  const results: Uint8Array[] = [];
+  const markerStr = "document.viewtree.treedepth.value='";
+  const markerBytes = Array.from(markerStr, (c) => c.charCodeAt(0));
+
+  let i = 0;
+  outer: while (i <= rawBytes.length - markerBytes.length) {
+    for (let j = 0; j < markerBytes.length; j++) {
+      if (rawBytes[i + j] !== markerBytes[j]) {
+        i++;
+        continue outer;
+      }
+    }
+
+    // マーカーを見つけた。Shift-JIS を正しく解析しながら closing ' を探す
+    let pos = i + markerBytes.length;
+    const start = pos;
+    while (pos < rawBytes.length) {
+      const b = rawBytes[pos]!;
+      if (b === 0x27) {
+        // closing '
+        if (pos > start) {
+          results.push(rawBytes.slice(start, pos));
+        }
+        i = pos + 1;
+        continue outer;
+      }
+      // Shift-JIS 2バイト文字の先行バイト
+      if ((b >= 0x81 && b <= 0x9f) || (b >= 0xe0 && b <= 0xfc)) {
+        pos += 2;
+      } else {
+        pos++;
+      }
+    }
+    i++;
+  }
+
+  return results;
+}

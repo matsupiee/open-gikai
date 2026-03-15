@@ -46,7 +46,7 @@ export default {
       const msg = message.body as ScraperQueueMessage;
 
       try {
-        await handleQueueMessage(db, env.SCRAPER_QUEUE, msg);
+        await handleQueueMessage(db, env.SCRAPER_QUEUE, msg, env.OPENAI_API_KEY);
         message.ack();
       } catch (err) {
         await handleMessageError(db, msg, err);

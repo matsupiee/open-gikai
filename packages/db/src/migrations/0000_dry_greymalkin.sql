@@ -74,6 +74,8 @@ CREATE TABLE "municipalities" (
 	"system_type_id" text,
 	"base_url" text,
 	"enabled" boolean DEFAULT true NOT NULL,
+	"population" integer,
+	"population_year" integer,
 	CONSTRAINT "municipalities_code_unique" UNIQUE("code")
 );
 --> statement-breakpoint
@@ -89,9 +91,20 @@ CREATE TABLE "statements" (
 	"content_hash" text NOT NULL,
 	"start_offset" integer,
 	"end_offset" integer,
-	"page_hint" text,
-	"embedding" vector(1536),
+	"chunk_id" text,
 	"content_tsv" "tsvector" GENERATED ALWAYS AS (to_tsvector('simple', coalesce(content, ''))) STORED
+);
+--> statement-breakpoint
+CREATE TABLE "statement_chunks" (
+	"id" text PRIMARY KEY NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"meeting_id" text NOT NULL,
+	"speaker_name" text,
+	"speaker_role" text,
+	"chunk_index" integer DEFAULT 0 NOT NULL,
+	"content" text NOT NULL,
+	"content_hash" text NOT NULL,
+	"embedding" vector(1536)
 );
 --> statement-breakpoint
 CREATE TABLE "policy_tags" (
@@ -145,6 +158,8 @@ ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY
 ALTER TABLE "meetings" ADD CONSTRAINT "meetings_municipality_id_municipalities_id_fk" FOREIGN KEY ("municipality_id") REFERENCES "public"."municipalities"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "municipalities" ADD CONSTRAINT "municipalities_system_type_id_system_types_id_fk" FOREIGN KEY ("system_type_id") REFERENCES "public"."system_types"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "statements" ADD CONSTRAINT "statements_meeting_id_meetings_id_fk" FOREIGN KEY ("meeting_id") REFERENCES "public"."meetings"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "statements" ADD CONSTRAINT "statements_chunk_id_statement_chunks_id_fk" FOREIGN KEY ("chunk_id") REFERENCES "public"."statement_chunks"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "statement_chunks" ADD CONSTRAINT "statement_chunks_meeting_id_meetings_id_fk" FOREIGN KEY ("meeting_id") REFERENCES "public"."meetings"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "statement_policy_tags" ADD CONSTRAINT "statement_policy_tags_statement_id_statements_id_fk" FOREIGN KEY ("statement_id") REFERENCES "public"."statements"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "statement_policy_tags" ADD CONSTRAINT "statement_policy_tags_tag_id_policy_tags_id_fk" FOREIGN KEY ("tag_id") REFERENCES "public"."policy_tags"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scraper_job_logs" ADD CONSTRAINT "scraper_job_logs_job_id_scraper_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."scraper_jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -164,6 +179,9 @@ CREATE UNIQUE INDEX "statements_meeting_id_content_hash_index" ON "statements" U
 CREATE INDEX "statements_meeting_id_index" ON "statements" USING btree ("meeting_id");--> statement-breakpoint
 CREATE INDEX "statements_kind_index" ON "statements" USING btree ("kind");--> statement-breakpoint
 CREATE INDEX "statements_speaker_name_index" ON "statements" USING btree ("speaker_name");--> statement-breakpoint
+CREATE UNIQUE INDEX "statement_chunks_meeting_id_content_hash_index" ON "statement_chunks" USING btree ("meeting_id","content_hash");--> statement-breakpoint
+CREATE INDEX "statement_chunks_meeting_id_index" ON "statement_chunks" USING btree ("meeting_id");--> statement-breakpoint
+CREATE INDEX "statement_chunks_speaker_name_index" ON "statement_chunks" USING btree ("speaker_name");--> statement-breakpoint
 CREATE UNIQUE INDEX "statement_policy_tags_statement_id_tag_id_index" ON "statement_policy_tags" USING btree ("statement_id","tag_id");--> statement-breakpoint
 CREATE INDEX "statement_policy_tags_tag_id_statement_id_index" ON "statement_policy_tags" USING btree ("tag_id","statement_id");--> statement-breakpoint
 CREATE INDEX "scraper_job_logs_job_id_index" ON "scraper_job_logs" USING btree ("job_id");--> statement-breakpoint

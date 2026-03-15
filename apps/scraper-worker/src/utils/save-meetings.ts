@@ -10,8 +10,8 @@ import type { MeetingData } from "./types";
 export async function saveMeetings(
   db: Db,
   records: MeetingData[]
-): Promise<{ inserted: number; skipped: number }> {
-  if (records.length === 0) return { inserted: 0, skipped: 0 };
+): Promise<{ inserted: number; skipped: number; insertedIds: string[] }> {
+  if (records.length === 0) return { inserted: 0, skipped: 0, insertedIds: [] };
 
   const now = new Date();
   const rows = records.map((m) => ({
@@ -26,14 +26,15 @@ export async function saveMeetings(
     scrapedAt: now,
   }));
 
-  const inserted = await db
+  const insertedRows = await db
     .insert(meetings)
     .values(rows)
     .onConflictDoNothing()
     .returning({ id: meetings.id });
 
   return {
-    inserted: inserted.length,
-    skipped: rows.length - inserted.length,
+    inserted: insertedRows.length,
+    skipped: rows.length - insertedRows.length,
+    insertedIds: insertedRows.map((r) => r.id),
   };
 }

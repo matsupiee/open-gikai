@@ -14,13 +14,48 @@ export interface KensakusystemDetailSchedule {
 }
 
 /**
- * 議事録詳細ページから本文を取得
+ * 議事録詳細ページから本文を取得。
+ *
+ * ResultFrame.exe は FRAMESET を返すため、
+ * r_TextFrame.exe フレームを追跡して実際のテキストを取得する。
  */
 export async function fetchMeetingContent(
   detailUrl: string
 ): Promise<string | null> {
   const html = await fetchWithEncoding(detailUrl);
   if (!html) return null;
+
+  // FRAMESET ページの場合: r_TextFrame.exe → GetText3.exe の順に追跡
+  if (/<frameset/i.test(html)) {
+    // r_TextFrame.exe を優先 (ResultFrame.exe の場合)
+    const textFrameMatch = html.match(
+      /<frame[^>]+src=["']([^"']*r_TextFrame\.exe[^"']*)["']/i
+    );
+    if (textFrameMatch?.[1]) {
+      const textFrameUrl = new URL(textFrameMatch[1], detailUrl).toString();
+      return fetchMeetingContent(textFrameUrl);
+    }
+    // GetText3.exe を追跡 (r_TextFrame.exe の場合、通常の議事録)
+    const getText3Match = html.match(
+      /<frame[^>]+src=["']([^"']*GetText3\.exe[^"']*)["']/i
+    );
+    if (getText3Match?.[1]) {
+      // アンカー (#hit1) を除去してからfetch
+      const rawUrl = getText3Match[1].replace(/#.*$/, "");
+      const getText3Url = new URL(rawUrl, detailUrl).toString();
+      return fetchMeetingContent(getText3Url);
+    }
+    // GetHTML.exe を追跡 (r_TextFrame.exe の場合、質問一覧など .html 形式)
+    const getHtmlMatch = html.match(
+      /<frame[^>]+src=["']([^"']*GetHTML\.exe[^"']*)["']/i
+    );
+    if (getHtmlMatch?.[1]) {
+      const rawUrl = getHtmlMatch[1].replace(/#.*$/, "");
+      const getHtmlUrl = new URL(rawUrl, detailUrl).toString();
+      return fetchMeetingContent(getHtmlUrl);
+    }
+    return null;
+  }
 
   const preMatch = html.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i);
   if (preMatch?.[1]) {
@@ -58,9 +93,15 @@ export async function fetchMeetingDataFromSchedule(
 
   const meetingType = detectMeetingType(schedule.title);
 
+  const fileNameMatch = schedule.url.match(/[?&]fileName=([^&]+)/i);
   const codeMatch = schedule.url.match(/[?&]Code=([^&]+)/);
+  const fileName = fileNameMatch?.[1] ?? "";
   const code = codeMatch?.[1] ?? "";
-  const externalId = code ? `kensakusystem_${slug}_${code}` : null;
+  const externalId = fileName
+    ? `kensakusystem_${slug}_${fileName}`
+    : code
+      ? `kensakusystem_${slug}_${code}`
+      : null;
 
   return {
     municipalityId,

@@ -28,19 +28,20 @@ type KensakusystemMessage = Extract<
 export async function handleQueueMessage(
   db: Db,
   queue: Queue<ScraperQueueMessage>,
-  msg: ScraperQueueMessage
+  msg: ScraperQueueMessage,
+  openaiApiKey?: string
 ): Promise<void> {
   const [system] = msg.type.split(":") as [string, string];
 
   switch (system) {
     case "discussnet-ssp":
-      await handleDiscussnetSsp(db, queue, msg as DiscussnetSspMessage);
+      await handleDiscussnetSsp(db, queue, msg as DiscussnetSspMessage, openaiApiKey);
       break;
     case "dbsearch":
-      await handleDbsearch(db, queue, msg as DbsearchMessage);
+      await handleDbsearch(db, queue, msg as DbsearchMessage, openaiApiKey);
       break;
     case "kensakusystem":
-      await handleKensakusystem(db, queue, msg as KensakusystemMessage);
+      await handleKensakusystem(db, queue, msg as KensakusystemMessage, openaiApiKey);
       break;
     default:
       console.warn(`[scraper-worker] unknown message type:`, msg.type);
@@ -50,14 +51,15 @@ export async function handleQueueMessage(
 async function handleDiscussnetSsp(
   db: Db,
   queue: Queue<ScraperQueueMessage>,
-  msg: DiscussnetSspMessage
+  msg: DiscussnetSspMessage,
+  openaiApiKey?: string
 ): Promise<void> {
   switch (msg.type) {
     case "discussnet-ssp:schedule":
       await handleDiscussnetSspSchedule(db, queue, msg);
       break;
     case "discussnet-ssp:minute":
-      await handleDiscussnetSspMinute(db, msg);
+      await handleDiscussnetSspMinute(db, msg, openaiApiKey);
       break;
   }
 }
@@ -65,14 +67,15 @@ async function handleDiscussnetSsp(
 async function handleDbsearch(
   db: Db,
   queue: Queue<ScraperQueueMessage>,
-  msg: DbsearchMessage
+  msg: DbsearchMessage,
+  openaiApiKey?: string
 ): Promise<void> {
   switch (msg.type) {
     case "dbsearch:list":
       await handleDbsearchList(db, queue, msg);
       break;
     case "dbsearch:detail":
-      await handleDbsearchDetail(db, msg);
+      await handleDbsearchDetail(db, msg, openaiApiKey);
       break;
   }
 }
@@ -80,14 +83,15 @@ async function handleDbsearch(
 async function handleKensakusystem(
   db: Db,
   queue: Queue<ScraperQueueMessage>,
-  msg: KensakusystemMessage
+  msg: KensakusystemMessage,
+  openaiApiKey?: string
 ): Promise<void> {
   switch (msg.type) {
     case "kensakusystem:list":
       await handleKensakusystemList(db, queue, msg);
       break;
     case "kensakusystem:detail":
-      await handleKensakusystemDetail(db, msg);
+      await handleKensakusystemDetail(db, msg, openaiApiKey);
       break;
   }
 }

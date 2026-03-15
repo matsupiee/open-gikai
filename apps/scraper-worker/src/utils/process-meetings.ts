@@ -2,30 +2,7 @@ import { createHash } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { meetings, statements } from "@open-gikai/db/schema";
 import type { Db } from "@open-gikai/db";
-
-async function generateEmbedding(
-  text: string,
-  openaiApiKey: string
-): Promise<number[] | null> {
-  try {
-    const res = await fetch("https://api.openai.com/v1/embeddings", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openaiApiKey}`,
-      },
-      body: JSON.stringify({
-        input: text.slice(0, 8000),
-        model: "text-embedding-3-small",
-      }),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { data: [{ embedding: number[] }] };
-    return data.data[0]?.embedding ?? null;
-  } catch {
-    return null;
-  }
-}
+import { buildChunksForMeeting } from "./build-chunks";
 
 /**
  * rawText を発言単位に分割する。
@@ -76,6 +53,45 @@ function splitIntoStatements(rawText: string): string[] {
 }
 
 /**
+ * 行政職員の役職（答弁者として扱う）
+ */
+const EXECUTIVE_ROLES = new Set([
+  "市長",
+  "副市長",
+  "部長",
+  "副部長",
+  "課長",
+  "副課長",
+  "室長",
+  "市長室長",
+  "局長",
+  "係長",
+  "主任",
+  "補佐",
+  "主査",
+]);
+
+/**
+ * 議事進行役の役職（一般発言として扱う）
+ */
+const PRESIDING_ROLES = new Set(["議長", "副議長", "委員長", "副委員長"]);
+
+/**
+ * 発言種別を分類する。
+ *
+ * - presiding role (議長/委員長 など)  → "remark"
+ * - executive role (市長/部長/課長 など) → "answer"
+ * - その他 (議員・委員 など)              → "question"
+ */
+function classifyKind(speakerRole: string | null): string {
+  if (speakerRole) {
+    if (PRESIDING_ROLES.has(speakerRole)) return "remark";
+    if (EXECUTIVE_ROLES.has(speakerRole)) return "answer";
+  }
+  return "question";
+}
+
+/**
  * 役職サフィックス一覧（長いものを優先してマッチ）
  */
 const ROLE_SUFFIXES = [
@@ -98,6 +114,14 @@ const ROLE_SUFFIXES = [
   "補佐",
   "主査",
 ];
+
+/**
+ * 発言テキストから発言者プレフィックス（○委員長（中元かつあき）　など）を除去して
+ * 本文のみを返す。
+ */
+function stripSpeakerPrefix(text: string): string {
+  return text.replace(/^[○◎◆][^（　\s]+(?:（[^）]+）)?[　\s]?/, "").trim();
+}
 
 /**
  * 発言テキストから発言者情報を抽出する。
@@ -191,32 +215,22 @@ export async function processPendingMeetings(
       const startOffset = offset;
       const endOffset = offset + part.length;
 
-      let embedding: number[] | null = null;
-      if (openaiApiKey) {
-        embedding = await generateEmbedding(part, openaiApiKey);
-        if (!embedding) {
-          console.warn(
-            `[process-meetings] Failed to generate embedding for meeting ${meeting.id}`
-          );
-        }
-      }
-
       const { speakerName, speakerRole } = parseSpeaker(part);
+      const content = stripSpeakerPrefix(part);
+      const kind = classifyKind(speakerRole);
 
       try {
         await db
           .insert(statements)
           .values({
             meetingId: meeting.id,
-            kind: "speech",
+            kind,
             speakerName,
             speakerRole,
-            content: part,
+            content,
             contentHash,
             startOffset,
             endOffset,
-            pageHint: null,
-            embedding,
           })
           .onConflictDoNothing();
       } catch (err) {
@@ -241,6 +255,16 @@ export async function processPendingMeetings(
 
     console.log(
       `[process-meetings] Processed meeting ${meeting.id} → ${parts.length} statement(s)`
+    );
+
+    // statement_chunks を構築（手続き系除外 + スピーカーグループ化）
+    const { inserted: chunksInserted } = await buildChunksForMeeting(
+      db,
+      meeting.id,
+      openaiApiKey
+    );
+    console.log(
+      `[process-meetings] Built ${chunksInserted} chunk(s) for meeting ${meeting.id}`
     );
   }
 }

@@ -31,7 +31,7 @@ function JobDetailPage() {
   const { data: logsData } = useQuery(
     orpc.scrapers.getJobLogs.queryOptions({
       input: { jobId, limit: 500 },
-      refetchInterval: (query) => {
+      refetchInterval: (_query) => {
         if (!job) return 500;
         return TERMINAL_STATUSES.has(job.status) ? false : 500;
       },

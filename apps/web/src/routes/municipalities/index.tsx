@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-import { ExternalLink } from "lucide-react";
+import { ArrowDown, ArrowUpDown, ExternalLink } from "lucide-react";
 
 import { orpc } from "@/lib/orpc/orpc";
 import { Badge } from "@/shared/_components/ui/badge";
@@ -15,51 +15,47 @@ export const Route = createFileRoute("/municipalities/")({
   component: RouteComponent,
 });
 
+type SortBy = "code" | "population";
+
+const LIMIT = 50;
+
 function RouteComponent() {
   const [query, setQuery] = useState("");
   const [appliedQuery, setAppliedQuery] = useState("");
-  const [cursor, setCursor] = useState<string | undefined>(undefined);
-  const [cursors, setCursors] = useState<(string | undefined)[]>([undefined]);
   const [page, setPage] = useState(0);
+  const [sortBy, setSortBy] = useState<SortBy>("code");
+
+  const offset = page * LIMIT;
 
   const input = {
     ...(appliedQuery ? { query: appliedQuery } : {}),
-    ...(cursor ? { cursor } : {}),
-    limit: 50,
+    limit: LIMIT,
+    offset,
+    sortBy,
   };
 
   const { data, isLoading } = useQuery(orpc.municipalities.list.queryOptions({ input }));
 
   function handleSearch() {
     setAppliedQuery(query);
-    setCursor(undefined);
-    setCursors([undefined]);
     setPage(0);
   }
 
   function handleReset() {
     setQuery("");
     setAppliedQuery("");
-    setCursor(undefined);
-    setCursors([undefined]);
     setPage(0);
   }
 
-  function handleNextPage() {
-    if (!data?.nextCursor) return;
-    const nextCursors = [...cursors, data.nextCursor];
-    setCursors(nextCursors);
-    setCursor(data.nextCursor);
-    setPage(page + 1);
+  function handleSortByPopulation() {
+    setSortBy(sortBy === "population" ? "code" : "population");
+    setPage(0);
   }
 
-  function handlePrevPage() {
-    if (page === 0) return;
-    const prevPage = page - 1;
-    const prevCursor = cursors[prevPage];
-    setPage(prevPage);
-    setCursor(prevCursor);
-  }
+  const total = data?.total ?? 0;
+  const count = data?.municipalities.length ?? 0;
+  const start = offset + 1;
+  const end = offset + count;
 
   return (
     <div className="min-h-screen bg-background">
@@ -86,6 +82,25 @@ function RouteComponent() {
                 </Button>
               )}
             </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant={sortBy === "population" ? "default" : "outline"}
+                size="sm"
+                onClick={handleSortByPopulation}
+                className="gap-1.5"
+              >
+                {sortBy === "population" ? (
+                  <ArrowDown className="h-3.5 w-3.5" />
+                ) : (
+                  <ArrowUpDown className="h-3.5 w-3.5" />
+                )}
+                人口順
+              </Button>
+              {sortBy === "population" && (
+                <span className="text-xs text-muted-foreground">人口の多い順で表示中</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -110,7 +125,7 @@ function RouteComponent() {
           {!isLoading && data && data.municipalities.length > 0 && (
             <>
               <div className="text-xs text-muted-foreground mb-2">
-                {page * 50 + 1}〜{page * 50 + data.municipalities.length} 件表示
+                {start}〜{end} 件表示（全 {total.toLocaleString()} 件）
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {data.municipalities.map((municipality) => (
@@ -122,7 +137,7 @@ function RouteComponent() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handlePrevPage}
+                  onClick={() => setPage(page - 1)}
                   disabled={page === 0}
                 >
                   前のページ
@@ -130,8 +145,8 @@ function RouteComponent() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleNextPage}
-                  disabled={!data.nextCursor}
+                  onClick={() => setPage(page + 1)}
+                  disabled={end >= total}
                 >
                   次のページ
                 </Button>
@@ -151,7 +166,9 @@ interface MunicipalityCardProps {
     name: string;
     prefecture: string;
     baseUrl: string | null;
+    population: number | null;
     meetingCount: number;
+    systemTypeDescription: string | null;
   };
 }
 
@@ -183,6 +200,12 @@ function MunicipalityCard({ municipality }: MunicipalityCardProps) {
         <CardContent>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span>{municipality.prefecture}</span>
+            {municipality.population != null && (
+              <>
+                <span>•</span>
+                <span>人口 {municipality.population.toLocaleString()} 人</span>
+              </>
+            )}
             {municipality.meetingCount > 0 && (
               <>
                 <span>•</span>
@@ -192,6 +215,11 @@ function MunicipalityCard({ municipality }: MunicipalityCardProps) {
               </>
             )}
           </div>
+          {municipality.systemTypeDescription && (
+            <p className="mt-1.5 text-xs text-muted-foreground/70">
+              {municipality.systemTypeDescription}
+            </p>
+          )}
         </CardContent>
       </Card>
     </Link>

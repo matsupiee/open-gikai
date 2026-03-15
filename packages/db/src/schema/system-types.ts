@@ -23,22 +23,13 @@ export const system_types = pgTable(
 );
 
 /** 既知のシステム種別（アプリコードでの型付けに使用） */
-export type SystemType =
-  | "discussnet"
-  | "discussnet_ssp"
-  | "dbsearch"
-  | "kensakusystem"
-  | "sophia"
-  | "voices"
-  | "custom_html"
-  | "pdf";
+export type SystemType = "discussnet_ssp" | "dbsearch" | "kensakusystem";
 
 /** system_types テーブルの初期データ */
 export const SYSTEM_TYPES_SEED: Array<{
   name: SystemType;
   description: string;
 }> = [
-  { name: "discussnet", description: "NTT-AT DiscussNet（ASP版・全国最多）" },
   {
     name: "discussnet_ssp",
     description: "NTT-AT DiscussNet SSP（SaaS版: ssp.kaigiroku.net）",
@@ -48,8 +39,4 @@ export const SYSTEM_TYPES_SEED: Array<{
     name: "kensakusystem",
     description: "kensakusystem.jp（複数自治体共通検索システム）",
   },
-  { name: "sophia", description: "神戸綜合速記" },
-  { name: "voices", description: "フューチャーイン" },
-  { name: "custom_html", description: "独自 CMS" },
-  { name: "pdf", description: "PDF 直接公開" },
 ];

@@ -2,6 +2,7 @@ import {
   pgTable,
   text,
   boolean,
+  integer,
   timestamp,
   index,
   uniqueIndex,
@@ -41,6 +42,10 @@ export const municipalities = pgTable(
     baseUrl: text(),
     /** スクレイピング対象フラグ（false = robots.txt / 利用規約違反で除外） */
     enabled: boolean().notNull().default(true),
+    /** 人口（住民基本台帳ベース） */
+    population: integer(),
+    /** 人口データの基準年（例: 2024） */
+    populationYear: integer(),
   },
   (table) => [
     uniqueIndex().on(table.code),

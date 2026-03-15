@@ -3,6 +3,12 @@
  *
  * council_id ごとに schedule 一覧を取得し、
  * discussnet-ssp:minute としてキューに投入する。
+ *
+ * DiscussNet SSP の データ構造
+ * - tenant: 自治体
+ * - council: 会期（例: 令和7年第4回定例会 11月27日〜12月15日）
+ * - schedule: 個別会議（例: 11月27日-01号）
+ * - minute: 発言
  */
 
 import type { Db } from "@open-gikai/db";

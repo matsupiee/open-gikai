@@ -4,6 +4,10 @@
  * 1. トップページ GET → CSRFトークン + セッションCookie + 検索エンドポイントIDを取得
  * 2. 検索エンドポイントへ POST → 年フィルタで議事録一覧を取得
  * 3. ページネーションを処理してすべての議事録を収集
+ *
+ * URL スタイルの違い:
+ *   旧形式 (dbsr.jp):    https://foo.dbsr.jp/index.php/{endpointId}
+ *   新形式 (東京都など):  https://www.record.gikai.metro.tokyo.lg.jp/{endpointId}
  */
 
 const USER_AGENT =
@@ -25,7 +29,9 @@ export async function fetchMeetingList(
 ): Promise<DbsearchMeetingRecord[] | null> {
   try {
     const origin = toHttpsOrigin(baseUrl);
-    const topUrl = `${origin}/index.php/`;
+    // baseUrl に index.php が含まれているかで URL スタイルを判定
+    const pathPrefix = baseUrl.includes("/index.php/") ? "/index.php/" : "/";
+    const topUrl = `${origin}${pathPrefix}`;
 
     // Step 1: トップページ取得 → CSRFトークン・Cookie・検索エンドポイントID
     const initRes = await fetch(topUrl, {
@@ -38,10 +44,12 @@ export async function fetchMeetingList(
     if (!csrfToken) return null;
 
     const cookie = buildCookieHeader(initRes.headers);
-    const searchEndpointId = extractFormActionId(initHtml);
+    // トップページの form action からIDを取得できない場合は baseUrl 自体から抽出する
+    const searchEndpointId =
+      extractFormActionId(initHtml) ?? extractEndpointIdFromUrl(baseUrl);
     if (!searchEndpointId) return null;
 
-    const searchUrl = `${origin}/index.php/${searchEndpointId}`;
+    const searchUrl = `${origin}${pathPrefix}${searchEndpointId}`;
 
     // Step 2: 年フィルタ付きで POST → 1ページ目の結果とセッションIDを取得
     const firstRes = await fetch(searchUrl, {
@@ -50,6 +58,7 @@ export async function fetchMeetingList(
         "User-Agent": USER_AGENT,
         "Content-Type": "application/x-www-form-urlencoded",
         Cookie: cookie,
+        Referer: topUrl,
       },
       body: new URLSearchParams({
         _token: csrfToken,
@@ -72,7 +81,7 @@ export async function fetchMeetingList(
 
     // Step 3: ページネーション処理
     if (sessionEndpointId && hasNextPage(firstHtml)) {
-      const sessionUrl = `${origin}/index.php/${sessionEndpointId}`;
+      const sessionUrl = `${origin}${pathPrefix}${sessionEndpointId}`;
       let page = 2;
 
       while (true) {
@@ -135,17 +144,31 @@ function buildCookieHeader(headers: Headers): string {
 }
 
 /**
- * HTML から form action 内の index.php/{id} を抽出する。
- * トップページでは検索エンドポイントID、結果ページではセッションIDが取れる。
+ * HTML から form action 内のエンドポイントIDを抽出する。
+ * 旧形式: action="https://foo.dbsr.jp/index.php/12345"
+ * 新形式: action="https://www.record.gikai.metro.tokyo.lg.jp/916983"
  */
 function extractFormActionId(html: string): string | null {
-  const m = html.match(/action="[^"]+\/index\.php\/(\d+)"/);
+  const m = html.match(/action="[^"]+\/(\d+)(?:\?[^"]*)?"/);
+  return m?.[1] ?? null;
+}
+
+/**
+ * URL のパスからエンドポイントIDを抽出する。
+ * baseUrl にエンドポイントIDが含まれている場合のフォールバック用。
+ * 旧形式: /index.php/12345
+ * 新形式: /100000?Template=search-phrase
+ */
+function extractEndpointIdFromUrl(url: string): string | null {
+  const m =
+    url.match(/\/index\.php\/(\d+)/) ?? url.match(/\/(\d+)(?:\?|$)/);
   return m?.[1] ?? null;
 }
 
 /**
  * 結果ページの HTML から議事録レコードを抽出する。
- * <a href="...?Template=view&amp;Id={docId}...">タイトル</a> を対象とする。
+ * 旧形式: href="...?Template=view&Id={docId}..."
+ * 新形式: href="...?Template=document&Id={docId}..."
  */
 function parseListHtml(
   html: string,
@@ -154,9 +177,8 @@ function parseListHtml(
   const records: DbsearchMeetingRecord[] = [];
   const seen = new Set<string>();
 
-  // href に Template=view と Id={数字} を含むアンカータグを抽出
   const anchorPattern =
-    /<a\s[^>]*href="([^"]+Template=view[^"]*(?:&amp;|&)Id=(\d+)[^"]*)"[^>]*>([^<]+)<\/a>/gi;
+    /<a\s[^>]*href="([^"]+Template=(?:view|document)[^"]*(?:&amp;|&)Id=(\d+)[^"]*)"[^>]*>([^<]+)<\/a>/gi;
 
   let match;
   while ((match = anchorPattern.exec(html)) !== null) {
