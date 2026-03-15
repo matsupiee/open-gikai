@@ -132,9 +132,7 @@ export async function dispatchJob(
     }
 
     default: {
-      await logger.error(
-        `未対応の systemType: ${systemType?.name ?? "null"}`
-      );
+      await logger.error(`未対応の systemType: ${systemType?.name ?? "null"}`);
       await updateJobStatus(db, scraper_jobs.id, "failed", {
         errorMessage: `未対応の systemType: ${systemType?.name ?? "null"}`,
       });

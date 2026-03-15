@@ -23,6 +23,29 @@ interface MinuteApiResponse {
 }
 
 /**
+ * DiscussNet SSP の minute データ構造
+ * 
+ * {
+    minute_id: 93,
+    title: "議長（川越桂路君）",
+    page_no: 340,
+    hit_count: 0,
+    body: "<pre>○議長（川越桂路君）　これをもって、令和４年第１
+  回鹿児島市議会定例会を閉会いたします。\n　　　　　　　　　　
+  　　　午前11時42分　閉会\n──────────────────────\n\n\n　　　
+  　地方自治法第１２３条第２項の規定により署名する。\n\n\n　　
+  　　　　　　　市議会議長　　川　　越　　桂　　路\n\n　　　　
+  　　　　　市議会議員　　仮　　屋　　秀　　一\n\n　　　　　　
+  　　　市議会議員　　伊 地 知　　紘　　徳\n</pre>",
+    minute_anchor_id: "",
+    minute_type: "○議長",
+    minute_type_code: 4,
+    speech_type: null,
+    minute_link: [],
+  }
+ */
+
+/**
  * 指定 schedule の議事録本文を取得し、MeetingData に変換して返す。
  * 本文が空の場合は null を返す。
  */
@@ -44,19 +67,31 @@ export async function fetchMinuteData(
   const statements: ParsedStatement[] = [];
   let offset = 0;
   for (const m of data.tenant_minutes) {
-    // 2=名簿、3=議題はスキップ（発言ではない）
-    if (m.minute_type_code < 4) continue;
-    const content = extractTextFromBody(m.body);
-    if (!content) continue;
+    const kind = classifyKindByCode(m.minute_type_code);
+    if (kind === null) continue;
+
+    const { speakerName, speakerRole } = parseSpeakerFromTitle(m.title);
+
+    const rawContent = extractTextFromBody(m.body);
+    if (!rawContent) continue;
+
+    const cleanedTitle = m.title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const content = rawContent.replace(
+      new RegExp(`^.{1}${cleanedTitle}\\s*`),
+      ""
+    );
 
     const contentHash = createHash("sha256")
       .update(`${m.minute_id}:${content}`)
       .digest("hex");
+
     const startOffset = offset;
     const endOffset = offset + content.length;
+
     statements.push({
-      kind: classifyKindByCode(m.minute_type_code),
-      ...parseSpeakerFromTitle(m.title),
+      kind,
+      speakerName,
+      speakerRole,
       content,
       contentHash,
       startOffset,
@@ -90,37 +125,13 @@ export async function fetchMinuteData(
 // --- 内部ユーティリティ ---
 
 /** minute_type_code から kind を決定する */
-function classifyKindByCode(code: number): string {
+function classifyKindByCode(code: number): string | null {
   if (code === 4) return "remark"; // 議長発言
+  if (code === 5) return "question"; // 質問
   if (code === 6) return "answer"; // 答弁
-  return "question"; // 5=質問、その他
-}
 
-const ROLE_SUFFIXES = [
-  "委員長",
-  "副委員長",
-  "副議長",
-  "副市長",
-  "副町長",
-  "副村長",
-  "副部長",
-  "副課長",
-  "市長室長",
-  "議長",
-  "市長",
-  "町長",
-  "村長",
-  "委員",
-  "議員",
-  "部長",
-  "課長",
-  "室長",
-  "局長",
-  "係長",
-  "主任",
-  "補佐",
-  "主査",
-];
+  return null;
+}
 
 /**
  * title フィールドから speakerName / speakerRole を抽出する。
@@ -131,18 +142,18 @@ function parseSpeakerFromTitle(title: string): {
   speakerRole: string | null;
 } {
   const normalized = title.trim();
-  for (const suffix of ROLE_SUFFIXES) {
-    if (normalized.endsWith(suffix) && normalized.length > suffix.length) {
-      return {
-        speakerRole: suffix,
-        speakerName: normalized.slice(0, -suffix.length),
-      };
-    }
-    if (normalized === suffix) {
-      return { speakerRole: suffix, speakerName: null };
-    }
-  }
-  return { speakerRole: null, speakerName: normalized || null };
+
+  const m = normalized.match(
+    /^\s*(?:([^（()]+?)（([^）]+?)）|（([^）]+?)）)\s*$/u
+  );
+
+  if (!m) return { speakerRole: null, speakerName: null };
+
+  const speakerRole = m[1]?.trim() ?? null;
+  const rawSpeakerName = m[2] ?? m[3] ?? null;
+  const speakerName = rawSpeakerName?.trim().replace(/(君|議員)$/u, "") ?? null;
+
+  return { speakerRole, speakerName };
 }
 
 function extractTextFromBody(body: string): string {

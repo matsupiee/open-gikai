@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1773556303739,
-      "tag": "0000_dry_greymalkin",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1773562198715,
-      "tag": "0001_previous_chronomancer",
+      "when": 1773586387761,
+      "tag": "0000_chief_toro",
       "breakpoints": true
     }
   ]

@@ -1,5 +1,5 @@
 {
-  "id": "57dcd08a-e61f-4501-ae4e-4fc0e09a4f5e",
+  "id": "07ba9fda-e130-4724-b463-222ed2d79945",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -426,12 +426,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "raw_text": {
-          "name": "raw_text",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
         },
         "status": {
           "name": "status",

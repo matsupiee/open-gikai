@@ -2,10 +2,19 @@
  * dbsr.jp スクレイパー — detail フェーズ
  *
  * 議事録詳細ページを取得し、MeetingData に変換する。
+ *
+ * HTML 構造（実際のページから確認済み）:
+ *   タイトル: <span class="command__docname">
+ *   日付:     <span class="command__date">YYYY-MM-DD</span>
+ *   発言一覧: <ul class="page-list" id="page-list">
+ *               <li class="voice-block" data-voice-title="◯議長（高瀬博文）">
+ *                 <p class="voice__text">本文テキスト</p>
+ *               </li>
+ *             </ul>
  */
 
+import { createHash } from "node:crypto";
 import type { MeetingData, ParsedStatement } from "../../../utils/types";
-import { toStatements } from "../to-statements";
 
 const USER_AGENT =
   "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
@@ -28,17 +37,15 @@ export async function fetchMeetingDetail(
 
     const html = await res.text();
 
-    const statements: ParsedStatement[] = extractStatements(html);
-
-    const rawText = statements.map((s) => s.content).join("\n");
+    const statements = extractStatements(html);
 
     const title = extractTitle(html) ?? listTitle ?? null;
     if (!title) return null;
 
-    const heldOn = extractDate(html, rawText);
+    const heldOn = extractDate(html);
     if (!heldOn) return null;
 
-    const meetingType = detectMeetingType(html, rawText);
+    const meetingType = detectMeetingType(title);
     const externalId = `dbsearch_${meetingId}`;
 
     return {
@@ -55,114 +62,175 @@ export async function fetchMeetingDetail(
   }
 }
 
+/**
+ * タイトルを <span class="command__docname"> から取得する。
+ */
 function extractTitle(html: string): string | null {
-  // dbsr.jp の詳細ページは <p class="view__title"> にタイトルがある
-  const viewTitleMatch = html.match(/class="view__title">([^<]+)<\/p>/);
-  if (viewTitleMatch?.[1]) {
-    const title = viewTitleMatch[1].replace(/\s+/g, " ").trim();
+  const m = html.match(/class="command__docname">([^<]+)<\/span>/);
+  if (m?.[1]) {
+    const title = m[1].replace(/\s+/g, " ").trim();
     if (title.length > 0) return title;
   }
-
-  // フォールバック: <title> タグ（ただし汎用的なサイトタイトルは除外）
-  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  if (titleMatch?.[1]) {
-    const title = titleMatch[1].replace(/\s+/g, " ").trim();
-    // "閲覧 | xxx" や "検索" のような汎用タイトルはスキップ
-    if (
-      title.length > 0 &&
-      !title.includes("閲覧") &&
-      !title.includes("検索")
-    ) {
-      return title;
-    }
-  }
-
   return null;
 }
 
-function extractDate(html: string, rawText: string): string | null {
-  // dbsr.jp の詳細ページは <time>2025-12-18</time> に日付がある
-  const timeMatch = html.match(/<time>(\d{4}-\d{2}-\d{2})<\/time>/);
-  if (timeMatch?.[1]) return timeMatch[1];
-
-  // フォールバック: 和暦・西暦テキストから日付を抽出
-  const searchText = normalizeFullWidth(html + " " + rawText);
-
-  const wareki: Record<string, number> = {
-    令和: 2018,
-    平成: 1988,
-    昭和: 1925,
-  };
-
-  for (const [era, base] of Object.entries(wareki)) {
-    const m = searchText.match(
-      new RegExp(`${era}(\\d+)年(\\d{1,2})月(\\d{1,2})日`)
-    );
-    if (m?.[1] && m[2] && m[3]) {
-      const y = base + Number(m[1]);
-      return `${y}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
-    }
-  }
-
-  const m = searchText.match(/(\d{4})[.\-\/年](\d{1,2})[.\-\/月](\d{1,2})/);
-  if (m?.[1] && m[2] && m[3]) {
-    return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
-  }
-
-  return null;
+/**
+ * 日付を <span class="command__date"> から取得する。
+ * フォーマットは YYYY-MM-DD。
+ */
+function extractDate(html: string): string | null {
+  const m = html.match(/class="command__date">(\d{4}-\d{2}-\d{2})<\/span>/);
+  return m?.[1] ?? null;
 }
 
-function detectMeetingType(title: string, rawText: string): string {
-  const text = (title + " " + rawText).toLowerCase();
-  if (text.includes("委員会")) return "committee";
-  if (text.includes("臨時会") || text.includes("臨時")) return "extraordinary";
+/**
+ * タイトルから会議種別を決定する。
+ */
+function detectMeetingType(title: string): string {
+  if (title.includes("委員会")) return "committee";
+  if (title.includes("臨時会") || title.includes("臨時")) return "extraordinary";
   return "plenary";
 }
 
-function normalizeFullWidth(str: string): string {
-  return str.replace(/[０-９]/g, (c) =>
-    String.fromCharCode(c.charCodeAt(0) - 0xfee0)
-  );
+// 行政側の役職（答弁者として分類する）
+const ANSWER_ROLES = new Set([
+  "市長",
+  "町長",
+  "村長",
+  "副市長",
+  "副町長",
+  "副村長",
+  "副知事",
+  "知事",
+  "部長",
+  "課長",
+  "室長",
+  "局長",
+  "係長",
+  "主任",
+  "補佐",
+  "主査",
+  "事務局長",
+  "議会事務局長",
+  "書記",
+  "参事",
+  "次長",
+  "理事",
+  "総務部長",
+  "財政部長",
+]);
+
+/**
+ * data-voice-title 属性値から speakerName / speakerRole を抽出する。
+ *
+ * 形式: "◯議長（高瀬博文）" または "◯議会事務局長（八鍬政幸）" など
+ *   → speakerRole="議長", speakerName="高瀬博文"
+ * 括弧なし: "◯議長" → speakerRole="議長", speakerName=null
+ */
+function parseSpeakerFromTitle(voiceTitle: string): {
+  speakerName: string | null;
+  speakerRole: string | null;
+} {
+  // 先頭の ◯ や ○ などの記号を除去
+  const stripped = voiceTitle.replace(/^[◯○◎●]\s*/, "").trim();
+
+  // 「役職（氏名）」形式
+  const withNameMatch = stripped.match(/^(.+?)（(.+?)）$/);
+  if (withNameMatch?.[1] && withNameMatch[2]) {
+    const rawName = withNameMatch[2].trim();
+    const speakerName = rawName.replace(/(さん|くん|君)$/, "").trim();
+    return {
+      speakerRole: withNameMatch[1].trim(),
+      speakerName: speakerName || null,
+    };
+  }
+
+  // 括弧なし（役職のみ）
+  if (stripped.length > 0) {
+    return { speakerRole: stripped, speakerName: null };
+  }
+
+  return { speakerRole: null, speakerName: null };
 }
 
-function stripHtmlTags(html: string): string {
+/**
+ * speakerRole から kind を決定する。
+ * - 議員・委員 → "question"
+ * - 行政側（市長・部長・課長等） → "answer"
+ * - 議長・委員長・不明 → "remark"
+ */
+function classifyKind(speakerRole: string | null): string {
+  if (!speakerRole) return "remark";
+  if (speakerRole.endsWith("議員") || speakerRole.endsWith("委員"))
+    return "question";
+  if (speakerRole === "議長" || speakerRole.endsWith("委員長")) return "remark";
+  // 行政側役職の完全一致・部分一致
+  for (const role of ANSWER_ROLES) {
+    if (speakerRole === role || speakerRole.endsWith(role)) return "answer";
+  }
+  return "remark";
+}
+
+/**
+ * HTML エンティティをデコードし、<br> を改行に変換してタグを除去する。
+ */
+function cleanVoiceText(html: string): string {
   return html
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<[^>]+>/g, "")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
 /**
  * dbsr.jp の議事録詳細 HTML から ParsedStatement 配列を生成する。
  *
- * <ul class="voice__list"> の各 <li> を1発言として抽出する
- * voice__list が見つからない場合は <div class="view__body"> からフォールバック取得する。
+ * <ul class="page-list"> の各 <li class="voice-block"> を1発言として抽出する。
+ * 発言者は data-voice-title 属性から、本文は <p class="voice__text"> から取得する。
  */
 function extractStatements(html: string): ParsedStatement[] {
-  // 主経路: <ul class="voice__list"> の各 <li> を抽出
-  const voiceListMatch = html.match(
-    /<ul[^>]+class="[^"]*voice__list[^"]*"[^>]*>([\s\S]*?)<\/ul>/i
-  );
-  if (voiceListMatch?.[1]) {
-    const parts: string[] = [];
-    const liPattern = /<li[^>]*>([\s\S]*?)<\/li>/gi;
-    let m: RegExpExecArray | null;
-    while ((m = liPattern.exec(voiceListMatch[1])) !== null) {
-      const text = stripHtmlTags(m[1] ?? "")
-        .replace(/\s+/g, " ")
-        .trim();
-      if (text) parts.push(text);
-    }
-    return parts.map((p) => {
-      // TODO 変換処理
-    }));
+  const statements: ParsedStatement[] = [];
+  let offset = 0;
+
+  // voice-block の li を順番に抽出
+  // data-voice-title 属性と voice__text p タグをペアで取得
+  const voiceBlockPattern =
+    /<li[^>]+class="[^"]*voice[_-]block[^"]*"[^>]*data-voice-title="([^"]*)"[^>]*>([\s\S]*?)<\/li>/gi;
+
+  let m: RegExpExecArray | null;
+  while ((m = voiceBlockPattern.exec(html)) !== null) {
+    const voiceTitle = m[1] ?? "";
+    const liInner = m[2] ?? "";
+
+    // <p class="voice__text"> の内容を抽出
+    const textMatch = liInner.match(/<p[^>]+class="[^"]*voice__text[^"]*"[^>]*>([\s\S]*?)<\/p>/i);
+    if (!textMatch?.[1]) continue;
+
+    const content = cleanVoiceText(textMatch[1]);
+    if (!content) continue;
+
+    const { speakerName, speakerRole } = parseSpeakerFromTitle(voiceTitle);
+    const contentHash = createHash("sha256").update(content).digest("hex");
+    const startOffset = offset;
+    const endOffset = offset + content.length;
+
+    statements.push({
+      kind: classifyKind(speakerRole),
+      speakerName,
+      speakerRole,
+      content,
+      contentHash,
+      startOffset,
+      endOffset,
+    });
+
+    offset = endOffset + 1;
   }
 
-  return [];
+  return statements;
 }

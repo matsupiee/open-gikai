@@ -60,7 +60,6 @@ CREATE TABLE "meetings" (
 	"held_on" date NOT NULL,
 	"source_url" text,
 	"external_id" text,
-	"raw_text" text NOT NULL,
 	"status" text DEFAULT 'pending' NOT NULL
 );
 --> statement-breakpoint
