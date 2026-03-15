@@ -88,7 +88,8 @@ function extractDate(html: string): string | null {
  */
 function detectMeetingType(title: string): string {
   if (title.includes("委員会")) return "committee";
-  if (title.includes("臨時会") || title.includes("臨時")) return "extraordinary";
+  if (title.includes("臨時会") || title.includes("臨時"))
+    return "extraordinary";
   return "plenary";
 }
 
@@ -188,6 +189,18 @@ function cleanVoiceText(html: string): string {
 }
 
 /**
+ * 「◯役職（氏名）　本文」形式の先頭から発言者ヘッダーを除去する。
+ * data-voice-title に発言者情報が別途存在するため、content には本文のみを格納する。
+ */
+function stripSpeakerPrefix(content: string): string {
+  // ◯総務課長（小海途　聡君）　… のような先頭ヘッダーを除去
+  // ◯役職（氏名）〔登壇〕 のような先頭ヘッダーを除去（〔〕の補足表記は任意）
+  return content
+    .replace(/^[◯○◎●][^（\n]*(?:（[^）]*）)?(?:〔[^〕]*〕)?[\s\u3000\n]+/, "")
+    .trim();
+}
+
+/**
  * dbsr.jp の議事録詳細 HTML から ParsedStatement 配列を生成する。
  *
  * <ul class="page-list"> の各 <li class="voice-block"> を1発言として抽出する。
@@ -208,10 +221,15 @@ function extractStatements(html: string): ParsedStatement[] {
     const liInner = m[2] ?? "";
 
     // <p class="voice__text"> の内容を抽出
-    const textMatch = liInner.match(/<p[^>]+class="[^"]*voice__text[^"]*"[^>]*>([\s\S]*?)<\/p>/i);
+    const textMatch = liInner.match(
+      /<p[^>]+class="[^"]*voice__text[^"]*"[^>]*>([\s\S]*?)<\/p>/i
+    );
     if (!textMatch?.[1]) continue;
 
-    const content = cleanVoiceText(textMatch[1]);
+    const rawContent = cleanVoiceText(textMatch[1]);
+    if (!rawContent) continue;
+
+    const content = stripSpeakerPrefix(rawContent);
     if (!content) continue;
 
     const { speakerName, speakerRole } = parseSpeakerFromTitle(voiceTitle);
