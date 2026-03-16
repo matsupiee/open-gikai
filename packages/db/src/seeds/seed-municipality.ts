@@ -10,7 +10,7 @@ import { system_types, SYSTEM_TYPES_SEED } from "../schema/system-types";
 import type { SystemType } from "../schema/system-types";
 
 dotenv.config({
-  path: "../../apps/web/.env", // packages/dbから見た相対pathを書く
+  path: "../../apps/web/.env.local", // packages/dbから見た相対pathを書く
 });
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -73,7 +73,7 @@ async function seed() {
 
   // 1. system_types を先に upsert する
   console.log(
-    `[seed] system_types を ${SYSTEM_TYPES_SEED.length} 件 upsert します`
+    `[seed] system_types を ${SYSTEM_TYPES_SEED.length} 件 upsert します`,
   );
   await db
     .insert(system_types)
