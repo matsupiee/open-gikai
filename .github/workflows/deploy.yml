@@ -13,6 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    env:
+      # GitHub Actions ランナーは IPv6 非対応のため IPv4 を優先する
+      NODE_OPTIONS: "--dns-result-order=ipv4first"
+
     steps:
       - uses: actions/checkout@v4
 
