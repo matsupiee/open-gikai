@@ -1,4 +1,4 @@
-import alchemy from "alchemy";
+import alchemy, { CloudflareStateStore } from "alchemy";
 import { Queue, TanStackStart, Worker } from "alchemy/cloudflare";
 import { config } from "dotenv";
 
@@ -7,6 +7,7 @@ config({ path: "../../apps/web/.env" });
 
 const app = await alchemy("open-gikai", {
   password: process.env.ALCHEMY_PASSWORD,
+  stateStore: (scope) => new CloudflareStateStore(scope),
 });
 
 const scraperQueue = await Queue("scraper-jobs", {
