@@ -5,7 +5,9 @@ import { config } from "dotenv";
 config({ path: "./.env" });
 config({ path: "../../apps/web/.env" });
 
-const app = await alchemy("open-gikai");
+const app = await alchemy("open-gikai", {
+  password: process.env.ALCHEMY_PASSWORD,
+});
 
 const scraperQueue = await Queue("scraper-jobs", {
   name: "scraper-jobs",
@@ -20,6 +22,7 @@ const scraperQueue = await Queue("scraper-jobs", {
  */
 const scraperWorker = await Worker("scraper-worker", {
   entrypoint: "../../apps/scraper-worker/src/index.ts",
+  compatibilityFlags: ["nodejs_compat"],
   crons: ["*/1 * * * *"], // 1 分ごとに pending ジョブを確認
   eventSources: [
     {
@@ -43,6 +46,7 @@ const scraperWorker = await Worker("scraper-worker", {
  */
 export const web = await TanStackStart("web", {
   cwd: "../../apps/web",
+  domains: ["opengikai.com"],
   bindings: {
     DATABASE_URL: alchemy.secret.env.DATABASE_URL!,
     CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
