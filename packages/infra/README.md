@@ -24,7 +24,8 @@ Alchemy がデプロイ時にこれらを読み取り、Cloudflare Workers Secre
 |--------|------|
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API 認証 |
 | `ALCHEMY_PASSWORD` | Alchemy の state 暗号化 |
-| `DATABASE_URL` | DB マイグレーション + Workers binding |
+| `DATABASE_URL` | Workers binding（直接接続） |
+| `DATABASE_MIGRATION_URL` | DB マイグレーション用（Session Pooler, IPv4） |
 | `BETTER_AUTH_SECRET` | 認証用シークレット（Workers binding） |
 | `BETTER_AUTH_URL` | 認証のベース URL（Workers binding） |
 | `CORS_ORIGIN` | CORS 設定（Workers binding） |
@@ -36,7 +37,10 @@ Alchemy がデプロイ時にこれらを読み取り、Cloudflare Workers Secre
 gh secret set -f apps/web/.env
 gh secret set -f packages/infra/.env
 
-# Cloudflare API トークンは個別に登録
+# マイグレーション用の Session Pooler URL（Supabase ダッシュボードから取得）
+gh secret set DATABASE_MIGRATION_URL
+
+# Cloudflare API トークン
 # https://dash.cloudflare.com/profile/api-tokens で作成（テンプレート: Edit Cloudflare Workers）
 gh secret set CLOUDFLARE_API_TOKEN
 
