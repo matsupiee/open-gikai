@@ -1,4 +1,5 @@
-import alchemy, { CloudflareStateStore } from "alchemy";
+import alchemy from "alchemy";
+import { CloudflareStateStore } from "alchemy/state";
 import { Queue, TanStackStart, Worker } from "alchemy/cloudflare";
 import { config } from "dotenv";
 
