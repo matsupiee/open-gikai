@@ -1,0 +1,96 @@
+name: Monitor Scraper Logs
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: monitor-logs
+  cancel-in-progress: true
+
+jobs:
+  check-logs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.10"
+
+      - run: bun install --frozen-lockfile
+
+      - name: Check scraper logs for errors
+        id: check
+        run: bun run scripts/check-logs.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Check for existing recent issues
+        if: steps.check.outputs.has_errors == 'true'
+        id: existing
+        run: |
+          recent_issues=$(gh issue list \
+            --label "scraper-error" \
+            --state open \
+            --search "scraper error" \
+            --limit 5 \
+            --json title,createdAt,number)
+          echo "recent_issues<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$recent_issues" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Analyze errors with Claude Code
+        if: steps.check.outputs.has_errors == 'true'
+        run: |
+          npm install -g @anthropic-ai/claude-code
+
+          ERROR_LOGS=$(cat /tmp/error-logs.json)
+          EXISTING_ISSUES="${{ steps.existing.outputs.recent_issues }}"
+
+          claude -p "You are analyzing scraper worker error logs for the open-gikai project.
+
+          ## Error Logs (past 1 hour)
+          \`\`\`json
+          ${ERROR_LOGS}
+          \`\`\`
+
+          ## Existing Open Issues (labeled scraper-error)
+          \`\`\`json
+          ${EXISTING_ISSUES}
+          \`\`\`
+
+          ## Instructions
+          1. Analyze the errors and identify root causes.
+          2. Check if any existing open issue already covers this error. If so, add a comment to that issue with the latest occurrence details using 'gh issue comment'.
+          3. If this is a new error not covered by existing issues, create a new GitHub issue with:
+             - A clear title describing the error
+             - Label: scraper-error
+             - Body containing: error summary, affected jobs, timestamps, and suggested fix
+             - Use 'gh issue create' command
+          4. If the fix is straightforward and you can implement it confidently:
+             - Create a new branch from main
+             - Make the fix
+             - Push and create a PR referencing the issue
+             - Use 'gh pr create' command
+          5. If you cannot fix it, just ensure the issue is created/updated.
+
+          Important:
+          - The project uses Bun, Drizzle ORM, Cloudflare Workers
+          - Scraper worker code is in apps/scraper-worker/
+          - DB schema is in packages/db/src/schema/
+          - Do NOT create duplicate issues
+          - Always use the scraper-error label"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
