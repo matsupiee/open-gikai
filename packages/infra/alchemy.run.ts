@@ -9,6 +9,9 @@ config({ path: "../../apps/web/.env" });
 const app = await alchemy("open-gikai", {
   password: process.env.ALCHEMY_PASSWORD,
   stateStore: (scope) => new CloudflareStateStore(scope),
+  // 既存の Cloudflare リソースを state に取り込む（初回 CI デプロイ用）
+  // state 同期完了後に false に戻す
+  adopt: true,
 });
 
 const scraperQueue = await Queue("scraper-jobs", {
