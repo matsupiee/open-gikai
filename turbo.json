@@ -29,7 +29,8 @@
       "cache": false
     },
     "db:migrate": {
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL"]
     },
     "db:studio": {
       "cache": false,
@@ -44,7 +45,15 @@
       "persistent": false
     },
     "deploy": {
-      "cache": false
+      "cache": false,
+      "env": [
+        "CLOUDFLARE_API_TOKEN",
+        "ALCHEMY_PASSWORD",
+        "DATABASE_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "CORS_ORIGIN"
+      ]
     },
     "destroy": {
       "cache": false
