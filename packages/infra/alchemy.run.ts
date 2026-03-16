@@ -7,6 +7,7 @@ config({ path: "./.env" });
 config({ path: "../../apps/web/.env" });
 
 const app = await alchemy("open-gikai", {
+  stage: "production",
   password: process.env.ALCHEMY_PASSWORD,
   stateStore: (scope) => new CloudflareStateStore(scope),
   // 既存の Cloudflare リソースを state に取り込む（初回 CI デプロイ用）
@@ -26,6 +27,7 @@ const scraperQueue = await Queue("scraper-jobs", {
  * 1分ごとに pending ジョブを確認して、ジョブがあればジョブを実行する
  */
 const scraperWorker = await Worker("scraper-worker", {
+  name: "open-gikai-scraper-worker",
   entrypoint: "../../apps/scraper-worker/src/index.ts",
   compatibilityFlags: ["nodejs_compat"],
   crons: ["*/1 * * * *"], // 1 分ごとに pending ジョブを確認
@@ -50,6 +52,7 @@ const scraperWorker = await Worker("scraper-worker", {
  * フロントエンドサーバーのCloudflare Worker
  */
 export const web = await TanStackStart("web", {
+  name: "open-gikai-web",
   cwd: "../../apps/web",
   domains: ["opengikai.com"],
   bindings: {
