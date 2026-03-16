@@ -12,14 +12,13 @@ export function getDb(): Db {
   return createDb(cfEnv.HYPERDRIVE.connectionString);
 }
 
-let _auth: Auth | null = null;
-
-/** Web アプリ用の auth インスタンス（遅延初期化） */
+/**
+ * Web アプリ用の auth インスタンスを取得する。
+ * Hyperdrive の接続文字列はリクエストごとに変わるため、毎回新しい DB で生成する。
+ */
 export function getAuth(): Auth {
-  if (!_auth)
-    _auth = createAuth({
-      db: getDb(),
-      trustedOrigins: env.CORS_ORIGIN,
-    });
-  return _auth;
+  return createAuth({
+    db: getDb(),
+    trustedOrigins: env.CORS_ORIGIN,
+  });
 }
