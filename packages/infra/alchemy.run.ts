@@ -48,9 +48,37 @@ const scraperWorker = await Worker("scraper-worker", {
   },
 });
 
+// DATABASE_URL のパスワードに特殊文字（@, %, ! 等）が含まれるため
+// 接続文字列ではなくオブジェクト形式で origin を渡す
+function parseDatabaseUrl(url: string) {
+  const withoutScheme = url.replace(/^postgres(ql)?:\/\//, "");
+  const lastAtIndex = withoutScheme.lastIndexOf("@");
+  const userInfo = withoutScheme.slice(0, lastAtIndex);
+  const hostInfo = withoutScheme.slice(lastAtIndex + 1);
+  const firstColonIndex = userInfo.indexOf(":");
+  const [hostPort, ...rest] = hostInfo.split("/");
+  const database = (rest.join("/") || "postgres").split("?")[0]!;
+  const [host, portStr] = hostPort!.split(":");
+  return {
+    user: userInfo.slice(0, firstColonIndex),
+    password: userInfo.slice(firstColonIndex + 1),
+    host: host!,
+    port: Number(portStr) || 5432,
+    database,
+  };
+}
+
+const dbConfig = parseDatabaseUrl(process.env.DATABASE_URL!);
 const hyperdrive = await Hyperdrive("database", {
   name: "open-gikai-database",
-  origin: alchemy.secret.env.DATABASE_URL!,
+  origin: {
+    host: dbConfig.host,
+    port: dbConfig.port,
+    database: dbConfig.database,
+    user: dbConfig.user,
+    password: dbConfig.password,
+    scheme: "postgres",
+  },
 });
 
 /**
