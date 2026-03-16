@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": ["Bash(*)"],
+    "bash": {
+      "allow": ["*"],
+      "deny": [
+        "rm -rf /",
+        "rm -rf ~",
+        "sudo rm -rf /",
+        "shutdown",
+        "reboot",
+        "mkfs*",
+        "dd if=* of=/dev/*",
+        ">: /dev/sd*",
+        "chmod -R 777 /",
+        "chown -R * /",
+        "git clean -fdx"
+      ]
+    }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": ["supabase"],
+  "fileSystem": {
+    "read": ["**"],
+    "write": ["**"]
+  }
+}
