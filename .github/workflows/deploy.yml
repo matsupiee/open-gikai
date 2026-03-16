@@ -25,12 +25,12 @@ jobs:
       # マイグレーションは Session Pooler (IPv4) 経由で実行
       # ランタイム用の DATABASE_URL とは別の接続先を使う
       - name: Run database migrations
-        run: bun run db:migrate
+        run: bunx turbo -F @open-gikai/db db:migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
 
       - name: Deploy to Cloudflare
-        run: bun run deploy
+        run: bunx turbo -F @open-gikai/infra deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
