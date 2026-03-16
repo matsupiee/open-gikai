@@ -54,7 +54,7 @@ function RootDocument() {
       <body>
         <div className="min-h-svh flex flex-col">
           <Header />
-          <main className="flex-1">
+          <main className="flex flex-1 flex-col">
             <Outlet />
           </main>
         </div>

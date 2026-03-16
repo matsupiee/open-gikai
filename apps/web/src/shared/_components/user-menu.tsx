@@ -11,6 +11,8 @@ import {
 } from "@/shared/_components/ui/dropdown-menu";
 import { authClient } from "@/lib/better-auth/auth-client";
 
+import { User } from "lucide-react";
+
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 
@@ -33,7 +35,9 @@ export default function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">{session.user.name}</Button>
+        <Button variant="outline" size="icon">
+            <User className="size-4" />
+          </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-card">
         <DropdownMenuGroup>
