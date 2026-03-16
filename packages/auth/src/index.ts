@@ -21,6 +21,11 @@ export function createAuth({ db, trustedOrigins }: CreateAuthOptions) {
       enabled: true,
     },
     plugins: [tanstackStartCookies()],
+    advanced: {
+      ipAddress: {
+        ipAddressHeaders: ["cf-connecting-ip"],
+      },
+    },
   });
 }
 

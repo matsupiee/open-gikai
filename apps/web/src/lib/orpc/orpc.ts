@@ -13,6 +13,14 @@ import { getRequest } from "@tanstack/react-start/server";
 import { toast } from "sonner";
 
 export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
   queryCache: new QueryCache({
     onError: (error, query) => {
       toast.error(`Error: ${error.message}`, {
