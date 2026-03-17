@@ -15,6 +15,10 @@ export const users = pgTable("users", {
   email: text().notNull().unique(),
   emailVerified: boolean().default(false).notNull(),
   image: text(),
+  role: text(),
+  banned: boolean().default(false),
+  banReason: text(),
+  banExpires: timestamp(),
 });
 
 export const sessions = pgTable(
@@ -35,8 +39,9 @@ export const sessions = pgTable(
     userId: text()
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    impersonatedBy: text(), // このカラムは現在使われてないのでリレーションは不要
   },
-  (table) => [index().on(table.userId)]
+  (table) => [index().on(table.userId)],
 );
 
 export const accounts = pgTable(
@@ -63,7 +68,7 @@ export const accounts = pgTable(
     scope: text(),
     password: text(),
   },
-  (table) => [index().on(table.userId)]
+  (table) => [index().on(table.userId)],
 );
 
 export const verifications = pgTable(
@@ -81,7 +86,7 @@ export const verifications = pgTable(
     value: text().notNull(),
     expiresAt: timestamp().notNull(),
   },
-  (table) => [index().on(table.identifier)]
+  (table) => [index().on(table.identifier)],
 );
 
 export const userRelations = relations(users, ({ many }) => ({

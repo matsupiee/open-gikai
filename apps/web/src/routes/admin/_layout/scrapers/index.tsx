@@ -25,7 +25,7 @@ import {
   TableRow,
 } from "@/shared/_components/ui/table";
 
-export const Route = createFileRoute("/admin/scrapers/")({
+export const Route = createFileRoute("/admin/_layout/scrapers/")({
   component: ScrapersPage,
 });
 

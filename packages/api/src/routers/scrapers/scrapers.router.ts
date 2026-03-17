@@ -1,4 +1,4 @@
-import { publicProcedure as protectedProcedure } from "../../index";
+import { adminProcedure } from "../../index";
 import {
   scrapersListJobsSchema,
   scrapersCreateJobSchema,
@@ -19,31 +19,31 @@ import {
 } from "./scrapers.service";
 
 export const scrapersRouter = {
-  listJobs: protectedProcedure
+  listJobs: adminProcedure
     .input(scrapersListJobsSchema)
     .handler(({ input, context }) => listJobs(context.db, input)),
 
-  createJob: protectedProcedure
+  createJob: adminProcedure
     .input(scrapersCreateJobSchema)
     .handler(({ input, context }) => createJob(context.db, input)),
 
-  getJob: protectedProcedure
+  getJob: adminProcedure
     .input(scrapersGetJobSchema)
     .handler(({ input, context }) => getJob(context.db, input)),
 
-  cancelJob: protectedProcedure
+  cancelJob: adminProcedure
     .input(scrapersCancelJobSchema)
     .handler(({ input, context }) => cancelJob(context.db, input)),
 
-  getJobLogs: protectedProcedure
+  getJobLogs: adminProcedure
     .input(scrapersGetJobLogsSchema)
     .handler(({ input, context }) => getJobLogs(context.db, input)),
 
-  listMunicipalities: protectedProcedure
+  listMunicipalities: adminProcedure
     .input(scrapersListMunicipalitiesSchema)
     .handler(({ input, context }) => listMunicipalities(context.db, input)),
 
-  reprocessStatements: protectedProcedure
+  reprocessStatements: adminProcedure
     .input(scrapersReprocessStatementsSchema)
     .handler(({ input, context }) => reprocessStatements(context.db, input)),
 };

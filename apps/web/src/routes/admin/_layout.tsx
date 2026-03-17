@@ -8,6 +8,9 @@ export const Route = createFileRoute("/admin/_layout")({
     if (!session?.user) {
       throw redirect({ to: "/sign-in" });
     }
+    if (session.user.role !== "admin") {
+      throw redirect({ to: "/" });
+    }
   },
   component: AdminLayout,
 });

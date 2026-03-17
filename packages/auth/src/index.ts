@@ -2,6 +2,7 @@ import type { Db } from "@open-gikai/db";
 import * as schema from "@open-gikai/db/schema/auth";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { admin } from "better-auth/plugins/admin";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 
 export interface CreateAuthOptions {
@@ -20,7 +21,7 @@ export function createAuth({ db, trustedOrigins }: CreateAuthOptions) {
     emailAndPassword: {
       enabled: true,
     },
-    plugins: [tanstackStartCookies()],
+    plugins: [tanstackStartCookies(), admin({ defaultRole: "user" })],
     advanced: {
       ipAddress: {
         ipAddressHeaders: ["cf-connecting-ip"],

@@ -5,7 +5,7 @@ import { orpc } from "@/lib/orpc/orpc";
 import { Badge } from "@/shared/_components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/_components/ui/card";
 
-export const Route = createFileRoute("/admin/")({
+export const Route = createFileRoute("/admin/_layout/")({
   component: AdminDashboard,
 });
 

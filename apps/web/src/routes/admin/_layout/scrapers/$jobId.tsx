@@ -8,7 +8,7 @@ import { Badge } from "@/shared/_components/ui/badge";
 import { Button } from "@/shared/_components/ui/button";
 import { Progress } from "@/shared/_components/ui/progress";
 
-export const Route = createFileRoute("/admin/scrapers/$jobId")({
+export const Route = createFileRoute("/admin/_layout/scrapers/$jobId")({
   component: JobDetailPage,
 });
 
