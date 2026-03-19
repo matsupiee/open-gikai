@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "scrape:local": "bun --env-file ../web/.env src/utils/local-runner.ts"
   },
   "dependencies": {
@@ -16,6 +18,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251213.0",
     "@open-gikai/config": "workspace:*",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^4.1.0"
   }
 }

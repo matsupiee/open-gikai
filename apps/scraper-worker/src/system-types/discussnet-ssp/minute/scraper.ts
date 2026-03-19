@@ -125,7 +125,8 @@ export async function fetchMinuteData(
 // --- 内部ユーティリティ ---
 
 /** minute_type_code から kind を決定する */
-function classifyKindByCode(code: number): string | null {
+/** @internal テスト用にexport */
+export function classifyKindByCode(code: number): string | null {
   if (code === 4) return "remark"; // 議長発言
   if (code === 5) return "question"; // 質問
   if (code === 6) return "answer"; // 答弁
@@ -137,7 +138,8 @@ function classifyKindByCode(code: number): string | null {
  * title フィールドから speakerName / speakerRole を抽出する。
  * DiscussNet SSP の title は "田中市長" / "山田委員" のような「氏名+役職」形式を想定。
  */
-function parseSpeakerFromTitle(title: string): {
+/** @internal テスト用にexport */
+export function parseSpeakerFromTitle(title: string): {
   speakerName: string | null;
   speakerRole: string | null;
 } {
@@ -156,7 +158,8 @@ function parseSpeakerFromTitle(title: string): {
   return { speakerRole, speakerName };
 }
 
-function extractTextFromBody(body: string): string {
+/** @internal テスト用にexport */
+export function extractTextFromBody(body: string): string {
   return body
     .replace(/<pre[^>]*>/gi, "")
     .replace(/<\/pre>/gi, "")
@@ -164,7 +167,8 @@ function extractTextFromBody(body: string): string {
     .trim();
 }
 
-function extractDateFromMemberList(memberList: string): string | null {
+/** @internal テスト用にexport */
+export function extractDateFromMemberList(memberList: string): string | null {
   const text = normalizeFullWidth(
     memberList.replace(/<[^>]+>/g, "").replace(/&[a-z]+;/gi, " ")
   );
@@ -195,7 +199,8 @@ function normalizeScheduleName(name: string): string {
   return normalizeFullWidth(name).trim();
 }
 
-function detectMeetingType(councilName: string): string {
+/** @internal テスト用にexport */
+export function detectMeetingType(councilName: string): string {
   if (councilName.includes("委員会")) return "committee";
   if (councilName.includes("臨時会")) return "extraordinary";
   return "plenary";

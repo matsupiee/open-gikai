@@ -75,7 +75,8 @@ const ANSWER_ROLES = new Set([
   "主査",
 ]);
 
-function parseSpeaker(text: string): {
+/** @internal テスト用にexport */
+export function parseSpeaker(text: string): {
   speakerName: string | null;
   speakerRole: string | null;
   content: string;
@@ -142,7 +143,8 @@ function parseSpeaker(text: string): {
   return { speakerName: null, speakerRole: null, content: stripped.trim() };
 }
 
-function classifyKind(speakerRole: string | null): string {
+/** @internal テスト用にexport */
+export function classifyKind(speakerRole: string | null): string {
   if (!speakerRole) return "remark";
   if (ANSWER_ROLES.has(speakerRole)) return "answer";
   if (speakerRole === "議長" || speakerRole === "委員長") return "remark";
@@ -159,7 +161,8 @@ function classifyKind(speakerRole: string | null): string {
  * plain text は ○ マーカーで始まる発言ブロックの連続。
  * 複数行にまたがる発言は空白で連結してひとつの content にまとめる。
  */
-function parseStatementsFromPlainText(text: string): ParsedStatement[] {
+/** @internal テスト用にexport */
+export function parseStatementsFromPlainText(text: string): ParsedStatement[] {
   // ○ 記号の前で分割（ルックアヘッド）
   const blocks = text.split(/(?=[○◯◎●])/);
   const statements: ParsedStatement[] = [];

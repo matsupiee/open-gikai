@@ -65,7 +65,8 @@ export async function fetchMeetingDetail(
 /**
  * タイトルを <span class="command__docname"> から取得する。
  */
-function extractTitle(html: string): string | null {
+/** @internal テスト用にexport */
+export function extractTitle(html: string): string | null {
   const m = html.match(/class="command__docname">([^<]+)<\/span>/);
   if (m?.[1]) {
     const title = m[1].replace(/\s+/g, " ").trim();
@@ -78,7 +79,8 @@ function extractTitle(html: string): string | null {
  * 日付を <span class="command__date"> から取得する。
  * フォーマットは YYYY-MM-DD。
  */
-function extractDate(html: string): string | null {
+/** @internal テスト用にexport */
+export function extractDate(html: string): string | null {
   const m = html.match(/class="command__date">(\d{4}-\d{2}-\d{2})<\/span>/);
   return m?.[1] ?? null;
 }
@@ -86,7 +88,8 @@ function extractDate(html: string): string | null {
 /**
  * タイトルから会議種別を決定する。
  */
-function detectMeetingType(title: string): string {
+/** @internal テスト用にexport */
+export function detectMeetingType(title: string): string {
   if (title.includes("委員会")) return "committee";
   if (title.includes("臨時会") || title.includes("臨時"))
     return "extraordinary";
@@ -128,7 +131,8 @@ const ANSWER_ROLES = new Set([
  *   → speakerRole="議長", speakerName="高瀬博文"
  * 括弧なし: "◯議長" → speakerRole="議長", speakerName=null
  */
-function parseSpeakerFromTitle(voiceTitle: string): {
+/** @internal テスト用にexport */
+export function parseSpeakerFromTitle(voiceTitle: string): {
   speakerName: string | null;
   speakerRole: string | null;
 } {
@@ -160,7 +164,8 @@ function parseSpeakerFromTitle(voiceTitle: string): {
  * - 行政側（市長・部長・課長等） → "answer"
  * - 議長・委員長・不明 → "remark"
  */
-function classifyKind(speakerRole: string | null): string {
+/** @internal テスト用にexport */
+export function classifyKind(speakerRole: string | null): string {
   if (!speakerRole) return "remark";
   if (speakerRole.endsWith("議員") || speakerRole.endsWith("委員"))
     return "question";
@@ -177,7 +182,8 @@ function classifyKind(speakerRole: string | null): string {
 /**
  * HTML エンティティをデコードし、<br> を改行に変換してタグを除去する。
  */
-function cleanVoiceText(html: string): string {
+/** @internal テスト用にexport */
+export function cleanVoiceText(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<[^>]+>/g, "")
@@ -194,7 +200,8 @@ function cleanVoiceText(html: string): string {
  * 「◯役職（氏名）　本文」形式の先頭から発言者ヘッダーを除去する。
  * data-voice-title に発言者情報が別途存在するため、content には本文のみを格納する。
  */
-function stripSpeakerPrefix(content: string): string {
+/** @internal テスト用にexport */
+export function stripSpeakerPrefix(content: string): string {
   // ◯総務課長（小海途　聡君）　… のような先頭ヘッダーを除去
   // ◯役職（氏名）〔登壇〕 のような先頭ヘッダーを除去（〔〕の補足表記は任意）
   return content
@@ -208,7 +215,8 @@ function stripSpeakerPrefix(content: string): string {
  * <ul class="page-list"> の各 <li class="voice-block"> を1発言として抽出する。
  * 発言者は data-voice-title 属性から、本文は <p class="voice__text"> から取得する。
  */
-function extractStatements(html: string): ParsedStatement[] {
+/** @internal テスト用にexport */
+export function extractStatements(html: string): ParsedStatement[] {
   const statements: ParsedStatement[] = [];
   let offset = 0;
 

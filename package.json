@@ -30,6 +30,7 @@
     "db:generate": "turbo -F @open-gikai/db db:generate",
     "db:migrate": "turbo -F @open-gikai/db db:migrate",
     "db:seed": "turbo -F @open-gikai/db db:seed",
+    "test": "turbo test",
     "check": "oxlint && oxfmt --write",
     "scrape:local": "turbo -F @open-gikai/scraper-worker scrape:local"
   },

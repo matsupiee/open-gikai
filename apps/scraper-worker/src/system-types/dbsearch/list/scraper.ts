@@ -124,7 +124,8 @@ function toHttpsOrigin(baseUrl: string): string {
   return url.origin;
 }
 
-function extractCsrfToken(html: string): string | null {
+/** @internal テスト用にexport */
+export function extractCsrfToken(html: string): string | null {
   const m = html.match(/name="csrf-token"\s+content="([^"]+)"/);
   return m?.[1] ?? null;
 }
@@ -148,7 +149,8 @@ function buildCookieHeader(headers: Headers): string {
  * 旧形式: action="https://foo.dbsr.jp/index.php/12345"
  * 新形式: action="https://www.record.gikai.metro.tokyo.lg.jp/916983"
  */
-function extractFormActionId(html: string): string | null {
+/** @internal テスト用にexport */
+export function extractFormActionId(html: string): string | null {
   const m = html.match(/action="[^"]+\/(\d+)(?:\?[^"]*)?"/);
   return m?.[1] ?? null;
 }
@@ -159,7 +161,8 @@ function extractFormActionId(html: string): string | null {
  * 旧形式: /index.php/12345
  * 新形式: /100000?Template=search-phrase
  */
-function extractEndpointIdFromUrl(url: string): string | null {
+/** @internal テスト用にexport */
+export function extractEndpointIdFromUrl(url: string): string | null {
   const m =
     url.match(/\/index\.php\/(\d+)/) ?? url.match(/\/(\d+)(?:\?|$)/);
   return m?.[1] ?? null;
@@ -170,7 +173,8 @@ function extractEndpointIdFromUrl(url: string): string | null {
  * 旧形式: href="...?Template=view&Id={docId}..."
  * 新形式: href="...?Template=document&Id={docId}..."
  */
-function parseListHtml(
+/** @internal テスト用にexport */
+export function parseListHtml(
   html: string,
   origin: string
 ): DbsearchMeetingRecord[] {
@@ -203,7 +207,8 @@ function parseListHtml(
 /**
  * 結果ページに「次のページ」ボタンが存在するか確認する。
  */
-function hasNextPage(html: string): boolean {
+/** @internal テスト用にexport */
+export function hasNextPage(html: string): boolean {
   // aria-label="次のページ" かつ aria-disabled="false" のボタンがあれば次ページあり
   return /aria-label="次のページ"[^>]*aria-disabled="false"|aria-disabled="false"[^>]*aria-label="次のページ"/.test(
     html
