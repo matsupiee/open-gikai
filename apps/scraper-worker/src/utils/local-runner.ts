@@ -21,13 +21,9 @@ import { handleQueueMessage, handleMessageError } from "./handle-message";
 import { fetchPendingJobs } from "./jobs";
 import { updateScraperJobStatus } from "./job-logger";
 
-const DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) {
-  console.error("[local-runner] DATABASE_URL is required");
-  process.exit(1);
-}
+import { env } from "@open-gikai/env/db";
 
-const db = createDb(DATABASE_URL);
+const db = createDb(env.DATABASE_URL);
 
 /** Cloudflare Queue<ScraperQueueMessage> の最小互換モック */
 class LocalQueue {

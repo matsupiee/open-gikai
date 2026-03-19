@@ -1,10 +1,6 @@
 import alchemy from "alchemy";
 import { CloudflareStateStore } from "alchemy/state";
 import { Hyperdrive, Queue, TanStackStart, Worker } from "alchemy/cloudflare";
-import { config } from "dotenv";
-
-config({ path: "./.env" });
-config({ path: "../../apps/web/.env" });
 
 const app = await alchemy("open-gikai", {
   stage: "production",

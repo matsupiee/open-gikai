@@ -6,10 +6,11 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "scrape:local": "bun --env-file ../web/.env src/utils/local-runner.ts"
+    "scrape:local": "bun src/utils/local-runner.ts"
   },
   "dependencies": {
     "@open-gikai/db": "workspace:*",
+    "@open-gikai/env": "workspace:*",
     "@paralleldrive/cuid2": "^3.3.0",
     "cheerio": "^1.0.0",
     "drizzle-orm": "^0.45.1",

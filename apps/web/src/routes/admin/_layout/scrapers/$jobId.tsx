@@ -23,7 +23,7 @@ function JobDetailPage() {
       input: { jobId },
       refetchInterval: (query) => {
         const status = query.state.data?.status;
-        return status && TERMINAL_STATUSES.has(status) ? false : 2000;
+        return status && TERMINAL_STATUSES.has(status) ? false : 10_000;
       },
     })
   );
@@ -32,8 +32,8 @@ function JobDetailPage() {
     orpc.scrapers.getJobLogs.queryOptions({
       input: { jobId, limit: 500 },
       refetchInterval: (_query) => {
-        if (!job) return 500;
-        return TERMINAL_STATUSES.has(job.status) ? false : 500;
+        if (!job) return 10_000;
+        return TERMINAL_STATUSES.has(job.status) ? false : 10_000;
       },
     })
   );

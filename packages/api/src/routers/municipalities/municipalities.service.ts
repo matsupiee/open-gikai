@@ -23,7 +23,8 @@ export interface MunicipalitiesListResponse {
 
 export async function listMunicipalities(
   db: Db,
-  input: z.infer<typeof municipalitiesListSchema>
+  input: z.infer<typeof municipalitiesListSchema>,
+  isAdmin: boolean
 ): Promise<MunicipalitiesListResponse> {
   const limit = input.limit ?? 50;
   const offset = input.offset ?? 0;
@@ -84,7 +85,10 @@ export async function listMunicipalities(
   ]);
 
   return {
-    municipalities: results as MunicipalityListItem[],
+    municipalities: results.map((r) => ({
+      ...r,
+      baseUrl: isAdmin ? r.baseUrl : null,
+    })) as MunicipalityListItem[],
     total: countRow?.total ?? 0,
   };
 }

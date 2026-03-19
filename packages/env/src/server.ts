@@ -1,9 +1,13 @@
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
-dotenv.config({ path: ".env.local", override: true });
-dotenv.config({ path: ".env" });
+// packages/env/src/server.ts → 4階層上がリポジトリルート
+const root = resolve(fileURLToPath(import.meta.url), "../../../../");
+dotenv.config({ path: resolve(root, ".env.local"), override: true });
+dotenv.config({ path: resolve(root, ".env") });
 
 export const env = createEnv({
   server: {

@@ -10,7 +10,7 @@ import { system_types, SYSTEM_TYPES_SEED } from "../schema/system-types";
 import type { SystemType } from "../schema/system-types";
 
 dotenv.config({
-  path: "../../apps/web/.env.local", // packages/dbから見た相対pathを書く
+  path: "../../.env.local",
 });
 
 const DATABASE_URL = process.env.DATABASE_URL;
