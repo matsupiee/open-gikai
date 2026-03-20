@@ -1,7 +1,7 @@
 ---
 name: scraper-troubleshooting
 description: open-gikai スクレイパーのトラブルシューティング手順と既知のハマりポイント
-version: 1.0.0
+version: 2.0.0
 source: local-git-analysis
 ---
 
@@ -11,27 +11,95 @@ source: local-git-analysis
 
 ```
 DB (scraper_jobs: status=pending)
-  ↓ scheduled cron (1分毎)
-Cloudflare Queue → scraper-worker
-  ↓ message type switch
-  start-job → ndl-page / kagoshima-council / local-target
+  ↓ scheduled cron (1分毎) — apps/scraper-worker/src/index.ts
+dispatchJob() — systemType に応じて最初のキューメッセージを投入
+  ↓ Cloudflare Queue (SCRAPER_QUEUE binding)
+handleQueueMessage() — メッセージタイプで分岐
+  ↓
+  discussnet-ssp:schedule → discussnet-ssp:minute
+  dbsearch:list → dbsearch:detail
+  kensakusystem:list → kensakusystem:detail
+  gijiroku-com:list → gijiroku-com:detail
 ```
 
-ローカル開発は `bun --env-file ../web/.env src/utils/local-runner.ts` で代替。
-LocalQueue がインメモリキューとして Cloudflare Queue を模倣する。
+ローカル開発は `local-runner.local.ts` で代替。LocalQueue がインメモリキューとして Cloudflare Queue を模倣する。
 
 ---
 
-## デバッグ手順
+## ローカルで動作確認する手順
 
-### 1. ジョブのステータスとログを確認する
+### 前提条件
 
-まずDBのログを確認する。ジョブ失敗の root cause はほぼ `scraper_job_logs` に記録されている。
+- `.env.local` がプロジェクトルートに存在し、`DATABASE_URL` が設定されていること
+- `bun install` が完了していること
+- DB にマイグレーションが適用済みであること
+
+### Step 1: 対象自治体の情報を確認する
+
+`apps/scraper-worker` ディレクトリで実行する。
 
 ```ts
-// check-logs.ts (scraper-worker ディレクトリで実行)
+// bun -e で実行
+import dotenv from "dotenv";
+import { resolve } from "node:path";
+dotenv.config({ path: resolve(process.cwd(), "../../.env.local"), override: true });
 import { createDb } from "@open-gikai/db";
-import { scraper_job_logs, scraper_jobs } from "@open-gikai/db/schema";
+import { municipalities, system_types } from "@open-gikai/db/schema";
+import { eq } from "drizzle-orm";
+
+const db = createDb(process.env.DATABASE_URL!);
+const result = await db
+  .select({
+    id: municipalities.id,
+    name: municipalities.name,
+    baseUrl: municipalities.baseUrl,
+    systemTypeId: municipalities.systemTypeId,
+  })
+  .from(municipalities)
+  .where(eq(municipalities.name, "秋田市")) // ← 対象自治体名に変更
+  .limit(1);
+console.log(JSON.stringify(result, null, 2));
+process.exit(0);
+```
+
+### Step 2: pending ジョブを作成する
+
+```ts
+// bun -e で実行（apps/scraper-worker ディレクトリ）
+import dotenv from "dotenv";
+import { resolve } from "node:path";
+dotenv.config({ path: resolve(process.cwd(), "../../.env.local"), override: true });
+import { createDb } from "@open-gikai/db";
+import { scraper_jobs } from "@open-gikai/db/schema";
+
+const db = createDb(process.env.DATABASE_URL!);
+const [job] = await db.insert(scraper_jobs).values({
+  municipalityId: "xctahgcha1eklqi9cmolimcu", // ← Step 1 で確認した ID
+  year: 2024, // ← 対象年
+  status: "pending",
+}).returning();
+console.log("Created job:", JSON.stringify(job, null, 2));
+process.exit(0);
+```
+
+### Step 3: local-runner を実行する
+
+```bash
+# apps/scraper-worker ディレクトリで
+bun src/utils/local-runner.local.ts
+```
+
+**注意**: local-runner は `LocalQueue`（インメモリキュー）を使うため、Cloudflare Queue の `SCRAPER_QUEUE` バインディングは不要。本番の Queue バインディング問題はローカルでは再現しない。
+
+### Step 4: 結果を確認する
+
+```ts
+// bun -e で実行（apps/scraper-worker ディレクトリ）
+import dotenv from "dotenv";
+import { resolve } from "node:path";
+dotenv.config({ path: resolve(process.cwd(), "../../.env.local"), override: true });
+import { createDb } from "@open-gikai/db";
+import { scraper_jobs, scraper_job_logs } from "@open-gikai/db/schema";
 import { eq, desc } from "drizzle-orm";
 
 const db = createDb(process.env.DATABASE_URL!);
@@ -40,128 +108,70 @@ const jobs = await db.select().from(scraper_jobs)
   .orderBy(desc(scraper_jobs.createdAt)).limit(3);
 
 for (const job of jobs) {
-  console.log(`Job: ${job.id} | ${job.status} | ${job.source}`);
+  console.log(`Job: ${job.id} | status=${job.status} | inserted=${job.totalInserted} | skipped=${job.totalSkipped}`);
   if (job.errorMessage) console.log("  error:", job.errorMessage);
   const logs = await db.select().from(scraper_job_logs)
-    .where(eq(scraper_job_logs.jobId, job.id));
+    .where(eq(scraper_job_logs.jobId, job.id))
+    .orderBy(desc(scraper_job_logs.createdAt))
+    .limit(10);
   for (const log of logs) console.log(`  [${log.level}] ${log.message}`);
 }
+process.exit(0);
 ```
 
-### 2. テストジョブを作成して実行する
+---
 
-```ts
-// scraper-worker ディレクトリで実行
-import { createDb } from "@open-gikai/db";
-import { scraper_jobs } from "@open-gikai/db/schema";
-import { eq } from "drizzle-orm";
-import { handleStartJob } from "./src/handlers/start-job";
-import { handleNdlPage } from "./src/handlers/ndl";
-import type { ScraperQueueMessage } from "./src/utils/types";
+## Cloudflare Worker のビルド確認
 
-const db = createDb(process.env.DATABASE_URL!);
-
-class MockQueue {
-  messages: ScraperQueueMessage[] = [];
-  async send(msg: ScraperQueueMessage) { this.messages.push(msg); }
-  async sendBatch(msgs: Iterable<{ body: ScraperQueueMessage }>) {
-    for (const m of msgs) this.messages.push(m.body);
-  }
-}
-
-const [job] = await db.insert(scraper_jobs).values({
-  source: "ndl",
-  config: { from: "2024-01-15", until: "2024-01-31", limit: 5 },
-}).returning();
-
-const q = new MockQueue();
-await handleStartJob(db, q as unknown as Queue<ScraperQueueMessage>, job!.id);
-
-const ndlMsg = q.messages[0];
-if (ndlMsg?.type === "ndl-page") {
-  q.messages = [];
-  await handleNdlPage(db, q as unknown as Queue<ScraperQueueMessage>, ndlMsg);
-}
-
-const [updated] = await db.select().from(scraper_jobs)
-  .where(eq(scraper_jobs.id, job!.id)).limit(1);
-console.log("status:", updated?.status, "inserted:", updated?.totalInserted);
-```
-
-### 3. 外部APIを直接テストする
-
-`fetchPage` はエラーを握り潰して `null` を返す実装のため、実際に何が起きているかはcurlで確認する。
+wrangler.toml の設定が正しいかは dry-run で確認できる。
 
 ```bash
-# NDL meeting API テスト
-curl -s "https://kokkai.ndl.go.jp/api/meeting?from=2024-01-15&until=2024-01-31&recordPacking=json&maximumRecords=10&startRecord=1" | python3 -m json.tool | head -30
-
-# ステータスコードも確認
-curl -sv "https://kokkai.ndl.go.jp/api/meeting?from=2024-01-15&until=2024-01-31&recordPacking=json&maximumRecords=100&startRecord=1" 2>&1 | grep "< HTTP"
+# apps/scraper-worker ディレクトリで
+bunx wrangler deploy --dry-run --outdir /tmp/scraper-build
 ```
+
+出力の `Your Worker has access to the following bindings:` セクションで `env.SCRAPER_QUEUE` が表示されることを確認する。
 
 ---
 
 ## 既知のハマりポイント
 
-### NDL API: エンドポイントごとに `maximumRecords` の上限が違う
+### wrangler.toml: Queue のプロデューサーバインディングが必要
 
-| エンドポイント | maximumRecords 上限 |
-|---|---|
-| `/api/speech` | 100 |
-| `/api/meeting` | **10** |
+`[[queues.consumers]]` だけでなく `[[queues.producers]]` も必要。これがないと `env.SCRAPER_QUEUE` が `undefined` になり、`dispatchJob` 内の `queue.send()` で `TypeError: Cannot read properties of undefined (reading 'send')` が発生する。
 
-`maximumRecords` に範囲外の値を送ると HTTP 400 が返り、`fetchPage` は `null` を返す。
-結果としてジョブは `"NDL API 取得失敗"` で failed になる。
+```toml
+# 両方必要
+[[queues.producers]]
+queue = "scraper-jobs"
+binding = "SCRAPER_QUEUE"
 
-**症状:** ジョブログに `[error] NDL: API からの取得に失敗しました` と出る。
-
-**診断:** curl でエンドポイントを叩き、400 とエラーメッセージを確認する。
-
-**対処:** `handlers/ndl.ts` の `maximumRecords` を対象エンドポイントの上限以下に設定する。
-
----
-
-### `fetchPage` がエラーを握り潰す
-
-```ts
-// 現在の実装: res.ok=false でも catch でも null を返す
-async function fetchPage(...): Promise<NdlApiResponse | null> {
-  try {
-    const res = await fetch(...);
-    if (!res.ok) return null;   // ← ステータスコードもボディも捨てる
-    return await res.json();
-  } catch {
-    return null;                // ← 例外内容も捨てる
-  }
-}
+[[queues.consumers]]
+queue = "scraper-jobs"
 ```
 
-外部API変更や設定ミスで失敗しても、ログには `"NDL API 取得失敗"` としか出ない。
-調査時は必ず curl で直接叩いて HTTP レスポンスを目視確認する。
+### fetchPage 系関数がエラーを握り潰す
 
----
+外部サイトへの fetch でエラーが発生しても `null` を返す実装が多い。調査時は必ず curl で直接叩いて HTTP レスポンスを目視確認する。
 
-### `scraper_jobs.status` のライフサイクル
+### scraper_jobs.status のライフサイクル
 
 ```
-pending → queued (scheduled cronが投入時)
-         → running (start-job handler開始時)
-         → completed | failed (各handler終了時)
-         → cancelled (GUI操作)
+pending → queued (scheduled cron が投入時)
+        → running (dispatchJob 開始時)
+        → completed | failed (各 handler 終了時)
+        → cancelled (GUI 操作)
 ```
 
-`queued` のまま止まっている場合はworkerが起動していない（ローカルでは cron が動かない）。
-ローカルでは `local-runner.ts` を手動実行する。
+`queued` のまま止まっている場合は worker が起動していない（ローカルでは cron が動かない）。ローカルでは `local-runner.local.ts` を手動実行する。
 
----
+### local-runner と本番の差異
 
-## ローカル実行コマンド
+| 項目 | 本番 (Cloudflare Worker) | ローカル (local-runner) |
+|------|--------------------------|------------------------|
+| キュー | Cloudflare Queue (`SCRAPER_QUEUE` binding) | LocalQueue（インメモリ） |
+| 実行 | 非同期・並行 | 同期・逐次 |
+| 環境変数 | wrangler.toml + Cloudflare ダッシュボード | `.env.local` |
+| cron | `scheduled()` が自動で pending を検出 | 手動で `local-runner.local.ts` を実行 |
 
-```bash
-# scraper-worker ディレクトリで
-bun --env-file ../web/.env src/utils/local-runner.ts
-```
-
-`DATABASE_URL` が `apps/web/.env` に定義されている前提。
-`OPENAI_API_KEY` があれば embedding も生成される。
+本番固有の問題（Queue バインディング、環境変数の欠落など）はローカルでは再現しない。`bunx wrangler deploy --dry-run` でバインディングの確認を行うこと。
