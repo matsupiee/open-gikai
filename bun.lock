@@ -18,6 +18,21 @@
         "typescript": "catalog:",
       },
     },
+    "apps/local-bulk-scraper": {
+      "name": "@open-gikai/local-bulk-scraper",
+      "dependencies": {
+        "@open-gikai/db": "workspace:*",
+        "@open-gikai/scrapers": "workspace:*",
+        "@paralleldrive/cuid2": "^3.3.0",
+        "drizzle-orm": "^0.45.1",
+        "pg": "^8.17.1",
+      },
+      "devDependencies": {
+        "@open-gikai/config": "workspace:*",
+        "dotenv": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "apps/scraper-worker": {
       "name": "@open-gikai/scraper-worker",
       "dependencies": {
@@ -560,6 +575,8 @@
     "@open-gikai/config": ["@open-gikai/config@workspace:packages/config"],
 
     "@open-gikai/db": ["@open-gikai/db@workspace:packages/db"],
+
+    "@open-gikai/local-bulk-scraper": ["@open-gikai/local-bulk-scraper@workspace:apps/local-bulk-scraper"],
 
     "@open-gikai/notification": ["@open-gikai/notification@workspace:packages/notification"],
 
