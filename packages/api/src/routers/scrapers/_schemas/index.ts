@@ -9,3 +9,4 @@ export { scrapersReprocessStatementsSchema } from "./scrapers-reprocess-statemen
 export { scrapersProgressByPrefectureSchema } from "./scrapers-progress-by-prefecture.schema";
 export { scrapersProgressByMunicipalitySchema } from "./scrapers-progress-by-municipality.schema";
 export { scrapersProgressByYearSchema } from "./scrapers-progress-by-year.schema";
+export { scrapersDeletePendingJobsSchema } from "./scrapers-delete-pending-jobs.schema";
