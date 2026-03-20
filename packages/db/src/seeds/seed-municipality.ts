@@ -137,7 +137,7 @@ async function seed() {
   }
 
   console.log(`[seed] 完了: inserted/updated=${inserted}`);
-  process.exit(0);
+  await db.$client.end();
 }
 
 seed().catch((err) => {
