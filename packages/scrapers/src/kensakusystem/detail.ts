@@ -11,13 +11,13 @@
  */
 
 import { createHash } from "node:crypto";
-import type { MeetingData, ParsedStatement } from "../../../utils/types";
+import type { MeetingData, ParsedStatement } from "../types";
 import {
   fetchWithEncoding,
   fetchRawBytesPost,
   decodeShiftJis,
   detectMeetingType,
-} from "../_shared";
+} from "./shared";
 
 export interface KensakusystemDetailSchedule {
   title: string;

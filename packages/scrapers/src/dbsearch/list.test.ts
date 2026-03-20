@@ -5,7 +5,7 @@ import {
   extractEndpointIdFromUrl,
   parseListHtml,
   hasNextPage,
-} from "./scraper";
+} from "./list";
 
 describe("extractCsrfToken", () => {
   test("meta タグから CSRF トークンを抽出", () => {

@@ -8,7 +8,7 @@ import {
   cleanVoiceText,
   stripSpeakerPrefix,
   extractStatements,
-} from "./scraper";
+} from "./detail";
 
 describe("extractTitle", () => {
   test("command__docname から抽出", () => {

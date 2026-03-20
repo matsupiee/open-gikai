@@ -11,6 +11,7 @@
   "dependencies": {
     "@open-gikai/db": "workspace:*",
     "@open-gikai/notification": "workspace:*",
+    "@open-gikai/scrapers": "workspace:*",
     "@paralleldrive/cuid2": "^3.3.0",
     "cheerio": "^1.0.0",
     "drizzle-orm": "^0.45.1",

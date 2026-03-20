@@ -17,7 +17,7 @@ import {
   fetchFromSapphire,
   fetchFromCgi,
   fetchFromIndexHtml,
-} from "./scraper";
+} from "@open-gikai/scrapers/kensakusystem";
 
 const INTER_REQUEST_DELAY_MS = 1000;
 

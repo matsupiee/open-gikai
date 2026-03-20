@@ -23,6 +23,7 @@
       "dependencies": {
         "@open-gikai/db": "workspace:*",
         "@open-gikai/notification": "workspace:*",
+        "@open-gikai/scrapers": "workspace:*",
         "@paralleldrive/cuid2": "^3.3.0",
         "cheerio": "^1.0.0",
         "drizzle-orm": "^0.45.1",
@@ -157,6 +158,14 @@
       "devDependencies": {
         "@open-gikai/config": "workspace:*",
         "typescript": "catalog:",
+      },
+    },
+    "packages/scrapers": {
+      "name": "@open-gikai/scrapers",
+      "devDependencies": {
+        "@open-gikai/config": "workspace:*",
+        "typescript": "catalog:",
+        "vitest": "^4.1.0",
       },
     },
   },
@@ -555,6 +564,8 @@
     "@open-gikai/notification": ["@open-gikai/notification@workspace:packages/notification"],
 
     "@open-gikai/scraper-worker": ["@open-gikai/scraper-worker@workspace:apps/scraper-worker"],
+
+    "@open-gikai/scrapers": ["@open-gikai/scrapers@workspace:packages/scrapers"],
 
     "@orpc/client": ["@orpc/client@1.13.6", "", { "dependencies": { "@orpc/shared": "1.13.6", "@orpc/standard-server": "1.13.6", "@orpc/standard-server-fetch": "1.13.6", "@orpc/standard-server-peer": "1.13.6" } }, "sha512-M6lYM6fJUFp9GR+It/qglYTeXwspb6sGj46xXWHqHS6iDVquqju0bdYuLOfHx8CGJcUSzi0aKUcqMXiGJhBG3w=="],
 

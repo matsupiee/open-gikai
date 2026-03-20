@@ -3,8 +3,8 @@
  * Usage: bun --env-file ../web/.env src/utils/test-dbsearch.ts
  */
 
-import { fetchMeetingList } from "../system-types/dbsearch/list/scraper";
-import { fetchMeetingDetail } from "../system-types/dbsearch/detail/scraper";
+import { fetchMeetingList } from "@open-gikai/scrapers/dbsearch";
+import { fetchMeetingDetail } from "@open-gikai/scrapers/dbsearch";
 
 // 音更町（シンプルな dbsr.jp URL）
 const BASE_URL =
