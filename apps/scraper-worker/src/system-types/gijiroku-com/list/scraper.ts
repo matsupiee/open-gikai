@@ -72,7 +72,10 @@ export async function fetchMeetingList(
 export function buildListUrl(baseUrl: string, year: number): string | null {
   try {
     const url = new URL(baseUrl);
-    url.protocol = "https:";
+    // gijiroku.com SaaS は HTTPS を使用、自前ホストは元のプロトコルを保持
+    if (url.hostname.endsWith("gijiroku.com")) {
+      url.protocol = "https:";
+    }
 
     // voices/ を含むパスの前半部分を取得
     const voicesMatch = url.pathname.match(/^(.*\/voices)\//i);

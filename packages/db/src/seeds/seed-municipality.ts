@@ -60,6 +60,8 @@ function detectSystemType(baseUrl: string): SystemType | null {
   if (baseUrl.includes("dbsr.jp")) return "dbsearch";
   if (baseUrl.includes("kensakusystem.jp")) return "kensakusystem";
   if (baseUrl.includes("gijiroku.com")) return "gijiroku_com";
+  // 自前ホスティングの VOICES インスタンス（茅ヶ崎等）も同じ voiweb.exe CGI
+  if (/\/VOICES\//i.test(baseUrl)) return "gijiroku_com";
 
   return null;
 }

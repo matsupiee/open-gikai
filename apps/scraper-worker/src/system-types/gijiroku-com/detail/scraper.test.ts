@@ -39,6 +39,16 @@ describe("buildDetailUrl", () => {
       buildDetailUrl("http://example.com/other/path.asp", "100")
     ).toBeNull();
   });
+
+  test("自前ホスト VOICES は HTTP を保持", () => {
+    const url = buildDetailUrl(
+      "http://info.city.chigasaki.kanagawa.jp/VOICES/g08v_search.asp",
+      "2736"
+    );
+    expect(url).toMatch(/^http:\/\/info\.city\.chigasaki/);
+    expect(url).toContain("/VOICES/cgi/voiweb.exe");
+    expect(url).toContain("FINO=2736");
+  });
 });
 
 describe("buildSidebarUrl", () => {
@@ -50,6 +60,15 @@ describe("buildSidebarUrl", () => {
     expect(url).toBe(
       "https://tsukuba.gijiroku.com/voices/cgi/voiweb.exe?ACT=202&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&FINO=2770&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0"
     );
+  });
+
+  test("自前ホスト VOICES は HTTP を保持", () => {
+    const url = buildSidebarUrl(
+      "http://info.city.chigasaki.kanagawa.jp/VOICES/g08v_search.asp",
+      "100"
+    );
+    expect(url).toMatch(/^http:\/\/info\.city\.chigasaki/);
+    expect(url).toContain("ACT=202");
   });
 });
 
@@ -63,6 +82,16 @@ describe("buildDetailUrlWithHuid", () => {
     expect(url).toContain("ACT=203");
     expect(url).toContain("HUID=338263");
     expect(url).toContain("FINO=2770");
+  });
+
+  test("自前ホスト VOICES は HTTP を保持", () => {
+    const url = buildDetailUrlWithHuid(
+      "http://info.city.chigasaki.kanagawa.jp/VOICES/g08v_search.asp",
+      "100",
+      "5000"
+    );
+    expect(url).toMatch(/^http:\/\/info\.city\.chigasaki/);
+    expect(url).toContain("HUID=5000");
   });
 });
 
