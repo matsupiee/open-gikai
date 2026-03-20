@@ -119,6 +119,35 @@ export type ScraperQueueMessage =
       title: string;
       heldOn: string;
       detailUrl: string;
+    }
+  | {
+      /** gijiroku.com: voiweb.exe CGI から会議一覧を取得するメッセージ */
+      type: "gijiroku-com:list";
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      prefecture: string;
+      baseUrl: string;
+      year: number;
+    }
+  | {
+      /** gijiroku.com: voiweb.exe CGI から議事録本文を取得・保存するメッセージ */
+      type: "gijiroku-com:detail";
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      prefecture: string;
+      baseUrl: string;
+      /** FINO パラメータ（ファイル番号） */
+      fino: string;
+      /** KGNO パラメータ（会議番号） */
+      kgno: string;
+      /** UNID パラメータ（一意識別子） */
+      unid: string;
+      /** 会議タイトル */
+      title: string;
+      /** 日付ラベル（例: "12月05日-01号"） */
+      dateLabel: string;
     };
 
 /** Cloudflare Worker の環境変数（bindings） */

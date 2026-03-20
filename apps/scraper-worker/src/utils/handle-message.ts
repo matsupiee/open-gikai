@@ -7,6 +7,8 @@ import { handleDbsearchList } from "../system-types/dbsearch/list/handler";
 import { handleDbsearchDetail } from "../system-types/dbsearch/detail/handler";
 import { handleKensakusystemList } from "../system-types/kensakusystem/list/handler";
 import { handleKensakusystemDetail } from "../system-types/kensakusystem/detail/handler";
+import { handleGijirokuComList } from "../system-types/gijiroku-com/list/handler";
+import { handleGijirokuComDetail } from "../system-types/gijiroku-com/detail/handler";
 
 type DiscussnetSspMessage = Extract<
   ScraperQueueMessage,
@@ -19,6 +21,10 @@ type DbsearchMessage = Extract<
 type KensakusystemMessage = Extract<
   ScraperQueueMessage,
   { type: `kensakusystem:${string}` }
+>;
+type GijirokuComMessage = Extract<
+  ScraperQueueMessage,
+  { type: `gijiroku-com:${string}` }
 >;
 
 /**
@@ -42,6 +48,9 @@ export async function handleQueueMessage(
       break;
     case "kensakusystem":
       await handleKensakusystem(db, queue, msg as KensakusystemMessage, openaiApiKey);
+      break;
+    case "gijiroku-com":
+      await handleGijirokuCom(db, queue, msg as GijirokuComMessage, openaiApiKey);
       break;
     default:
       console.warn(`[scraper-worker] unknown message type:`, msg.type);
@@ -92,6 +101,22 @@ async function handleKensakusystem(
       break;
     case "kensakusystem:detail":
       await handleKensakusystemDetail(db, msg, openaiApiKey);
+      break;
+  }
+}
+
+async function handleGijirokuCom(
+  db: Db,
+  queue: Queue<ScraperQueueMessage>,
+  msg: GijirokuComMessage,
+  openaiApiKey?: string
+): Promise<void> {
+  switch (msg.type) {
+    case "gijiroku-com:list":
+      await handleGijirokuComList(db, queue, msg);
+      break;
+    case "gijiroku-com:detail":
+      await handleGijirokuComDetail(db, msg, openaiApiKey);
       break;
   }
 }
