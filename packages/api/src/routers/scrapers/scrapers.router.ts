@@ -11,6 +11,7 @@ import {
   scrapersProgressByPrefectureSchema,
   scrapersProgressByMunicipalitySchema,
   scrapersProgressByYearSchema,
+  scrapersDeletePendingJobsSchema,
 } from "./_schemas";
 import {
   listJobs,
@@ -24,6 +25,7 @@ import {
   progressByPrefecture,
   progressByMunicipality,
   progressByYear,
+  deletePendingJobs,
 } from "./scrapers.service";
 
 export const scrapersRouter = {
@@ -70,4 +72,8 @@ export const scrapersRouter = {
   progressByYear: adminProcedure
     .input(scrapersProgressByYearSchema)
     .handler(({ input, context }) => progressByYear(context.db, input)),
+
+  deletePendingJobs: adminProcedure
+    .input(scrapersDeletePendingJobsSchema)
+    .handler(({ input, context }) => deletePendingJobs(context.db, input)),
 };

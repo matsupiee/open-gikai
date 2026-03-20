@@ -75,6 +75,15 @@ function ScrapersPage() {
     onError: (err) => toast.error(`エラー: ${err.message}`),
   });
 
+  const deletePendingMutation = useMutation({
+    mutationFn: () => client.scrapers.deletePendingJobs({}),
+    onSuccess: (data) => {
+      toast.success(`${data.deletedCount} 件の待機中ジョブを削除しました`);
+      queryClient.invalidateQueries({ queryKey: orpc.scrapers.listJobs.key() });
+    },
+    onError: (err) => toast.error(`エラー: ${err.message}`),
+  });
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
       <h1 className="text-2xl font-bold">スクレイパー管理</h1>
@@ -93,6 +102,27 @@ function ScrapersPage() {
         onSubmit={(payload) => reprocessMutation.mutate(payload)}
         isSubmitting={reprocessMutation.isPending}
       />
+
+      <div className="rounded border border-border bg-card p-4 space-y-2">
+        <div>
+          <h2 className="font-semibold text-sm">待機中ジョブ一括削除</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            ステータスが pending のジョブをすべて削除します。
+          </p>
+        </div>
+        <Button
+          variant="destructive"
+          size="sm"
+          disabled={deletePendingMutation.isPending}
+          onClick={() => {
+            if (window.confirm("待機中（pending）のジョブをすべて削除しますか？")) {
+              deletePendingMutation.mutate();
+            }
+          }}
+        >
+          {deletePendingMutation.isPending ? "削除中..." : "待機中ジョブを削除"}
+        </Button>
+      </div>
 
       <div className="rounded border border-border bg-card">
         <div className="border-b px-4 py-3 font-semibold text-sm">

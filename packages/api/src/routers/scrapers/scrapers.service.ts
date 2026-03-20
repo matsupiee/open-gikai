@@ -16,6 +16,7 @@ import type {
   scrapersProgressByPrefectureSchema,
   scrapersProgressByMunicipalitySchema,
   scrapersProgressByYearSchema,
+  scrapersDeletePendingJobsSchema,
 } from "./_schemas";
 export interface ScraperJob {
   id: string;
@@ -333,6 +334,22 @@ export async function getJobLogs(
       createdAt: row.createdAt,
     })),
   };
+}
+
+export interface DeletePendingJobsResponse {
+  deletedCount: number;
+}
+
+export async function deletePendingJobs(
+  db: Db,
+  _input: z.infer<typeof scrapersDeletePendingJobsSchema>
+): Promise<DeletePendingJobsResponse> {
+  const deleted = await db
+    .delete(scraper_jobs)
+    .where(eq(scraper_jobs.status, "pending"))
+    .returning({ id: scraper_jobs.id });
+
+  return { deletedCount: deleted.length };
 }
 
 // ── Progress queries ──────────────────────────────────────────
