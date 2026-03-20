@@ -30,9 +30,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/scripts/worktree-setup.sh",
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/scripts/worktree-setup.sh",
             "timeout": 120,
-            "statusMessage": "Setting up worktree (mise trust & bun install)..."
+            "statusMessage": "Creating worktree & setting up (env, mise, bun)..."
           }
         ]
       }
