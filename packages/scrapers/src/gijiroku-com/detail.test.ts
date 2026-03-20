@@ -12,7 +12,7 @@ import {
   parseStatementText,
   parseSidebarHuids,
   extractStatementFromHuidPage,
-} from "./scraper";
+} from "./detail";
 
 describe("buildDetailUrl", () => {
   test("g08v_search.asp 形式から ACT=203 URL を構築", () => {

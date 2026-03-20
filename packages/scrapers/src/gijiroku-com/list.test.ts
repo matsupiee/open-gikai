@@ -3,7 +3,7 @@ import {
   buildListUrl,
   parseListHtml,
   extractTitleFromPreceding,
-} from "./scraper";
+} from "./list";
 
 describe("buildListUrl", () => {
   test("g08v_search.asp 形式の URL から CGI URL を構築", () => {

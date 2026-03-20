@@ -21,8 +21,8 @@
  */
 
 import { createHash } from "node:crypto";
-import type { MeetingData, ParsedStatement } from "../../../utils/types";
-import { decodeShiftJis } from "../list/decode-shift-jis";
+import type { MeetingData, ParsedStatement } from "../types";
+import { decodeShiftJis } from "./decode-shift-jis";
 
 const USER_AGENT =
   "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";

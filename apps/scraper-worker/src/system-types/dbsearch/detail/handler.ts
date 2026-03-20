@@ -11,7 +11,7 @@ import { saveMeetings } from "../../../utils/save-meetings";
 import { applyStatementsToMeeting } from "../../../utils/apply-statements";
 import { delay } from "../../../utils/delay";
 import type { ScraperQueueMessage } from "../../../utils/types";
-import { fetchMeetingDetail } from "./scraper";
+import { fetchMeetingDetail } from "@open-gikai/scrapers/dbsearch";
 
 const INTER_REQUEST_DELAY_MS = 1000;
 

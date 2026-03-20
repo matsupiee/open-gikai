@@ -5,9 +5,9 @@
  */
 
 import { createHash } from "node:crypto";
-import type { MeetingData, ParsedStatement } from "../../../utils/types";
-import { postJson, normalizeFullWidth, SSP_HOST } from "../_shared";
-import type { SspSchedule } from "../schedule/scraper";
+import type { MeetingData, ParsedStatement } from "../types";
+import { postJson, normalizeFullWidth, SSP_HOST } from "./shared";
+import type { SspSchedule } from "./schedule";
 
 interface MinuteItem {
   minute_id: number;

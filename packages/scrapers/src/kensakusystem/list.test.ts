@@ -5,7 +5,7 @@ import {
   isSapphireType,
   isCgiType,
   isIndexHtmlType,
-} from "./scraper";
+} from "./list";
 
 describe("parseDateFromFilename", () => {
   test("令和の日付を解析 (R080106)", () => {

@@ -5,7 +5,7 @@ import {
   extractTextFromBody,
   extractDateFromMemberList,
   detectMeetingType,
-} from "./scraper";
+} from "./minute";
 
 describe("classifyKindByCode", () => {
   test("code 4 → remark（議長発言）", () => {

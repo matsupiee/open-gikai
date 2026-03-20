@@ -4,7 +4,7 @@
  * tenant.js から tenantId を取得し、council 一覧・schedule 一覧を取得する。
  */
 
-import { postJson, normalizeFullWidth, SSP_HOST, USER_AGENT } from "../_shared";
+import { postJson, normalizeFullWidth, SSP_HOST, USER_AGENT } from "./shared";
 
 export interface SspCouncil {
   councilId: number;

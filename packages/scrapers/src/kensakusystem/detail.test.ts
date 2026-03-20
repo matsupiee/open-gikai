@@ -3,7 +3,7 @@ import {
   parseSpeaker,
   classifyKind,
   parseStatementsFromPlainText,
-} from "./scraper";
+} from "./detail";
 
 describe("parseSpeaker", () => {
   test("○議長（氏名君） 形式", () => {

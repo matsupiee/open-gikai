@@ -13,7 +13,7 @@ import {
   extractTreedepthRawBytes,
   extractDate,
   stripHtmlTags,
-} from "../_shared";
+} from "./shared";
 
 export interface KensakusystemSchedule {
   title: string;

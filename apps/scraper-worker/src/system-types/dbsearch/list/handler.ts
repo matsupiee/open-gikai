@@ -8,7 +8,7 @@ import type { Db } from "@open-gikai/db";
 import { createJobLogger, addTotalItems, updateJobStatus } from "../../../utils/job-logger";
 import { delay } from "../../../utils/delay";
 import type { ScraperQueueMessage } from "../../../utils/types";
-import { fetchMeetingList } from "./scraper";
+import { fetchMeetingList } from "@open-gikai/scrapers/dbsearch";
 
 const INTER_REQUEST_DELAY_MS = 1000;
 

@@ -15,8 +15,8 @@ import type { Db } from "@open-gikai/db";
 import { createJobLogger, addTotalItems } from "../../../utils/job-logger";
 import { delay } from "../../../utils/delay";
 import type { ScraperQueueMessage } from "../../../utils/types";
-import { fetchSchedules } from "./scraper";
-import { buildApiBase } from "../_shared";
+import { fetchSchedules } from "@open-gikai/scrapers/discussnet-ssp";
+import { buildApiBase } from "@open-gikai/scrapers/discussnet-ssp";
 
 const INTER_REQUEST_DELAY_MS = 1000;
 

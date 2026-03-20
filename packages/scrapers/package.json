@@ -1,0 +1,31 @@
+{
+  "name": "@open-gikai/scrapers",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./dbsearch": {
+      "default": "./src/dbsearch/index.ts"
+    },
+    "./discussnet-ssp": {
+      "default": "./src/discussnet-ssp/index.ts"
+    },
+    "./kensakusystem": {
+      "default": "./src/kensakusystem/index.ts"
+    },
+    "./gijiroku-com": {
+      "default": "./src/gijiroku-com/index.ts"
+    }
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@open-gikai/config": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "^4.1.0"
+  }
+}

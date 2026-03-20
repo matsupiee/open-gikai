@@ -8,8 +8,8 @@ import { createJobLogger, updateJobStatus } from "../utils/job-logger";
 import {
   fetchTenantId,
   fetchCouncils,
-} from "../system-types/discussnet-ssp/schedule/scraper";
-import { buildApiBase, extractHost } from "../system-types/discussnet-ssp/_shared";
+} from "@open-gikai/scrapers/discussnet-ssp";
+import { buildApiBase, extractHost } from "@open-gikai/scrapers/discussnet-ssp";
 import type { ScraperQueueMessage } from "../utils/types";
 
 /**

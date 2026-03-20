@@ -6,7 +6,7 @@ import {
   stripHtmlTags,
   decodeShiftJis,
   percentEncodeBytes,
-} from "./_shared";
+} from "./shared";
 
 describe("normalizeFullWidth", () => {
   test("全角数字を半角に変換", () => {
