@@ -85,7 +85,7 @@ export async function buildChunksForMeeting(
       );
     }
 
-    const rows = batch.map((chunk, j) => ({
+    const rawRows = batch.map((chunk, j) => ({
       id: createId(),
       meetingId,
       speakerName: chunk.speakerName,
@@ -97,6 +97,8 @@ export async function buildChunksForMeeting(
       // statementIds はチャンク挿入後に statements.chunkId へ反映するため保持
       _statementIds: chunk.statementIds,
     }));
+
+    const rows = deduplicateByContentHash(rawRows);
 
     await db
       .insert(statement_chunks)
@@ -117,6 +119,30 @@ export async function buildChunksForMeeting(
   }
 
   return { inserted };
+}
+
+/**
+ * 同一 contentHash のチャンク行を統合する。
+ *
+ * 異なるスピーカーが同一内容を発言した場合、buildChunksFromStatements は
+ * content が同一の複数チャンクを生成する。statement_chunks テーブルには
+ * (meetingId, contentHash) のユニーク制約があるため、onConflictDoNothing で
+ * 後続行が挿入されず、存在しない chunk_id を参照する FK 違反が発生する。
+ * この関数で事前に statementIds を統合して回避する。
+ */
+export function deduplicateByContentHash<
+  T extends { contentHash: string; _statementIds: string[] },
+>(rows: T[]): T[] {
+  const deduped = new Map<string, T>();
+  for (const row of rows) {
+    const existing = deduped.get(row.contentHash);
+    if (existing) {
+      existing._statementIds.push(...row._statementIds);
+    } else {
+      deduped.set(row.contentHash, row);
+    }
+  }
+  return [...deduped.values()];
 }
 
 /**
