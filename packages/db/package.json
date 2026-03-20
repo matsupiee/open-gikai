@@ -8,6 +8,9 @@
     "./schema": {
       "default": "./src/schema/index.ts"
     },
+    "./test-helpers": {
+      "default": "./src/test-helpers/index.ts"
+    },
     "./*": {
       "default": "./src/*.ts"
     }
