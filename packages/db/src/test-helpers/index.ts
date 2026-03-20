@@ -1,3 +1,4 @@
+import { TransactionRollbackError } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
@@ -81,10 +82,11 @@ export async function withRollback<T>(
       result = await fn(tx as unknown as TestDb);
       tx.rollback();
     });
-  } catch {
-    // tx.rollback() は TransactionRollbackError を throw する
-    // Drizzle が内部でキャッチしてロールバックを実行するため、ここでは握りつぶす
-    return result!;
+  } catch (e) {
+    if (e instanceof TransactionRollbackError) {
+      return result!;
+    }
+    throw e;
   }
   return result!;
 }
