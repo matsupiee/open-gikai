@@ -12,7 +12,7 @@
  */
 
 import type { Db } from "@open-gikai/db";
-import { createJobLogger } from "../../../utils/job-logger";
+import { createJobLogger, addTotalItems } from "../../../utils/job-logger";
 import { delay } from "../../../utils/delay";
 import type { ScraperQueueMessage } from "../../../utils/types";
 import { fetchSchedules } from "./scraper";
@@ -59,6 +59,8 @@ export async function handleDiscussnetSspSchedule(
       memberList: schedule.memberList,
     });
   }
+
+  await addTotalItems(db, msg.jobId, schedules.length);
 
   await delay(INTER_REQUEST_DELAY_MS);
 }

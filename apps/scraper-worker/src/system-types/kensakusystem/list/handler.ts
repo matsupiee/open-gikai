@@ -6,7 +6,7 @@
  */
 
 import type { Db } from "@open-gikai/db";
-import { createJobLogger } from "../../../utils/job-logger";
+import { createJobLogger, addTotalItems, updateJobStatus } from "../../../utils/job-logger";
 import { delay } from "../../../utils/delay";
 import type { ScraperQueueMessage } from "../../../utils/types";
 import {
@@ -37,6 +37,9 @@ export async function handleKensakusystemList(
     await logger.error(
       `kensakusystem [${msg.municipalityName}] slug を抽出できません: ${msg.baseUrl}`
     );
+    await updateJobStatus(db, msg.jobId, "failed", {
+      errorMessage: `slug 抽出失敗: ${msg.baseUrl}`,
+    });
     return;
   }
 
@@ -60,6 +63,7 @@ export async function handleKensakusystemList(
     await logger.warn(
       `kensakusystem [${msg.municipalityName}] 議事録が見つかりません`
     );
+    await updateJobStatus(db, msg.jobId, "completed");
     return;
   }
 
@@ -74,6 +78,7 @@ export async function handleKensakusystemList(
     await logger.warn(
       `kensakusystem [${msg.municipalityName}] ${msg.year} 年の議事録が見つかりません`
     );
+    await updateJobStatus(db, msg.jobId, "completed");
     return;
   }
 
@@ -89,6 +94,8 @@ export async function handleKensakusystemList(
       detailUrl: schedule.url,
     });
   }
+
+  await addTotalItems(db, msg.jobId, filtered.length);
 
   await delay(INTER_REQUEST_DELAY_MS);
 }

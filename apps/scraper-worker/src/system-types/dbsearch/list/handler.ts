@@ -5,7 +5,7 @@
  */
 
 import type { Db } from "@open-gikai/db";
-import { createJobLogger } from "../../../utils/job-logger";
+import { createJobLogger, addTotalItems, updateJobStatus } from "../../../utils/job-logger";
 import { delay } from "../../../utils/delay";
 import type { ScraperQueueMessage } from "../../../utils/types";
 import { fetchMeetingList } from "./scraper";
@@ -29,6 +29,7 @@ export async function handleDbsearchList(
     await logger.warn(
       `dbsr.jp [${msg.municipalityName}] 議事録が見つかりません: ${msg.baseUrl}`
     );
+    await updateJobStatus(db, msg.jobId, "completed");
     return;
   }
 
@@ -49,6 +50,8 @@ export async function handleDbsearchList(
       listTitle: record.title,
     });
   }
+
+  await addTotalItems(db, msg.jobId, records.length);
 
   await delay(INTER_REQUEST_DELAY_MS);
 }

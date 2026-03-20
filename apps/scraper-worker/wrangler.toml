@@ -14,8 +14,8 @@ binding = "SCRAPER_QUEUE"
 
 [[queues.consumers]]
 queue = "scraper-jobs"
-max_batch_size = 5
-max_concurrency = 2
+max_batch_size = 1
+max_concurrency = 1
 max_retries = 3
 retry_delay = 30
 
