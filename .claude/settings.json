@@ -23,5 +23,19 @@
   "fileSystem": {
     "read": ["**"],
     "write": ["**"]
+  },
+  "hooks": {
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "MAIN_REPO=$(git worktree list --porcelain | head -1 | sed 's/^worktree //') && [ -f \"$MAIN_REPO/.env.local\" ] && cp \"$MAIN_REPO/.env.local\" .env.local; mise trust && bun install",
+            "timeout": 120,
+            "statusMessage": "Setting up worktree (mise trust & bun install)..."
+          }
+        ]
+      }
+    ]
   }
 }
