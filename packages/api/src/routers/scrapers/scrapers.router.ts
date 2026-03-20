@@ -7,6 +7,9 @@ import {
   scrapersGetJobLogsSchema,
   scrapersListMunicipalitiesSchema,
   scrapersReprocessStatementsSchema,
+  scrapersProgressByPrefectureSchema,
+  scrapersProgressByMunicipalitySchema,
+  scrapersProgressByYearSchema,
 } from "./_schemas";
 import {
   listJobs,
@@ -16,6 +19,9 @@ import {
   getJobLogs,
   listMunicipalities,
   reprocessStatements,
+  progressByPrefecture,
+  progressByMunicipality,
+  progressByYear,
 } from "./scrapers.service";
 
 export const scrapersRouter = {
@@ -46,4 +52,16 @@ export const scrapersRouter = {
   reprocessStatements: adminProcedure
     .input(scrapersReprocessStatementsSchema)
     .handler(({ input, context }) => reprocessStatements(context.db, input)),
+
+  progressByPrefecture: adminProcedure
+    .input(scrapersProgressByPrefectureSchema)
+    .handler(({ input, context }) => progressByPrefecture(context.db, input)),
+
+  progressByMunicipality: adminProcedure
+    .input(scrapersProgressByMunicipalitySchema)
+    .handler(({ input, context }) => progressByMunicipality(context.db, input)),
+
+  progressByYear: adminProcedure
+    .input(scrapersProgressByYearSchema)
+    .handler(({ input, context }) => progressByYear(context.db, input)),
 };
