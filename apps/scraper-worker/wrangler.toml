@@ -6,6 +6,10 @@ compatibility_flags = ["nodejs_compat"]
 [triggers]
 crons = ["*/1 * * * *"]
 
+[[queues.producers]]
+queue = "scraper-jobs"
+binding = "SCRAPER_QUEUE"
+
 [[queues.consumers]]
 queue = "scraper-jobs"
 max_batch_size = 5
