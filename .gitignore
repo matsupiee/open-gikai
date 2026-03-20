@@ -43,6 +43,9 @@ coverage
 # Claude Code worktrees
 .claude/worktrees/
 
+# Scraper NDJSON output
+apps/scraper-worker/output/
+
 # Misc
 *.tgz
 .cache

@@ -6,7 +6,9 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "scrape:local": "bun src/utils/local-runner.local.ts"
+    "scrape:local": "bun src/utils/local-runner.local.ts",
+    "scrape:ndjson": "bun src/scripts/scrape-to-ndjson.ts",
+    "import:ndjson": "bun src/scripts/import-ndjson.ts"
   },
   "dependencies": {
     "@open-gikai/db": "workspace:*",
