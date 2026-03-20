@@ -15,7 +15,6 @@
   },
   "devDependencies": {
     "@open-gikai/config": "workspace:*",
-    "@open-gikai/infra": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:"
   }

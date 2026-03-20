@@ -15,8 +15,7 @@
       "@orpc/client": "^1.12.2",
       "@orpc/openapi": "^1.12.2",
       "@orpc/zod": "^1.12.2",
-      "better-auth": "^1.4.18",
-      "alchemy": "^0.82.1"
+      "better-auth": "^1.4.18"
     }
   },
   "type": "module",
@@ -24,6 +23,7 @@
     "build": "turbo build",
     "check-types": "turbo check-types",
     "dev:web": "turbo -F web dev",
+    "dev:stop": "sh -c 'lsof -t -i :$0 | xargs kill -9 2>/dev/null || true'",
     "db:start": "turbo -F @open-gikai/db db:start",
     "db:stop": "turbo -F @open-gikai/db db:stop",
     "db:studio": "turbo -F @open-gikai/db db:studio",

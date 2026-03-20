@@ -61,7 +61,6 @@
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "^5.0.4",
-    "alchemy": "catalog:",
     "jsdom": "^26.0.0",
     "typescript": "catalog:",
     "vite": "^7.0.2",
