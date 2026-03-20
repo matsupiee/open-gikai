@@ -100,4 +100,20 @@ describe("buildChunksFromStatements", () => {
     ];
     expect(buildChunksFromStatements(stmts)).toEqual([]);
   });
+
+  test("異なるスピーカーが同一内容を発言すると同一contentのチャンクが生成される", () => {
+    const stmts: StatementRecord[] = [
+      makeStatement("1", "田中", "賛成です。"),
+      makeStatement("2", "佐藤", "反対です。"),
+      makeStatement("3", "鈴木", "賛成です。"),
+    ];
+    const chunks = buildChunksFromStatements(stmts);
+    expect(chunks).toHaveLength(3);
+    // 田中と鈴木のチャンクが同じ content を持つ
+    expect(chunks[0]!.content).toBe("賛成です。");
+    expect(chunks[2]!.content).toBe("賛成です。");
+    // statementIds は別々
+    expect(chunks[0]!.statementIds).toEqual(["1"]);
+    expect(chunks[2]!.statementIds).toEqual(["3"]);
+  });
 });
