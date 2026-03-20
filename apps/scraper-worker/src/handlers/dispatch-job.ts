@@ -10,6 +10,7 @@ import {
   fetchCouncils,
 } from "../system-types/discussnet-ssp/schedule/scraper";
 import type { ScraperQueueMessage } from "../utils/types";
+import { sendSlackWebhook } from "@open-gikai/notification";
 
 /**
  * pending ジョブを検証し、自治体の systemType に応じて最初のキューメッセージを投入する。
@@ -22,7 +23,8 @@ export async function dispatchJob(
     scraper_jobs: typeof scraper_jobs.$inferSelect;
     municipalities: typeof municipalities.$inferSelect;
     system_types: typeof system_types.$inferSelect | null;
-  }
+  },
+  slackWebhookUrl?: string
 ): Promise<void> {
   const { scraper_jobs, municipalities, system_types: systemType } = job;
   const logger = createJobLogger(db, scraper_jobs.id);
@@ -35,11 +37,11 @@ export async function dispatchJob(
   );
 
   if (!municipalities.baseUrl) {
-    await logger.error(
-      `baseUrl が未設定: municipalityId=${scraper_jobs.municipalityId}`
-    );
-    await updateJobStatus(db, scraper_jobs.id, "failed", {
-      errorMessage: `baseUrl が未設定: municipalityId=${scraper_jobs.municipalityId}`,
+    const errorMessage = `baseUrl が未設定: municipalityId=${scraper_jobs.municipalityId}`;
+    await logger.error(errorMessage);
+    await updateJobStatus(db, scraper_jobs.id, "failed", { errorMessage });
+    await sendSlackWebhook(slackWebhookUrl, {
+      text: `🚨 スクレイピングジョブが失敗しました\n自治体: ${municipalities.name}\nエラー: ${errorMessage}\nジョブID: ${scraper_jobs.id}`,
     });
     return;
   }
@@ -49,11 +51,13 @@ export async function dispatchJob(
       // baseUrl: https://ssp.kaigiroku.net/tenant/{slug}/MinuteSearch.html
       const slugMatch = municipalities.baseUrl.match(/\/tenant\/([^/]+)\//);
       if (!slugMatch?.[1]) {
+        const errorMessage = `テナントスラッグ抽出失敗: ${municipalities.baseUrl}`;
         await logger.error(
           `DiscussNet SSP: ${municipalities.name} の baseUrl からテナントスラッグを抽出できません: ${municipalities.baseUrl}`
         );
-        await updateJobStatus(db, scraper_jobs.id, "failed", {
-          errorMessage: `テナントスラッグ抽出失敗: ${municipalities.baseUrl}`,
+        await updateJobStatus(db, scraper_jobs.id, "failed", { errorMessage });
+        await sendSlackWebhook(slackWebhookUrl, {
+          text: `🚨 スクレイピングジョブが失敗しました\n自治体: ${municipalities.name}\nエラー: ${errorMessage}\nジョブID: ${scraper_jobs.id}\nシステム: discussnet_ssp`,
         });
         return;
       }
@@ -61,11 +65,13 @@ export async function dispatchJob(
 
       const tenantId = await fetchTenantId(tenantSlug);
       if (!tenantId) {
+        const errorMessage = `tenantId 取得失敗: slug=${tenantSlug}`;
         await logger.error(
           `DiscussNet SSP: ${municipalities.name} の tenantId を取得できません (slug=${tenantSlug})`
         );
-        await updateJobStatus(db, scraper_jobs.id, "failed", {
-          errorMessage: `tenantId 取得失敗: slug=${tenantSlug}`,
+        await updateJobStatus(db, scraper_jobs.id, "failed", { errorMessage });
+        await sendSlackWebhook(slackWebhookUrl, {
+          text: `🚨 スクレイピングジョブが失敗しました\n自治体: ${municipalities.name}\nエラー: ${errorMessage}\nジョブID: ${scraper_jobs.id}\nシステム: discussnet_ssp`,
         });
         return;
       }
@@ -148,9 +154,11 @@ export async function dispatchJob(
     }
 
     default: {
-      await logger.error(`未対応の systemType: ${systemType?.name ?? "null"}`);
-      await updateJobStatus(db, scraper_jobs.id, "failed", {
-        errorMessage: `未対応の systemType: ${systemType?.name ?? "null"}`,
+      const errorMessage = `未対応の systemType: ${systemType?.name ?? "null"}`;
+      await logger.error(errorMessage);
+      await updateJobStatus(db, scraper_jobs.id, "failed", { errorMessage });
+      await sendSlackWebhook(slackWebhookUrl, {
+        text: `🚨 スクレイピングジョブが失敗しました\n自治体: ${municipalities.name}\nエラー: ${errorMessage}\nジョブID: ${scraper_jobs.id}`,
       });
     }
   }

@@ -1,6 +1,7 @@
 import type { Db } from "@open-gikai/db";
 import type { ScraperQueueMessage } from "./types";
 import { updateScraperJobStatus } from "./job-logger";
+import { sendSlackWebhook } from "@open-gikai/notification";
 import { handleDiscussnetSspSchedule } from "../system-types/discussnet-ssp/schedule/handler";
 import { handleDiscussnetSspMinute } from "../system-types/discussnet-ssp/minute/handler";
 import { handleDbsearchList } from "../system-types/dbsearch/list/handler";
@@ -127,7 +128,8 @@ async function handleGijirokuCom(
 export async function handleMessageError(
   db: Db,
   msg: ScraperQueueMessage,
-  err: unknown
+  err: unknown,
+  slackWebhookUrl?: string
 ): Promise<void> {
   const errorMessage = err instanceof Error ? err.message : String(err);
   console.error(
@@ -136,5 +138,8 @@ export async function handleMessageError(
   );
   if ("jobId" in msg) {
     await updateScraperJobStatus(db, msg.jobId, "failed", { errorMessage });
+    await sendSlackWebhook(slackWebhookUrl, {
+      text: `🚨 スクレイピングジョブが失敗しました\n自治体: ${"municipalityName" in msg ? msg.municipalityName : "不明"}\nエラー: ${errorMessage}\nジョブID: ${msg.jobId}\nシステム: ${msg.type}`,
+    });
   }
 }

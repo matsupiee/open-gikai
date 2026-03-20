@@ -28,7 +28,7 @@ export default {
       .where(inArray(scraper_jobs.id, jobIds));
 
     for (const job of pendingJobs) {
-      await dispatchJob(db, env.SCRAPER_QUEUE, job);
+      await dispatchJob(db, env.SCRAPER_QUEUE, job, env.SLACK_WEBHOOK_URL);
     }
   },
 
@@ -49,7 +49,7 @@ export default {
         await handleQueueMessage(db, env.SCRAPER_QUEUE, msg, env.OPENAI_API_KEY);
         message.ack();
       } catch (err) {
-        await handleMessageError(db, msg, err);
+        await handleMessageError(db, msg, err, env.SLACK_WEBHOOK_URL);
         // retryOnThrow のデフォルト動作 (再キュー) を避けるため ack する
         // ackするとメッセージがキューから削除されて再実行されない
         message.ack();

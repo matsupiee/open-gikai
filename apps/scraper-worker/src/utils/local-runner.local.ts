@@ -57,7 +57,7 @@ class LocalQueue {
       try {
         await handleQueueMessage(db, q, msg, process.env.OPENAI_API_KEY);
       } catch (err) {
-        await handleMessageError(db, msg, err);
+        await handleMessageError(db, msg, err, process.env.SLACK_WEBHOOK_URL);
       }
     }
   }
@@ -75,7 +75,7 @@ async function main() {
 
     const queue = new LocalQueue();
     for (const job of pendingJobs) {
-      await dispatchJob(db, queue, job);
+      await dispatchJob(db, queue, job, process.env.SLACK_WEBHOOK_URL);
     }
     await queue.processAll();
 
