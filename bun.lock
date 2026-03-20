@@ -22,6 +22,7 @@
       "name": "@open-gikai/scraper-worker",
       "dependencies": {
         "@open-gikai/db": "workspace:*",
+        "@open-gikai/notification": "workspace:*",
         "@paralleldrive/cuid2": "^3.3.0",
         "cheerio": "^1.0.0",
         "drizzle-orm": "^0.45.1",
@@ -148,6 +149,13 @@
         "@types/pg": "^8.16.0",
         "drizzle-kit": "^0.31.8",
         "pg": "^8.17.1",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/notification": {
+      "name": "@open-gikai/notification",
+      "devDependencies": {
+        "@open-gikai/config": "workspace:*",
         "typescript": "catalog:",
       },
     },
@@ -543,6 +551,8 @@
     "@open-gikai/config": ["@open-gikai/config@workspace:packages/config"],
 
     "@open-gikai/db": ["@open-gikai/db@workspace:packages/db"],
+
+    "@open-gikai/notification": ["@open-gikai/notification@workspace:packages/notification"],
 
     "@open-gikai/scraper-worker": ["@open-gikai/scraper-worker@workspace:apps/scraper-worker"],
 

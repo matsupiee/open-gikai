@@ -1,0 +1,17 @@
+{
+  "name": "@open-gikai/notification",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@open-gikai/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

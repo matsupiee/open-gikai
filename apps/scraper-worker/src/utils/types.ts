@@ -155,4 +155,5 @@ export interface Env {
   DATABASE_URL: string;
   SCRAPER_QUEUE: Queue<ScraperQueueMessage>;
   OPENAI_API_KEY?: string;
+  SLACK_WEBHOOK_URL?: string;
 }
