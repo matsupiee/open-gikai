@@ -122,19 +122,49 @@ async function handleGijirokuCom(
 }
 
 /**
+ * PostgreSQL エラーから詳細情報を抽出する。
+ * postgres.js の "Failed query: ..." フォーマットだけでは原因が不明なため、
+ * code / detail / severity があれば付与する。
+ */
+function formatErrorMessage(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+
+  const pg = err as Error & {
+    code?: string;
+    detail?: string;
+    severity?: string;
+  };
+  let msg = pg.message;
+  if (pg.code) msg += ` [code=${pg.code}]`;
+  if (pg.severity) msg += ` [severity=${pg.severity}]`;
+  if (pg.detail) msg += ` [detail=${pg.detail}]`;
+  return msg;
+}
+
+/**
  * メッセージ処理中のエラーを共通の方法で処理する。
+ *
+ * DB 接続が切れている場合に updateScraperJobStatus も失敗しうるため、
+ * try-catch でラップして Worker クラッシュを防止する。
  */
 export async function handleMessageError(
   db: Db,
   msg: ScraperQueueMessage,
   err: unknown
 ): Promise<void> {
-  const errorMessage = err instanceof Error ? err.message : String(err);
+  const errorMessage = formatErrorMessage(err);
   console.error(
     `[scraper-worker] handler error for type=${msg.type}:`,
     errorMessage
   );
   if ("jobId" in msg) {
-    await updateScraperJobStatus(db, msg.jobId, "failed", { errorMessage });
+    try {
+      await updateScraperJobStatus(db, msg.jobId, "failed", { errorMessage });
+    } catch (updateErr) {
+      console.error(
+        `[scraper-worker] failed to update job status for jobId=${msg.jobId}:`,
+        formatErrorMessage(updateErr)
+      );
+    }
   }
 }
