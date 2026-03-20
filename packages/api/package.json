@@ -9,7 +9,9 @@
       "default": "./src/*.ts"
     }
   },
-  "scripts": {},
+  "scripts": {
+    "test": "vitest run"
+  },
   "dependencies": {
     "@open-gikai/auth": "workspace:*",
     "@open-gikai/db": "workspace:*",
@@ -25,6 +27,7 @@
   "devDependencies": {
     "@open-gikai/config": "workspace:*",
     "@types/pg": "^8.18.0",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^4.1.0"
   }
 }

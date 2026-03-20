@@ -114,6 +114,7 @@
         "@open-gikai/config": "workspace:*",
         "@types/pg": "^8.18.0",
         "typescript": "catalog:",
+        "vitest": "^4.1.0",
       },
     },
     "packages/auth": {
