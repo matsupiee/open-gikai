@@ -95,7 +95,7 @@ async function seed() {
   console.log(`[seed] ${municipalityList.length} 件の自治体を登録します`);
 
   let inserted = 0;
-  const BATCH_SIZE = 50;
+  const BATCH_SIZE = 100;
 
   const values = municipalityList.map((m) => {
     const displayName = m.name || m.prefecture; // 都道府県行は都道府県名を name に
