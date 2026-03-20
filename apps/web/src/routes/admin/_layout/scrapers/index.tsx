@@ -37,7 +37,7 @@ function ScrapersPage() {
   const { data, isLoading } = useQuery(
     orpc.scrapers.listJobs.queryOptions({
       input: { limit: PAGE_SIZE, offset: page * PAGE_SIZE },
-      refetchInterval: 2000,
+      refetchInterval: 30_000,
     })
   );
 
