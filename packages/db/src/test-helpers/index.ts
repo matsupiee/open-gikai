@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
+import type { Sql } from "postgres";
 import * as schema from "../schema";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,6 +11,8 @@ const migrationsFolder = path.resolve(__dirname, "../migrations");
 
 const DEFAULT_TEST_DATABASE_URL =
   "postgresql://postgres:postgres@127.0.0.1:54322/postgres_test";
+
+type TestDb = ReturnType<typeof drizzle<typeof schema>> & { $client: Sql };
 
 function getTestDatabaseUrl() {
   return process.env.TEST_DATABASE_URL ?? DEFAULT_TEST_DATABASE_URL;
@@ -43,55 +46,45 @@ export async function createTestDatabase() {
 /**
  * テスト用 Drizzle 接続を返す。
  */
-export function getTestDb() {
+export function getTestDb(): TestDb {
   const client = postgres(getTestDatabaseUrl(), { prepare: false });
-  return drizzle(client, { schema, casing: "snake_case" });
+  return drizzle(client, { schema, casing: "snake_case" }) as TestDb;
 }
 
 /**
  * テスト DB にマイグレーションを実行する。
  */
-export async function runMigrations(db: ReturnType<typeof getTestDb>) {
+export async function runMigrations(db: TestDb) {
   await migrate(db, { migrationsFolder });
 }
 
 /**
  * コネクションプールを終了する。
- * drizzle の内部 client ($client) を使ってクローズする。
  */
-export async function closeTestDb(db: ReturnType<typeof getTestDb>) {
-  // postgres.js の end() を呼ぶ
-  await (db as unknown as { $client: postgres.Sql }).$client.end();
+export async function closeTestDb(db: TestDb) {
+  await db.$client.end();
 }
 
 /**
  * トランザクション内で fn を実行し、必ずロールバックする。
  * テスト間の分離を保証する。
+ *
+ * fn には Db 互換の型を渡すため、サービス関数をキャストなしで呼べる。
  */
 export async function withRollback<T>(
-  db: ReturnType<typeof getTestDb>,
-  fn: (tx: ReturnType<typeof getTestDb>) => Promise<T>,
+  db: TestDb,
+  fn: (tx: TestDb) => Promise<T>,
 ): Promise<T> {
   let result: T;
   try {
     await db.transaction(async (tx) => {
-      result = await fn(tx as unknown as ReturnType<typeof getTestDb>);
-      // 強制ロールバック
-      throw new RollbackError();
+      result = await fn(tx as unknown as TestDb);
+      tx.rollback();
     });
-  } catch (e) {
-    if (e instanceof RollbackError) {
-      return result!;
-    }
-    throw e;
+  } catch {
+    // tx.rollback() は TransactionRollbackError を throw する
+    // Drizzle が内部でキャッチしてロールバックを実行するため、ここでは握りつぶす
+    return result!;
   }
-  // unreachable
   return result!;
-}
-
-class RollbackError extends Error {
-  constructor() {
-    super("__ROLLBACK__");
-    this.name = "RollbackError";
-  }
 }

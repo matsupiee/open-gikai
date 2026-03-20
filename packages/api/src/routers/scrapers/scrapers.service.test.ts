@@ -10,7 +10,6 @@ import {
   listMunicipalities,
   createBulkJobs,
 } from "./scrapers.service";
-import type { Db } from "@open-gikai/db";
 
 let db: ReturnType<typeof getTestDb>;
 
@@ -26,7 +25,7 @@ afterAll(async () => {
  * テスト用シードデータを投入する。
  * system_types → municipalities の順で作成し、テストで使う ID を返す。
  */
-async function seedTestData(tx: Db) {
+async function seedTestData(tx: ReturnType<typeof getTestDb>) {
   const [systemType] = await tx
     .insert(system_types)
     .values({ name: "test_system", description: "テスト用システム" })
@@ -68,7 +67,7 @@ describe("createJob", () => {
     await withRollback(db, async (tx) => {
       const { municipality } = await seedTestData(tx);
 
-      const job = await createJob(tx as unknown as Db, {
+      const job = await createJob(tx, {
         municipalityId: municipality.id,
         year: 2024,
       });
@@ -97,10 +96,7 @@ describe("listJobs", () => {
         });
       }
 
-      const result = await listJobs(tx as unknown as Db, {
-        limit: 2,
-        offset: 0,
-      });
+      const result = await listJobs(tx, { limit: 2, offset: 0 });
 
       expect(result.jobs).toHaveLength(2);
       expect(result.total).toBe(3);
@@ -117,10 +113,7 @@ describe("listJobs", () => {
         year: 2024,
       });
 
-      const result = await listJobs(tx as unknown as Db, {
-        limit: 10,
-        offset: 0,
-      });
+      const result = await listJobs(tx, { limit: 10, offset: 0 });
 
       expect(result.jobs[0]!.municipalityName).toBe("テスト市");
       expect(result.jobs[0]!.prefecture).toBe("テスト県");
@@ -143,7 +136,7 @@ describe("getJob", () => {
         })
         .returning();
 
-      const job = await getJob(tx as unknown as Db, { jobId: created!.id });
+      const job = await getJob(tx, { jobId: created!.id });
 
       expect(job.id).toBe(created!.id);
       expect(job.status).toBe("running");
@@ -154,7 +147,7 @@ describe("getJob", () => {
   test("存在しない ID で NOT_FOUND エラー", async () => {
     await withRollback(db, async (tx) => {
       await expect(
-        getJob(tx as unknown as Db, { jobId: "nonexistent" }),
+        getJob(tx, { jobId: "nonexistent" }),
       ).rejects.toThrow("見つかりません");
     });
   });
@@ -174,9 +167,7 @@ describe("cancelJob", () => {
         })
         .returning();
 
-      const cancelled = await cancelJob(tx as unknown as Db, {
-        jobId: created!.id,
-      });
+      const cancelled = await cancelJob(tx, { jobId: created!.id });
 
       expect(cancelled.status).toBe("cancelled");
       expect(cancelled.completedAt).not.toBeNull();
@@ -196,9 +187,7 @@ describe("cancelJob", () => {
         })
         .returning();
 
-      const cancelled = await cancelJob(tx as unknown as Db, {
-        jobId: created!.id,
-      });
+      const cancelled = await cancelJob(tx, { jobId: created!.id });
 
       expect(cancelled.status).toBe("cancelled");
     });
@@ -218,7 +207,7 @@ describe("cancelJob", () => {
         .returning();
 
       await expect(
-        cancelJob(tx as unknown as Db, { jobId: created!.id }),
+        cancelJob(tx, { jobId: created!.id }),
       ).rejects.toThrow("キャンセルできません");
     });
   });
@@ -226,7 +215,7 @@ describe("cancelJob", () => {
   test("存在しない ID で NOT_FOUND エラー", async () => {
     await withRollback(db, async (tx) => {
       await expect(
-        cancelJob(tx as unknown as Db, { jobId: "nonexistent" }),
+        cancelJob(tx, { jobId: "nonexistent" }),
       ).rejects.toThrow("見つかりません");
     });
   });
@@ -244,15 +233,12 @@ describe("deletePendingJobs", () => {
         { municipalityId: municipality.id, status: "running", year: 2022 },
       ]);
 
-      const result = await deletePendingJobs(tx as unknown as Db, {});
+      const result = await deletePendingJobs(tx, {});
 
       expect(result.deletedCount).toBe(2);
 
       // running は残っている
-      const remaining = await listJobs(tx as unknown as Db, {
-        limit: 10,
-        offset: 0,
-      });
+      const remaining = await listJobs(tx, { limit: 10, offset: 0 });
       expect(remaining.total).toBe(1);
       expect(remaining.jobs[0]!.status).toBe("running");
     });
@@ -264,7 +250,7 @@ describe("listMunicipalities", () => {
     await withRollback(db, async (tx) => {
       await seedTestData(tx);
 
-      const result = await listMunicipalities(tx as unknown as Db, {});
+      const result = await listMunicipalities(tx, {});
 
       // enabled=true のテスト市のみ
       const testMunicipality = result.find((m) => m.code === "999999");
@@ -283,7 +269,7 @@ describe("createBulkJobs", () => {
     await withRollback(db, async (tx) => {
       await seedTestData(tx);
 
-      const result = await createBulkJobs(tx as unknown as Db, { year: 2024 });
+      const result = await createBulkJobs(tx, { year: 2024 });
 
       // enabled=true かつ baseUrl ありの自治体のみ (テスト市1件)
       expect(result.createdCount).toBe(1);
@@ -302,7 +288,7 @@ describe("createBulkJobs", () => {
         year: 2024,
       });
 
-      const result = await createBulkJobs(tx as unknown as Db, { year: 2024 });
+      const result = await createBulkJobs(tx, { year: 2024 });
 
       expect(result.createdCount).toBe(0);
       expect(result.skippedCount).toBe(1);

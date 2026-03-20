@@ -37,6 +37,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
         ports:
+          # Supabase CLI と同じ 54322 を使用。ローカルで supabase start 中は競合するため注意
           - 54322:5432
         options: >-
           --health-cmd="pg_isready -U postgres"
