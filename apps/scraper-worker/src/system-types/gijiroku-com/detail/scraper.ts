@@ -137,7 +137,9 @@ async function fetchShiftJisPage(url: string): Promise<string | null> {
 export function buildDetailUrl(baseUrl: string, fino: string): string | null {
   try {
     const url = new URL(baseUrl);
-    url.protocol = "https:";
+    if (url.hostname.endsWith("gijiroku.com")) {
+      url.protocol = "https:";
+    }
 
     const voicesMatch = url.pathname.match(/^(.*\/voices)\//i);
     if (!voicesMatch?.[1]) return null;
@@ -156,7 +158,9 @@ export function buildDetailUrl(baseUrl: string, fino: string): string | null {
 export function buildSidebarUrl(baseUrl: string, fino: string): string | null {
   try {
     const url = new URL(baseUrl);
-    url.protocol = "https:";
+    if (url.hostname.endsWith("gijiroku.com")) {
+      url.protocol = "https:";
+    }
 
     const voicesMatch = url.pathname.match(/^(.*\/voices)\//i);
     if (!voicesMatch?.[1]) return null;
@@ -179,7 +183,9 @@ export function buildDetailUrlWithHuid(
 ): string | null {
   try {
     const url = new URL(baseUrl);
-    url.protocol = "https:";
+    if (url.hostname.endsWith("gijiroku.com")) {
+      url.protocol = "https:";
+    }
 
     const voicesMatch = url.pathname.match(/^(.*\/voices)\//i);
     if (!voicesMatch?.[1]) return null;

@@ -53,6 +53,24 @@ describe("buildListUrl", () => {
   test("不正な URL は null", () => {
     expect(buildListUrl("not-a-url", 2024)).toBeNull();
   });
+
+  test("自前ホスト VOICES（大文字パス）は HTTP を保持", () => {
+    const url = buildListUrl(
+      "http://info.city.chigasaki.kanagawa.jp/VOICES/g08v_search.asp",
+      2024
+    );
+    expect(url).toBe(
+      "http://info.city.chigasaki.kanagawa.jp/VOICES/cgi/voiweb.exe?ACT=100&KTYP=0,1,2,3&SORT=0&FYY=2024&TYY=2024&KGTP=1,3"
+    );
+  });
+
+  test("gijiroku.com ドメインは HTTPS に変換", () => {
+    const url = buildListUrl(
+      "http://tsukuba.gijiroku.com/voices/g08v_search.asp",
+      2024
+    );
+    expect(url).toMatch(/^https:\/\//);
+  });
 });
 
 describe("parseListHtml", () => {
