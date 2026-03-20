@@ -4,6 +4,8 @@ compatibility_date = "2026-03-05"
 compatibility_flags = ["nodejs_compat"]
 
 [triggers]
+# */1: 毎分 pending ジョブをディスパッチ
+# */5: 5 分おきに失敗ジョブを集約して Slack 通知
 crons = ["*/1 * * * *", "*/5 * * * *"]
 
 [[queues.consumers]]
