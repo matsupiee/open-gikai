@@ -2,7 +2,7 @@ import type { Db } from "@open-gikai/db";
 import { scraper_jobs, scraper_job_logs, municipalities, system_types } from "@open-gikai/db";
 import { meetings, statements } from "@open-gikai/db/schema";
 import { ORPCError } from "@orpc/server";
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { asc, count, countDistinct, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import type {
   scrapersListJobsSchema,
@@ -12,6 +12,9 @@ import type {
   scrapersGetJobLogsSchema,
   scrapersListMunicipalitiesSchema,
   scrapersReprocessStatementsSchema,
+  scrapersProgressByPrefectureSchema,
+  scrapersProgressByMunicipalitySchema,
+  scrapersProgressByYearSchema,
 } from "./_schemas";
 export interface ScraperJob {
   id: string;
@@ -261,4 +264,192 @@ export async function getJobLogs(
       createdAt: row.createdAt,
     })),
   };
+}
+
+// ── Progress queries ──────────────────────────────────────────
+
+export interface PrefectureProgress {
+  prefecture: string;
+  totalMunicipalities: number;
+  scrapedMunicipalities: number;
+  totalJobs: number;
+  completedJobs: number;
+  failedJobs: number;
+  activeJobs: number;
+  totalMeetings: number;
+}
+
+export async function progressByPrefecture(
+  db: Db,
+  _input: z.infer<typeof scrapersProgressByPrefectureSchema>
+): Promise<PrefectureProgress[]> {
+  // Query 1: job-level stats grouped by prefecture
+  const jobStats = await db
+    .select({
+      prefecture: municipalities.prefecture,
+      totalMunicipalities: count(municipalities.id),
+      scrapedMunicipalities: sql<number>`count(distinct case when ${scraper_jobs.status} = 'completed' then ${municipalities.id} end)`.as("scraped_municipalities"),
+      totalJobs: sql<number>`count(${scraper_jobs.id})`.as("total_jobs"),
+      completedJobs: sql<number>`count(case when ${scraper_jobs.status} = 'completed' then 1 end)`.as("completed_jobs"),
+      failedJobs: sql<number>`count(case when ${scraper_jobs.status} = 'failed' then 1 end)`.as("failed_jobs"),
+      activeJobs: sql<number>`count(case when ${scraper_jobs.status} in ('pending', 'queued', 'running') then 1 end)`.as("active_jobs"),
+    })
+    .from(municipalities)
+    .leftJoin(scraper_jobs, eq(municipalities.id, scraper_jobs.municipalityId))
+    .groupBy(municipalities.prefecture)
+    .orderBy(asc(municipalities.prefecture));
+
+  // Query 2: meeting counts grouped by prefecture
+  const meetingStats = await db
+    .select({
+      prefecture: municipalities.prefecture,
+      totalMeetings: count(meetings.id),
+    })
+    .from(meetings)
+    .innerJoin(municipalities, eq(meetings.municipalityId, municipalities.id))
+    .groupBy(municipalities.prefecture);
+
+  const meetingMap = new Map(
+    meetingStats.map((r) => [r.prefecture, Number(r.totalMeetings)])
+  );
+
+  return jobStats.map((r) => ({
+    prefecture: r.prefecture,
+    totalMunicipalities: Number(r.totalMunicipalities),
+    scrapedMunicipalities: Number(r.scrapedMunicipalities),
+    totalJobs: Number(r.totalJobs),
+    completedJobs: Number(r.completedJobs),
+    failedJobs: Number(r.failedJobs),
+    activeJobs: Number(r.activeJobs),
+    totalMeetings: meetingMap.get(r.prefecture) ?? 0,
+  }));
+}
+
+export interface MunicipalityProgress {
+  municipalityId: string;
+  name: string;
+  prefecture: string;
+  totalJobs: number;
+  completedJobs: number;
+  failedJobs: number;
+  activeJobs: number;
+  totalMeetings: number;
+  totalInserted: number;
+}
+
+export interface MunicipalityProgressResponse {
+  items: MunicipalityProgress[];
+  total: number;
+}
+
+export async function progressByMunicipality(
+  db: Db,
+  input: z.infer<typeof scrapersProgressByMunicipalitySchema>
+): Promise<MunicipalityProgressResponse> {
+  const whereClause = input.prefecture
+    ? eq(municipalities.prefecture, input.prefecture)
+    : undefined;
+
+  // Main query with pagination
+  const rows = await db
+    .select({
+      municipalityId: municipalities.id,
+      name: municipalities.name,
+      prefecture: municipalities.prefecture,
+      totalJobs: sql<number>`count(${scraper_jobs.id})`.as("total_jobs"),
+      completedJobs: sql<number>`count(case when ${scraper_jobs.status} = 'completed' then 1 end)`.as("completed_jobs"),
+      failedJobs: sql<number>`count(case when ${scraper_jobs.status} = 'failed' then 1 end)`.as("failed_jobs"),
+      activeJobs: sql<number>`count(case when ${scraper_jobs.status} in ('pending', 'queued', 'running') then 1 end)`.as("active_jobs"),
+      totalInserted: sql<number>`coalesce(sum(${scraper_jobs.totalInserted}), 0)`.as("total_inserted"),
+    })
+    .from(municipalities)
+    .leftJoin(scraper_jobs, eq(municipalities.id, scraper_jobs.municipalityId))
+    .where(whereClause)
+    .groupBy(municipalities.id, municipalities.name, municipalities.prefecture)
+    .orderBy(asc(municipalities.prefecture), asc(municipalities.name))
+    .limit(input.limit)
+    .offset(input.offset);
+
+  // Count total
+  const totalResult = whereClause
+    ? await db.$count(municipalities, whereClause)
+    : await db.$count(municipalities);
+
+  // Meeting counts for the municipalities in the current page
+  const municipalityIds = rows.map((r) => r.municipalityId);
+  let meetingMap = new Map<string, number>();
+  if (municipalityIds.length > 0) {
+    const meetingStats = await db
+      .select({
+        municipalityId: meetings.municipalityId,
+        totalMeetings: count(meetings.id),
+      })
+      .from(meetings)
+      .where(inArray(meetings.municipalityId, municipalityIds))
+      .groupBy(meetings.municipalityId);
+
+    meetingMap = new Map(
+      meetingStats.map((r) => [r.municipalityId, Number(r.totalMeetings)])
+    );
+  }
+
+  return {
+    items: rows.map((r) => ({
+      municipalityId: r.municipalityId,
+      name: r.name,
+      prefecture: r.prefecture,
+      totalJobs: Number(r.totalJobs),
+      completedJobs: Number(r.completedJobs),
+      failedJobs: Number(r.failedJobs),
+      activeJobs: Number(r.activeJobs),
+      totalMeetings: meetingMap.get(r.municipalityId) ?? 0,
+      totalInserted: Number(r.totalInserted),
+    })),
+    total: totalResult,
+  };
+}
+
+export interface YearProgress {
+  year: number;
+  totalMunicipalities: number;
+  completedMunicipalities: number;
+  totalJobs: number;
+  completedJobs: number;
+  failedJobs: number;
+  activeJobs: number;
+  totalInserted: number;
+  totalSkipped: number;
+}
+
+export async function progressByYear(
+  db: Db,
+  _input: z.infer<typeof scrapersProgressByYearSchema>
+): Promise<YearProgress[]> {
+  const rows = await db
+    .select({
+      year: scraper_jobs.year,
+      totalMunicipalities: countDistinct(scraper_jobs.municipalityId),
+      completedMunicipalities: sql<number>`count(distinct case when ${scraper_jobs.status} = 'completed' then ${scraper_jobs.municipalityId} end)`.as("completed_municipalities"),
+      totalJobs: count(scraper_jobs.id),
+      completedJobs: sql<number>`count(case when ${scraper_jobs.status} = 'completed' then 1 end)`.as("completed_jobs"),
+      failedJobs: sql<number>`count(case when ${scraper_jobs.status} = 'failed' then 1 end)`.as("failed_jobs"),
+      activeJobs: sql<number>`count(case when ${scraper_jobs.status} in ('pending', 'queued', 'running') then 1 end)`.as("active_jobs"),
+      totalInserted: sql<number>`coalesce(sum(${scraper_jobs.totalInserted}), 0)`.as("total_inserted"),
+      totalSkipped: sql<number>`coalesce(sum(${scraper_jobs.totalSkipped}), 0)`.as("total_skipped"),
+    })
+    .from(scraper_jobs)
+    .groupBy(scraper_jobs.year)
+    .orderBy(desc(scraper_jobs.year));
+
+  return rows.map((r) => ({
+    year: r.year,
+    totalMunicipalities: Number(r.totalMunicipalities),
+    completedMunicipalities: Number(r.completedMunicipalities),
+    totalJobs: Number(r.totalJobs),
+    completedJobs: Number(r.completedJobs),
+    failedJobs: Number(r.failedJobs),
+    activeJobs: Number(r.activeJobs),
+    totalInserted: Number(r.totalInserted),
+    totalSkipped: Number(r.totalSkipped),
+  }));
 }

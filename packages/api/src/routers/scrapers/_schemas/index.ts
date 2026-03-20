@@ -5,3 +5,6 @@ export { scrapersCancelJobSchema } from "./scrapers-cancel-job.schema";
 export { scrapersGetJobLogsSchema } from "./scrapers-get-job-logs.schema";
 export { scrapersListMunicipalitiesSchema } from "./scrapers-list-municipalities.schema";
 export { scrapersReprocessStatementsSchema } from "./scrapers-reprocess-statements.schema";
+export { scrapersProgressByPrefectureSchema } from "./scrapers-progress-by-prefecture.schema";
+export { scrapersProgressByMunicipalitySchema } from "./scrapers-progress-by-municipality.schema";
+export { scrapersProgressByYearSchema } from "./scrapers-progress-by-year.schema";

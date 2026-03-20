@@ -33,6 +33,12 @@ function AdminLayout() {
             >
               スクレイパー
             </a>
+            <a
+              href="/admin/progress"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              進捗管理
+            </a>
           </nav>
         </div>
       </div>
