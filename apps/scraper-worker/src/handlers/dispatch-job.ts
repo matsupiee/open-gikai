@@ -131,6 +131,22 @@ export async function dispatchJob(
       break;
     }
 
+    case "gijiroku_com": {
+      await logger.info(
+        `gijiroku.com: ${municipalities.name} の会議一覧をキューに投入します`
+      );
+      await queue.send({
+        type: "gijiroku-com:list",
+        jobId: scraper_jobs.id,
+        municipalityId: municipalities.id,
+        municipalityName: municipalities.name,
+        prefecture: municipalities.prefecture,
+        baseUrl: municipalities.baseUrl,
+        year: scraper_jobs.year,
+      });
+      break;
+    }
+
     default: {
       await logger.error(`未対応の systemType: ${systemType?.name ?? "null"}`);
       await updateJobStatus(db, scraper_jobs.id, "failed", {

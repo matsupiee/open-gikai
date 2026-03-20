@@ -23,7 +23,7 @@ export const system_types = pgTable(
 );
 
 /** 既知のシステム種別（アプリコードでの型付けに使用） */
-export type SystemType = "discussnet_ssp" | "dbsearch" | "kensakusystem";
+export type SystemType = "discussnet_ssp" | "dbsearch" | "kensakusystem" | "gijiroku_com";
 
 /** system_types テーブルの初期データ */
 export const SYSTEM_TYPES_SEED: Array<{
@@ -38,5 +38,9 @@ export const SYSTEM_TYPES_SEED: Array<{
   {
     name: "kensakusystem",
     description: "kensakusystem.jp（複数自治体共通検索システム）",
+  },
+  {
+    name: "gijiroku_com",
+    description: "gijiroku.com（voiweb.exe ベースの議事録検索システム）",
   },
 ];
