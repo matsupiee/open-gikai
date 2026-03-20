@@ -56,6 +56,8 @@ export type ScraperQueueMessage =
       councilId: number;
       /** 会議名（例: "令和７年第４回定例会"） */
       councilName: string;
+      /** 自ホスト版のホスト（省略時は ssp.kaigiroku.net） */
+      host?: string;
     }
   | {
       /**
@@ -76,6 +78,8 @@ export type ScraperQueueMessage =
       scheduleName: string;
       /** member_list HTML: 開催日抽出に使用 */
       memberList: string;
+      /** 自ホスト版のホスト（省略時は ssp.kaigiroku.net） */
+      host?: string;
     }
   | {
       /** dbsr.jp: 議事録一覧ページから ID 一覧を取得するメッセージ */

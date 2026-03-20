@@ -55,13 +55,14 @@ export async function fetchMinuteData(
   councilId: number,
   councilName: string,
   schedule: SspSchedule,
-  municipalityId: string
+  municipalityId: string,
+  options?: { apiBase?: string; host?: string }
 ): Promise<MeetingData | null> {
   const data = await postJson<MinuteApiResponse>("minutes/get_minute", {
     tenant_id: tenantId,
     council_id: councilId,
     schedule_id: schedule.scheduleId,
-  });
+  }, options?.apiBase);
   if (!data?.tenant_minutes) return null;
 
   const statements: ParsedStatement[] = [];
@@ -108,7 +109,8 @@ export async function fetchMinuteData(
   const sourceUrl = buildMinuteViewUrl(
     tenantSlug,
     councilId,
-    schedule.scheduleId
+    schedule.scheduleId,
+    options?.host
   );
 
   return {
@@ -209,9 +211,11 @@ export function detectMeetingType(councilName: string): string {
 function buildMinuteViewUrl(
   tenantSlug: string,
   councilId: number,
-  scheduleId: number
+  scheduleId: number,
+  host?: string
 ): string {
-  const url = new URL(`${SSP_HOST}/tenant/${tenantSlug}/MinuteView.html`);
+  const baseHost = host ?? SSP_HOST;
+  const url = new URL(`${baseHost}/tenant/${tenantSlug}/MinuteView.html`);
   url.searchParams.set("council_id", String(councilId));
   url.searchParams.set("schedule_id", String(scheduleId));
   return url.toString();

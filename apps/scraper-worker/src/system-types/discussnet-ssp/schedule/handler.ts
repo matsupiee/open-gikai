@@ -16,6 +16,7 @@ import { createJobLogger, addTotalItems } from "../../../utils/job-logger";
 import { delay } from "../../../utils/delay";
 import type { ScraperQueueMessage } from "../../../utils/types";
 import { fetchSchedules } from "./scraper";
+import { buildApiBase } from "../_shared";
 
 const INTER_REQUEST_DELAY_MS = 1000;
 
@@ -30,7 +31,8 @@ export async function handleDiscussnetSspSchedule(
     `DiscussNet SSP [${msg.municipalityName}] schedule 一覧取得中: council_id=${msg.councilId} (${msg.councilName})`
   );
 
-  const schedules = await fetchSchedules(msg.tenantId, msg.councilId);
+  const apiBase = msg.host ? buildApiBase(`${msg.host}/`) : undefined;
+  const schedules = await fetchSchedules(msg.tenantId, msg.councilId, apiBase);
 
   if (schedules.length === 0) {
     await logger.warn(
@@ -57,6 +59,7 @@ export async function handleDiscussnetSspSchedule(
       scheduleId: schedule.scheduleId,
       scheduleName: schedule.name,
       memberList: schedule.memberList,
+      host: msg.host,
     });
   }
 
