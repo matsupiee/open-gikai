@@ -1,0 +1,17 @@
+name = "open-gikai-scraper-worker"
+main = "src/index.ts"
+compatibility_date = "2026-03-05"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+crons = ["*/1 * * * *"]
+
+[[queues.consumers]]
+queue = "scraper-jobs"
+max_batch_size = 5
+max_concurrency = 2
+max_retries = 3
+retry_delay = 30
+
+[observability]
+enabled = true

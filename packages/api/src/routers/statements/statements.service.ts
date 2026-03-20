@@ -3,7 +3,6 @@ import { meetings, municipalities, statement_chunks, statements } from "@open-gi
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq, gte, ilike, lte, lt, sql } from "drizzle-orm";
 import { z } from "zod";
-import { env } from "@open-gikai/env/server";
 import { generateEmbedding } from "../../shared/embedding";
 import { generateAnswer } from "../../shared/llm";
 import type {
@@ -258,7 +257,7 @@ export async function semanticSearchStatements(
   db: Db,
   input: z.infer<typeof statementsSemanticSearchSchema>
 ): Promise<SemanticSearchResponse> {
-  if (!env.OPENAI_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     return keywordFallbackSearch(db, input);
   }
 
