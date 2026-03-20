@@ -37,6 +37,12 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
 
+      # CSV を更新して main にマージすれば自動で本番 DB に反映される
+      - name: Seed municipalities
+        run: bunx turbo -F @open-gikai/db db:seed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+
       - name: Build web
         run: bunx turbo -F web build
         env:
