@@ -47,10 +47,12 @@ interface ScheduleApiResponse {
  * tenant.js の内容: `dnp.params.tenant_id = 89`
  */
 export async function fetchTenantId(
-  tenantSlug: string
+  tenantSlug: string,
+  host?: string
 ): Promise<number | null> {
   try {
-    const url = `${SSP_HOST}/tenant/${tenantSlug}/js/tenant.js`;
+    const baseHost = host ?? SSP_HOST;
+    const url = `${baseHost}/tenant/${tenantSlug}/js/tenant.js`;
     const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
     if (!res.ok) return null;
     const text = await res.text();
@@ -68,11 +70,12 @@ export async function fetchTenantId(
  */
 export async function fetchCouncils(
   tenantId: number,
-  year?: number
+  year?: number,
+  apiBase?: string
 ): Promise<SspCouncil[]> {
   const data = await postJson<CouncilsApiResponse>("councils/index", {
     tenant_id: tenantId,
-  });
+  }, apiBase);
   if (!data?.councils) return [];
 
   const result: SspCouncil[] = [];
@@ -98,12 +101,13 @@ export async function fetchCouncils(
 /** schedule 一覧を取得する */
 export async function fetchSchedules(
   tenantId: number,
-  councilId: number
+  councilId: number,
+  apiBase?: string
 ): Promise<SspSchedule[]> {
   const data = await postJson<ScheduleApiResponse>("minutes/get_schedule", {
     tenant_id: tenantId,
     council_id: councilId,
-  });
+  }, apiBase);
   if (!data?.council_schedules) return [];
 
   return data.council_schedules.map((s) => ({

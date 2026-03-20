@@ -9,6 +9,7 @@ import {
   fetchTenantId,
   fetchCouncils,
 } from "../system-types/discussnet-ssp/schedule/scraper";
+import { buildApiBase, extractHost } from "../system-types/discussnet-ssp/_shared";
 import type { ScraperQueueMessage } from "../utils/types";
 
 /**
@@ -47,6 +48,7 @@ export async function dispatchJob(
   switch (systemType?.name) {
     case "discussnet_ssp": {
       // baseUrl: https://ssp.kaigiroku.net/tenant/{slug}/MinuteSearch.html
+      //          http://giji.city.yokohama.lg.jp/tenant/yokohama/MinuteSearch.html (自ホスト版)
       const slugMatch = municipalities.baseUrl.match(/\/tenant\/([^/]+)\//);
       if (!slugMatch?.[1]) {
         await logger.error(
@@ -59,7 +61,12 @@ export async function dispatchJob(
       }
       const tenantSlug = slugMatch[1];
 
-      const tenantId = await fetchTenantId(tenantSlug);
+      // 自ホスト版の場合はホストを baseUrl から抽出する
+      const isSelfHosted = !municipalities.baseUrl.includes("ssp.kaigiroku.net");
+      const host = isSelfHosted ? extractHost(municipalities.baseUrl) : undefined;
+      const apiBase = isSelfHosted ? buildApiBase(municipalities.baseUrl) : undefined;
+
+      const tenantId = await fetchTenantId(tenantSlug, host);
       if (!tenantId) {
         await logger.error(
           `DiscussNet SSP: ${municipalities.name} の tenantId を取得できません (slug=${tenantSlug})`
@@ -70,7 +77,7 @@ export async function dispatchJob(
         return;
       }
 
-      const councils = await fetchCouncils(tenantId, scraper_jobs.year);
+      const councils = await fetchCouncils(tenantId, scraper_jobs.year, apiBase);
 
       if (councils.length === 0) {
         await logger.warn(
@@ -95,6 +102,7 @@ export async function dispatchJob(
           tenantId,
           councilId: council.councilId,
           councilName: council.name,
+          host,
         });
       }
       break;

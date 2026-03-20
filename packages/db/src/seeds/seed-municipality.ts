@@ -57,6 +57,8 @@ function parseCsv(filePath: string): MunicipalityRecord[] {
 
 function detectSystemType(baseUrl: string): SystemType | null {
   if (baseUrl.includes("ssp.kaigiroku.net")) return "discussnet_ssp";
+  // 自ホスト版 DiscussNet（/tenant/{slug}/ パスパターン）
+  if (/\/tenant\/[^/]+\//.test(baseUrl)) return "discussnet_ssp";
   if (baseUrl.includes("dbsr.jp")) return "dbsearch";
   if (baseUrl.includes("kensakusystem.jp")) return "kensakusystem";
   if (baseUrl.includes("gijiroku.com")) return "gijiroku_com";

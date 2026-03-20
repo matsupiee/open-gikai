@@ -12,6 +12,7 @@ import { applyStatementsToMeeting } from "../../../utils/apply-statements";
 import { delay } from "../../../utils/delay";
 import type { ScraperQueueMessage } from "../../../utils/types";
 import { fetchMinuteData } from "./scraper";
+import { buildApiBase } from "../_shared";
 
 const INTER_REQUEST_DELAY_MS = 1000;
 
@@ -22,6 +23,7 @@ export async function handleDiscussnetSspMinute(
 ): Promise<void> {
   const logger = createJobLogger(db, msg.jobId);
 
+  const apiBase = msg.host ? buildApiBase(`${msg.host}/`) : undefined;
   const meetingData = await fetchMinuteData(
     msg.tenantId,
     msg.tenantSlug,
@@ -32,7 +34,8 @@ export async function handleDiscussnetSspMinute(
       name: msg.scheduleName,
       memberList: msg.memberList,
     },
-    msg.municipalityId
+    msg.municipalityId,
+    { apiBase, host: msg.host }
   );
 
   if (!meetingData) {
