@@ -13,7 +13,7 @@ fi
 
 # --- 1. stdin から worktree 名を取得し、worktree を作成 ---
 NAME=$(jq -r .name)
-DIR="$HOME/.claude/worktrees/$NAME"
+DIR="$CLAUDE_PROJECT_DIR/.claude/worktrees/$NAME"
 
 git worktree add "$DIR" HEAD >&2
 echo "Worktree created: $DIR" >&2
@@ -35,7 +35,7 @@ fi
 # --- 3. mise trust ---
 cd "$DIR"
 if command -v mise &>/dev/null; then
-  mise trust
+  mise trust >&2
   echo "✓ mise trust done" >&2
 else
   echo "⚠ mise not found, skipping mise trust" >&2
@@ -43,7 +43,7 @@ fi
 
 # --- 4. bun install ---
 if command -v bun &>/dev/null; then
-  bun install --frozen-lockfile
+  bun install --frozen-lockfile >&2
   echo "✓ bun install done" >&2
 else
   echo "⚠ bun not found, skipping bun install" >&2
