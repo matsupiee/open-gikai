@@ -1,33 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# --- 0. PATH にツールを追加 ---
-# hook はログインシェルではないため mise / bun が PATH にない場合がある
-export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$HOME/.bun/bin:$PATH"
+# WorktreeCreate hook: デフォルトの git worktree add を置き換える
+# stdin から JSON を受け取り、worktree を作成してセットアップする
+# 最後に worktree の絶対パスを stdout に出力する（必須）
 
-# mise が activate 済みならその shims も追加
+# --- 0. PATH にツールを追加 ---
+export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$HOME/.bun/bin:$PATH"
 if command -v mise &>/dev/null; then
   eval "$(mise env 2>/dev/null)" || true
 fi
 
-WORKTREE_ROOT="$(pwd)"
+# --- 1. stdin から worktree 名を取得し、worktree を作成 ---
+NAME=$(jq -r .name)
+DIR="$HOME/.claude/worktrees/$NAME"
 
-# メインリポジトリのパスを取得
-MAIN_REPO=$(git worktree list --porcelain | head -1 | sed 's/^worktree //')
-echo "Main repo: $MAIN_REPO" >&2
-echo "Worktree:  $WORKTREE_ROOT" >&2
+git worktree add "$DIR" HEAD >&2
+echo "Worktree created: $DIR" >&2
 
-# --- 1. .env.local をメインリポジトリからコピー ---
-# .env.local は .gitignore 対象のため worktree に自動コピーされない
-if [ -f "$MAIN_REPO/.env.local" ]; then
-  cp "$MAIN_REPO/.env.local" "$WORKTREE_ROOT/.env.local"
-  echo "✓ .env.local copied from main repo" >&2
+# --- 2. .env をメインリポジトリからコピー ---
+if [ -f "$CLAUDE_PROJECT_DIR/.env" ]; then
+  cp "$CLAUDE_PROJECT_DIR/.env" "$DIR/.env"
+  echo "✓ .env copied from main repo" >&2
 else
-  echo "⚠ .env.local not found in main repo: $MAIN_REPO" >&2
+  echo "⚠ .env not found in main repo: $CLAUDE_PROJECT_DIR" >&2
 fi
 
-# --- 2. mise trust ---
-cd "$WORKTREE_ROOT"
+# .env.local も存在すればコピー
+if [ -f "$CLAUDE_PROJECT_DIR/.env.local" ]; then
+  cp "$CLAUDE_PROJECT_DIR/.env.local" "$DIR/.env.local"
+  echo "✓ .env.local copied from main repo" >&2
+fi
+
+# --- 3. mise trust ---
+cd "$DIR"
 if command -v mise &>/dev/null; then
   mise trust
   echo "✓ mise trust done" >&2
@@ -35,8 +41,7 @@ else
   echo "⚠ mise not found, skipping mise trust" >&2
 fi
 
-# --- 3. bun install (グローバルキャッシュ活用 + frozen lockfile) ---
-# グローバルキャッシュからハードリンクするため、2回目以降はほぼ一瞬
+# --- 4. bun install ---
 if command -v bun &>/dev/null; then
   bun install --frozen-lockfile
   echo "✓ bun install done" >&2
@@ -46,3 +51,6 @@ fi
 
 echo "" >&2
 echo "=== Worktree setup complete ===" >&2
+
+# 最後に worktree パスを stdout に出力（必須）
+echo "$DIR"
