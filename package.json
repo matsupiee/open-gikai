@@ -35,7 +35,6 @@
     "scrape:local": "turbo -F @open-gikai/scraper-worker scrape:local"
   },
   "dependencies": {
-    "@open-gikai/env": "workspace:*",
     "dotenv": "catalog:",
     "zod": "catalog:"
   },

@@ -5,7 +5,6 @@
     "": {
       "name": "open-gikai",
       "dependencies": {
-        "@open-gikai/env": "workspace:*",
         "dotenv": "catalog:",
         "zod": "catalog:",
       },
@@ -23,9 +22,9 @@
       "name": "@open-gikai/scraper-worker",
       "dependencies": {
         "@open-gikai/db": "workspace:*",
-        "@open-gikai/env": "workspace:*",
         "@paralleldrive/cuid2": "^3.3.0",
         "cheerio": "^1.0.0",
+        "dotenv": "catalog:",
         "drizzle-orm": "^0.45.1",
         "pg": "^8.17.1",
       },
@@ -43,7 +42,6 @@
         "@open-gikai/api": "workspace:*",
         "@open-gikai/auth": "workspace:*",
         "@open-gikai/db": "workspace:*",
-        "@open-gikai/env": "workspace:*",
         "@orpc/client": "catalog:",
         "@orpc/openapi": "catalog:",
         "@orpc/server": "catalog:",
@@ -103,7 +101,6 @@
       "dependencies": {
         "@open-gikai/auth": "workspace:*",
         "@open-gikai/db": "workspace:*",
-        "@open-gikai/env": "workspace:*",
         "@orpc/client": "catalog:",
         "@orpc/openapi": "catalog:",
         "@orpc/server": "catalog:",
@@ -123,7 +120,6 @@
       "name": "@open-gikai/auth",
       "dependencies": {
         "@open-gikai/db": "workspace:*",
-        "@open-gikai/env": "workspace:*",
         "better-auth": "catalog:",
         "dotenv": "catalog:",
         "zod": "catalog:",
@@ -140,7 +136,6 @@
     "packages/db": {
       "name": "@open-gikai/db",
       "dependencies": {
-        "@open-gikai/env": "workspace:*",
         "@paralleldrive/cuid2": "^3.3.0",
         "dotenv": "catalog:",
         "drizzle-orm": "^0.45.1",
@@ -152,20 +147,6 @@
         "@types/pg": "^8.16.0",
         "drizzle-kit": "^0.31.8",
         "pg": "^8.17.1",
-        "typescript": "catalog:",
-      },
-    },
-    "packages/env": {
-      "name": "@open-gikai/env",
-      "version": "0.0.0",
-      "dependencies": {
-        "@t3-oss/env-core": "^0.13.1",
-        "dotenv": "catalog:",
-        "zod": "catalog:",
-      },
-      "devDependencies": {
-        "@open-gikai/config": "workspace:*",
-        "@types/node": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -562,8 +543,6 @@
 
     "@open-gikai/db": ["@open-gikai/db@workspace:packages/db"],
 
-    "@open-gikai/env": ["@open-gikai/env@workspace:packages/env"],
-
     "@open-gikai/scraper-worker": ["@open-gikai/scraper-worker@workspace:apps/scraper-worker"],
 
     "@orpc/client": ["@orpc/client@1.13.6", "", { "dependencies": { "@orpc/shared": "1.13.6", "@orpc/standard-server": "1.13.6", "@orpc/standard-server-fetch": "1.13.6", "@orpc/standard-server-peer": "1.13.6" } }, "sha512-M6lYM6fJUFp9GR+It/qglYTeXwspb6sGj46xXWHqHS6iDVquqju0bdYuLOfHx8CGJcUSzi0aKUcqMXiGJhBG3w=="],
@@ -943,8 +922,6 @@
     "@speed-highlight/core": ["@speed-highlight/core@1.2.14", "", {}, "sha512-G4ewlBNhUtlLvrJTb88d2mdy2KRijzs4UhnlrOSRT4bmjh/IqNElZa3zkrZ+TC47TwtlDWzVLFADljF1Ijp5hA=="],
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
-
-    "@t3-oss/env-core": ["@t3-oss/env-core@0.13.10", "", { "peerDependencies": { "arktype": "^2.1.0", "typescript": ">=5.0.0", "valibot": "^1.0.0-beta.7 || ^1.0.0", "zod": "^3.24.0 || ^4.0.0" }, "optionalPeers": ["arktype", "typescript", "valibot", "zod"] }, "sha512-NNFfdlJ+HmPHkLi2HKy7nwuat9SIYOxei9K10lO2YlcSObDILY7mHZNSHsieIM3A0/5OOzw/P/b+yLvPdaG52g=="],
 
     "@tabby_ai/hijri-converter": ["@tabby_ai/hijri-converter@1.0.5", "", {}, "sha512-r5bClKrcIusDoo049dSL8CawnHR6mRdDwhlQuIgZRNty68q0x8k3Lf1BtPAMxRf/GgnHBnIO4ujd3+GQdLWzxQ=="],
 

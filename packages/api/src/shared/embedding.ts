@@ -1,12 +1,11 @@
 import { OpenAI } from "openai";
-import { env } from "@open-gikai/env/server";
 
 let openaiClient: OpenAI | null = null;
 
 function getOpenAIClient(): OpenAI {
   if (!openaiClient) {
     openaiClient = new OpenAI({
-      apiKey: env.OPENAI_API_KEY,
+      apiKey: process.env.OPENAI_API_KEY,
     });
   }
   return openaiClient;

@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "@open-gikai/db": "workspace:*",
-    "@open-gikai/env": "workspace:*",
     "@paralleldrive/cuid2": "^3.3.0",
+    "dotenv": "catalog:",
     "cheerio": "^1.0.0",
     "drizzle-orm": "^0.45.1",
     "pg": "^8.17.1"

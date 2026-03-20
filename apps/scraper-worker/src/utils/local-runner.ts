@@ -21,9 +21,14 @@ import { handleQueueMessage, handleMessageError } from "./handle-message";
 import { fetchPendingJobs } from "./jobs";
 import { updateScraperJobStatus } from "./job-logger";
 
-import { env } from "@open-gikai/env/db";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 
-const db = createDb(env.DATABASE_URL);
+const root = resolve(fileURLToPath(import.meta.url), "../../../../../");
+dotenv.config({ path: resolve(root, ".env.local"), override: true });
+
+const db = createDb(process.env.DATABASE_URL!);
 
 /** Cloudflare Queue<ScraperQueueMessage> の最小互換モック */
 class LocalQueue {

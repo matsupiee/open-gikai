@@ -21,7 +21,6 @@
     "db:seed": "bun src/seeds/seed-municipality.ts"
   },
   "dependencies": {
-    "@open-gikai/env": "workspace:*",
     "@paralleldrive/cuid2": "^3.3.0",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
