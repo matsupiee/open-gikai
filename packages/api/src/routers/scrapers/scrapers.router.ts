@@ -2,6 +2,7 @@ import { adminProcedure } from "../../index";
 import {
   scrapersListJobsSchema,
   scrapersCreateJobSchema,
+  scrapersCreateBulkJobsSchema,
   scrapersGetJobSchema,
   scrapersCancelJobSchema,
   scrapersGetJobLogsSchema,
@@ -14,6 +15,7 @@ import {
 import {
   listJobs,
   createJob,
+  createBulkJobs,
   getJob,
   cancelJob,
   getJobLogs,
@@ -32,6 +34,10 @@ export const scrapersRouter = {
   createJob: adminProcedure
     .input(scrapersCreateJobSchema)
     .handler(({ input, context }) => createJob(context.db, input)),
+
+  createBulkJobs: adminProcedure
+    .input(scrapersCreateBulkJobsSchema)
+    .handler(({ input, context }) => createBulkJobs(context.db, input)),
 
   getJob: adminProcedure
     .input(scrapersGetJobSchema)

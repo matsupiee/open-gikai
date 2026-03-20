@@ -54,6 +54,18 @@ function ScrapersPage() {
     onError: (err) => toast.error(`エラー: ${err.message}`),
   });
 
+  const bulkCreateMutation = useMutation({
+    mutationFn: (input: Parameters<typeof client.scrapers.createBulkJobs>[0]) =>
+      client.scrapers.createBulkJobs(input),
+    onSuccess: (data) => {
+      toast.success(
+        `${data.createdCount} 件のジョブを作成しました（${data.skippedCount} 件スキップ）`
+      );
+      queryClient.invalidateQueries({ queryKey: orpc.scrapers.listJobs.key() });
+    },
+    onError: (err) => toast.error(`エラー: ${err.message}`),
+  });
+
   const reprocessMutation = useMutation({
     mutationFn: (input: Parameters<typeof client.scrapers.reprocessStatements>[0]) =>
       client.scrapers.reprocessStatements(input),
@@ -66,6 +78,11 @@ function ScrapersPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
       <h1 className="text-2xl font-bold">スクレイパー管理</h1>
+
+      <BulkCreateJobsForm
+        onSubmit={(payload) => bulkCreateMutation.mutate(payload)}
+        isSubmitting={bulkCreateMutation.isPending}
+      />
 
       <CreateJobForm
         onSubmit={(payload) => createMutation.mutate(payload)}
@@ -182,6 +199,68 @@ function ScrapersPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function BulkCreateJobsForm({
+  onSubmit,
+  isSubmitting,
+}: {
+  onSubmit: (payload: Parameters<typeof client.scrapers.createBulkJobs>[0]) => void;
+  isSubmitting: boolean;
+}) {
+  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState(currentYear);
+
+  const yearOptions = Array.from(
+    { length: currentYear - 2000 + 1 },
+    (_, i) => currentYear - i
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({ year });
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="rounded border border-border bg-card p-4 space-y-4"
+    >
+      <div>
+        <h2 className="font-semibold text-sm">年度一括スクレイピング</h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          年度を選択すると、有効な全自治体に対してジョブを一括作成します。既にアクティブなジョブがある自治体はスキップされます。
+        </p>
+      </div>
+
+      <div className="flex items-end gap-4">
+        <div>
+          <Label htmlFor="bulk-year" className="text-xs">
+            年度
+          </Label>
+          <Select
+            value={String(year)}
+            onValueChange={(v) => setYear(Number(v))}
+          >
+            <SelectTrigger id="bulk-year" className="mt-1 w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {yearOptions.map((y) => (
+                <SelectItem key={y} value={String(y)}>
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button type="submit" disabled={isSubmitting} size="sm">
+          {isSubmitting ? "作成中..." : "一括実行"}
+        </Button>
+      </div>
+    </form>
   );
 }
 

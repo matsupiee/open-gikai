@@ -2,11 +2,12 @@ import type { Db } from "@open-gikai/db";
 import { scraper_jobs, scraper_job_logs, municipalities, system_types } from "@open-gikai/db";
 import { meetings, statements } from "@open-gikai/db/schema";
 import { ORPCError } from "@orpc/server";
-import { asc, count, countDistinct, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, count, countDistinct, desc, eq, inArray, isNotNull, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import type {
   scrapersListJobsSchema,
   scrapersCreateJobSchema,
+  scrapersCreateBulkJobsSchema,
   scrapersGetJobSchema,
   scrapersCancelJobSchema,
   scrapersGetJobLogsSchema,
@@ -135,13 +136,81 @@ export async function createJob(
   return rowToJob(row);
 }
 
+export interface CreateBulkJobsResponse {
+  createdCount: number;
+  skippedCount: number;
+}
+
+export async function createBulkJobs(
+  db: Db,
+  input: z.infer<typeof scrapersCreateBulkJobsSchema>
+): Promise<CreateBulkJobsResponse> {
+  // 1. enabled かつ baseUrl がある自治体を取得
+  const enabledMunicipalities = await db
+    .select({ id: municipalities.id })
+    .from(municipalities)
+    .where(
+      and(
+        eq(municipalities.enabled, true),
+        isNotNull(municipalities.baseUrl),
+        ne(municipalities.baseUrl, "")
+      )
+    );
+
+  if (enabledMunicipalities.length === 0) {
+    return { createdCount: 0, skippedCount: 0 };
+  }
+
+  // 2. 該当年度で pending/queued/running のジョブがある自治体を取得
+  const activeJobs = await db
+    .select({ municipalityId: scraper_jobs.municipalityId })
+    .from(scraper_jobs)
+    .where(
+      and(
+        eq(scraper_jobs.year, input.year),
+        inArray(scraper_jobs.status, ["pending", "queued", "running"])
+      )
+    );
+
+  const activeMunicipalityIds = new Set(activeJobs.map((j) => j.municipalityId));
+
+  // 3. アクティブジョブがない自治体のみ対象
+  const targetMunicipalities = enabledMunicipalities.filter(
+    (m) => !activeMunicipalityIds.has(m.id)
+  );
+
+  const skippedCount = enabledMunicipalities.length - targetMunicipalities.length;
+
+  if (targetMunicipalities.length === 0) {
+    return { createdCount: 0, skippedCount };
+  }
+
+  // 4. 一括 insert
+  await db.insert(scraper_jobs).values(
+    targetMunicipalities.map((m) => ({
+      municipalityId: m.id,
+      status: "pending" as const,
+      year: input.year,
+    }))
+  );
+
+  return { createdCount: targetMunicipalities.length, skippedCount };
+}
+
 export async function getJob(
   db: Db,
   input: z.infer<typeof scrapersGetJobSchema>
 ): Promise<ScraperJob> {
   const [row] = await db
-    .select()
+    .select({
+      job: scraper_jobs,
+      municipalityName: municipalities.name,
+      prefecture: municipalities.prefecture,
+      systemTypeDescription: system_types.description,
+    })
     .from(scraper_jobs)
+    .leftJoin(municipalities, eq(scraper_jobs.municipalityId, municipalities.id))
+    .leftJoin(system_types, eq(municipalities.systemTypeId, system_types.id))
     .where(eq(scraper_jobs.id, input.jobId));
 
   if (!row) {
@@ -150,7 +219,7 @@ export async function getJob(
     });
   }
 
-  return rowToJob(row);
+  return rowToJob(row.job, row.municipalityName ?? "", row.prefecture ?? "", row.systemTypeDescription ?? null);
 }
 
 export async function cancelJob(

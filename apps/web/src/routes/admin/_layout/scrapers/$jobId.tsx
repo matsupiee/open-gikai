@@ -97,8 +97,12 @@ function JobDetailPage() {
       </div>
 
       <div className="rounded border border-border bg-card p-4 grid gap-3 sm:grid-cols-2 text-sm">
-        <Field label="自治体ID" value={job.municipalityId} />
+        <Field label="自治体" value={job.municipalityName ? `${job.prefecture} ${job.municipalityName}` : job.municipalityId} />
         <Field label="ステータス" value={<StatusBadge status={job.status} />} />
+        {job.systemTypeDescription && (
+          <Field label="サイト種別" value={job.systemTypeDescription} />
+        )}
+        <Field label="対象年" value={`${job.year}年`} />
         <Field label="挿入件数" value={job.totalInserted.toLocaleString()} />
         <Field label="スキップ件数" value={job.totalSkipped.toLocaleString()} />
         {job.totalItems !== null && (
