@@ -91,29 +91,34 @@ async function seed() {
     .from(system_types);
   const systemTypeIdByName = new Map(systemTypeRows.map((r) => [r.name, r.id]));
 
-  // 3. municipalities を upsert する
+  // 3. municipalities を 50 件ずつバッチで upsert する
   console.log(`[seed] ${municipalityList.length} 件の自治体を登録します`);
 
   let inserted = 0;
-  let skipped = 0;
+  const BATCH_SIZE = 100;
 
-  for (const m of municipalityList) {
+  const values = municipalityList.map((m) => {
     const displayName = m.name || m.prefecture; // 都道府県行は都道府県名を name に
     const typeName = detectSystemType(m.baseUrl);
     const systemTypeId = systemTypeIdByName.get(typeName ?? "");
 
+    return {
+      code: m.code,
+      name: displayName,
+      prefecture: m.prefecture,
+      systemTypeId,
+      baseUrl: m.baseUrl,
+      enabled: true,
+      population: m.population,
+      populationYear: m.populationYear,
+    };
+  });
+
+  for (let i = 0; i < values.length; i += BATCH_SIZE) {
+    const batch = values.slice(i, i + BATCH_SIZE);
     const result = await db
       .insert(municipalities)
-      .values({
-        code: m.code,
-        name: displayName,
-        prefecture: m.prefecture,
-        systemTypeId,
-        baseUrl: m.baseUrl,
-        enabled: true,
-        population: m.population,
-        populationYear: m.populationYear,
-      })
+      .values(batch)
       .onConflictDoUpdate({
         target: municipalities.code,
         set: {
@@ -127,15 +132,11 @@ async function seed() {
       })
       .returning({ id: municipalities.id, code: municipalities.code });
 
-    if (result.length > 0) {
-      inserted++;
-    } else {
-      skipped++;
-    }
+    inserted += result.length;
   }
 
-  console.log(`[seed] 完了: inserted/updated=${inserted}, skipped=${skipped}`);
-  process.exit(0);
+  console.log(`[seed] 完了: inserted/updated=${inserted}`);
+  await db.$client.end();
 }
 
 seed().catch((err) => {
