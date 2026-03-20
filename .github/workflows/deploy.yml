@@ -23,6 +23,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -37,9 +39,20 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
 
-      # CSV を更新して main にマージすれば自動で本番 DB に反映される
+      # seed ファイルに変更があった場合のみ municipality を upsert する
+      - name: Check municipality seed changes
+        id: check-seed
+        run: |
+          if git diff --name-only HEAD~1 HEAD | grep -qE 'packages/db/src/seeds/(seed-municipality\.ts|municipalities\.csv)'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Seed municipalities
-        run: bunx turbo -F @open-gikai/db db:seed
+        if: steps.check-seed.outputs.changed == 'true'
+        continue-on-error: true
+        run: bunx turbo -F @open-gikai/db db:seed-municipality
         env:
           DATABASE_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
 

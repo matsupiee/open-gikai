@@ -120,7 +120,6 @@ async function seed() {
           name: sql`excluded.name`,
           prefecture: sql`excluded.prefecture`,
           baseUrl: sql`excluded.base_url`,
-          enabled: sql`excluded.enabled`,
           systemTypeId: sql`excluded.system_type_id`,
           population: sql`excluded.population`,
           populationYear: sql`excluded.population_year`,

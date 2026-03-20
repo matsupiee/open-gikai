@@ -44,6 +44,11 @@
       "cache": false,
       "persistent": false
     },
+    "db:seed-municipality": {
+      "cache": false,
+      "persistent": false,
+      "env": ["DATABASE_URL"]
+    },
     "scrape:local": {
       "cache": false,
       "persistent": false
