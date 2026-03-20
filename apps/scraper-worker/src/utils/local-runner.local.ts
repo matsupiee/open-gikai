@@ -12,14 +12,11 @@
  * 2. 各ジョブをキューに投入し、ハンドラーを順次呼び出す
  * 3. 生成された meetings を statements に変換（OPENAI_API_KEY があれば embedding も生成）
  */
-import { eq } from "drizzle-orm";
-import { scraper_jobs } from "@open-gikai/db/schema";
 import { createDb } from "@open-gikai/db";
 import type { ScraperQueueMessage } from "./types";
 import { dispatchJob } from "../handlers/dispatch-job";
 import { handleQueueMessage, handleMessageError } from "./handle-message";
 import { fetchPendingJobs } from "./jobs";
-import { updateScraperJobStatus } from "./job-logger";
 
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -78,18 +75,6 @@ async function main() {
       await dispatchJob(db, queue, job);
     }
     await queue.processAll();
-
-    // running 状態のジョブを completed に更新（Cloudflare Queue と異なりローカルは同期処理のため）
-    for (const job of pendingJobs) {
-      const [current] = await db
-        .select({ status: scraper_jobs.status })
-        .from(scraper_jobs)
-        .where(eq(scraper_jobs.id, job.scraper_jobs.id))
-        .limit(1);
-      if (current?.status === "running") {
-        await updateScraperJobStatus(db, job.scraper_jobs.id, "completed");
-      }
-    }
   }
 
   console.log("[local-runner] Done.");

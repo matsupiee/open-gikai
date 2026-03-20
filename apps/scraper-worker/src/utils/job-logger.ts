@@ -93,3 +93,50 @@ export async function addJobStats(
     })
     .where(eq(scraper_jobs.id, jobId));
 }
+
+/**
+ * ジョブの totalItems を加算する。
+ * list/schedule ハンドラーがキューに投入した件数を記録する。
+ */
+export async function addTotalItems(
+  db: Db,
+  jobId: string,
+  count: number
+): Promise<void> {
+  await db
+    .update(scraper_jobs)
+    .set({
+      totalItems: sql`COALESCE(${scraper_jobs.totalItems}, 0) + ${count}`,
+    })
+    .where(eq(scraper_jobs.id, jobId));
+}
+
+/**
+ * processedItems が totalItems に達していればジョブを completed にする。
+ *
+ * 前提: max_concurrency=1 の逐次処理であること。
+ * 並行処理の場合は totalItems が確定する前に呼ばれる可能性がある。
+ */
+export async function completeJobIfDone(
+  db: Db,
+  jobId: string
+): Promise<void> {
+  const [job] = await db
+    .select({
+      status: scraper_jobs.status,
+      processedItems: scraper_jobs.processedItems,
+      totalItems: scraper_jobs.totalItems,
+    })
+    .from(scraper_jobs)
+    .where(eq(scraper_jobs.id, jobId))
+    .limit(1);
+
+  if (
+    job &&
+    job.status === "running" &&
+    job.totalItems !== null &&
+    job.processedItems >= job.totalItems
+  ) {
+    await updateScraperJobStatus(db, jobId, "completed");
+  }
+}

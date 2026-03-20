@@ -6,7 +6,7 @@
  */
 
 import type { Db } from "@open-gikai/db";
-import { createJobLogger, addJobStats } from "../../../utils/job-logger";
+import { createJobLogger, addJobStats, completeJobIfDone } from "../../../utils/job-logger";
 import { saveMeetings } from "../../../utils/save-meetings";
 import { applyStatementsToMeeting } from "../../../utils/apply-statements";
 import { delay } from "../../../utils/delay";
@@ -35,6 +35,8 @@ export async function handleGijirokuComDetail(
     await logger.warn(
       `gijiroku.com [${msg.municipalityName}] 議事録取得失敗または本文なし: FINO=${msg.fino}`
     );
+    await addJobStats(db, msg.jobId, 0, 0);
+    await completeJobIfDone(db, msg.jobId);
     return;
   }
 
@@ -51,6 +53,8 @@ export async function handleGijirokuComDetail(
     const parsedStatements = meetingData.statements;
     await applyStatementsToMeeting(db, insertedIds[0], parsedStatements, openaiApiKey);
   }
+
+  await completeJobIfDone(db, msg.jobId);
 
   await delay(INTER_REQUEST_DELAY_MS);
 }
