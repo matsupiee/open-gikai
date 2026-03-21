@@ -76,47 +76,42 @@ function parseYear(): number | undefined {
   return val;
 }
 
-function parseConcurrency(): number {
-  const idx = process.argv.indexOf("--concurrency");
-  if (idx === -1) return 100;
-  const val = Number(process.argv[idx + 1]);
-  if (Number.isNaN(val) || val < 1) {
-    console.error(`[scrape-to-ndjson] 無効な concurrency: ${process.argv[idx + 1]}`);
-    process.exit(1);
+/**
+ * タスクをホスト単位でグループ化し、同一ホストはシリアル・ホスト間は並列で実行する。
+ *
+ * discussnet-ssp (ssp.kaigiroku.net) や kensakusystem (kensakusystem.jp) のように
+ * 複数自治体が同一ホストを共有するシステムでは、並列アクセスによる IP 制限を避けるため
+ * 同一ホストへのリクエストをシリアル化する。
+ */
+function runGroupedByHost(
+  targets: { baseUrl: string | null }[],
+  tasks: (() => Promise<void>)[]
+): Promise<void> {
+  const hostGroups = new Map<string, (() => Promise<void>)[]>();
+
+  for (let i = 0; i < targets.length; i++) {
+    const host = new URL(targets[i]!.baseUrl!).hostname;
+    if (!hostGroups.has(host)) hostGroups.set(host, []);
+    hostGroups.get(host)!.push(tasks[i]!);
   }
-  return val;
-}
 
-async function runWithConcurrency<T>(
-  tasks: (() => Promise<T>)[],
-  concurrency: number
-): Promise<T[]> {
-  const results: (T | undefined)[] = new Array(tasks.length);
-  const executing = new Set<Promise<void>>();
-  let index = 0;
-
-  for (const task of tasks) {
-    const i = index++;
-    const p: Promise<void> = task().then((result) => {
-      results[i] = result;
-      executing.delete(p);
-    });
-    executing.add(p);
-    if (executing.size >= concurrency) {
-      await Promise.race(executing);
+  const hostTasks = [...hostGroups.values()].map(
+    (groupTasks) => async () => {
+      for (const task of groupTasks) {
+        await task();
+      }
     }
-  }
-  await Promise.all(executing);
-  return results as T[];
+  );
+
+  return Promise.all(hostTasks).then(() => undefined);
 }
 
 async function main() {
   const targetYear = parseYear();
-  const concurrency = parseConcurrency();
   if (targetYear) {
     console.log(`[scrape-to-ndjson] ${targetYear}年を対象にスクレイピングします`);
   }
-  console.log(`[scrape-to-ndjson] Starting... (concurrency=${concurrency})`);
+  console.log("[scrape-to-ndjson] Starting...");
 
   // 1. DB から enabled な municipalities + system_types を取得
   const targets = await db
@@ -293,7 +288,7 @@ async function main() {
     }
   });
 
-  await runWithConcurrency(tasks, concurrency);
+  await runGroupedByHost(enabledTargets, tasks);
 
   // ストリームを閉じる
   await Promise.all([
