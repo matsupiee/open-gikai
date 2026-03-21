@@ -244,6 +244,24 @@ Agent 起動パラメータ:
 - カテゴリ C: 常に 1 Agent（簡易ファイルなので一括作成）
 - カテゴリ A, B, C は同時に並列起動してよい（worktree で分離されるため衝突しない）
 
+### Step 5: Worktree のクリーンアップ (CRITICAL)
+
+Step 4 の全 Agent が完了したら、**返却された worktree パスを `git worktree remove` で削除する**。
+
+Agent が `isolation: "worktree"` で起動され、変更をコミット・プッシュした場合、worktree ディレクトリがディスク上に残る。PR 作成済みであれば不要なので、必ず削除する。
+
+```bash
+# 各 Agent の返却結果に含まれる worktree パスに対して実行
+git worktree remove /path/to/worktree --force
+
+# 全 worktree が削除されたことを確認
+git worktree list
+```
+
+- Agent の返却結果から worktree パス（`.claude/worktrees/` 配下）を取得する
+- `--force` を付けることで、未コミットの変更がなくても確実に削除できる
+- 全 Agent 分のクリーンアップが完了してから結果サマリーを表示する
+
 ## 対応済みシステムの URL パターン例
 
 調査時の参考情報として、各システムの典型的な URL パターン:
