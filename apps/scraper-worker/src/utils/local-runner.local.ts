@@ -6,7 +6,6 @@
  *
  * 使い方:
  *   bun run run:local
- *   bun run run:local --limit 2   # 各自治体の会議数を2件に制限（動作確認用）
  *
  * 実行順:
  * 1. DB から status="pending" のジョブを取得
@@ -27,19 +26,6 @@ const root = resolve(fileURLToPath(import.meta.url), "../../../../../");
 dotenv.config({ path: resolve(root, ".env.local"), override: true });
 
 const db = createDb(process.env.DATABASE_URL!);
-
-function parseMeetingLimit(): number | undefined {
-  const idx = process.argv.indexOf("--limit");
-  if (idx === -1) return undefined;
-  const value = Number(process.argv[idx + 1]);
-  if (!Number.isInteger(value) || value <= 0) {
-    console.error("[local-runner] --limit には正の整数を指定してください");
-    process.exit(1);
-  }
-  return value;
-}
-
-const meetingLimit = parseMeetingLimit();
 
 /** Cloudflare Queue<ScraperQueueMessage> の最小互換モック */
 class LocalQueue {
@@ -76,9 +62,6 @@ class LocalQueue {
 
 async function main() {
   console.log("[local-runner] Starting...");
-  if (meetingLimit) {
-    console.log(`[local-runner] 会議数上限: ${meetingLimit} 件/自治体`);
-  }
 
   const pendingJobs = await fetchPendingJobs(db);
 
@@ -89,7 +72,7 @@ async function main() {
 
     const queue = new LocalQueue();
     for (const job of pendingJobs) {
-      await dispatchJob(db, queue, job, { meetingLimit });
+      await dispatchJob(db, queue, job);
     }
     await queue.processAll();
   }
