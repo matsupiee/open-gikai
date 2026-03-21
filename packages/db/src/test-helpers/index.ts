@@ -37,7 +37,16 @@ export async function createTestDatabase() {
       SELECT 1 FROM pg_database WHERE datname = ${dbName}
     `;
     if (result.length === 0) {
-      await adminSql.unsafe(`CREATE DATABASE "${dbName}"`);
+      try {
+        await adminSql.unsafe(`CREATE DATABASE "${dbName}"`);
+      } catch (e: unknown) {
+        // 並列実行時の競合（23505: unique_violation）は無視する
+        if (e instanceof Error && "code" in e && e.code === "23505") {
+          // 別プロセスが先に作成済み — 正常
+        } else {
+          throw e;
+        }
+      }
     }
   } finally {
     await adminSql.end();
