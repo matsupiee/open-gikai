@@ -23,8 +23,7 @@ export async function dispatchJob(
     scraper_jobs: typeof scraper_jobs.$inferSelect;
     municipalities: typeof municipalities.$inferSelect;
     system_types: typeof system_types.$inferSelect | null;
-  },
-  options?: { meetingLimit?: number }
+  }
 ): Promise<void> {
   const { scraper_jobs, municipalities, system_types: systemType } = job;
   const logger = createJobLogger(db, scraper_jobs.id);
@@ -136,7 +135,6 @@ export async function dispatchJob(
         municipalityName: municipalities.name,
         baseUrl: municipalities.baseUrl,
         year: scraper_jobs.year,
-        meetingLimit: options?.meetingLimit,
       });
       break;
     }
