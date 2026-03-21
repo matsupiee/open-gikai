@@ -64,11 +64,15 @@ export async function fetchMeetingDetail(
 }
 
 /**
- * タイトルを <span class="command__docname"> から取得する。
+ * タイトルを取得する。
+ * 旧形式: <span class="command__docname">
+ * 新形式: <p class="view__title">
  */
 /** @internal テスト用にexport */
 export function extractTitle(html: string): string | null {
-  const m = html.match(/class="command__docname">([^<]+)<\/span>/);
+  const m =
+    html.match(/class="command__docname">([^<]+)<\/span>/) ??
+    html.match(/class="view__title">([^<]+)<\/p>/);
   if (m?.[1]) {
     const title = m[1].replace(/\s+/g, " ").trim();
     if (title.length > 0) return title;
@@ -77,12 +81,15 @@ export function extractTitle(html: string): string | null {
 }
 
 /**
- * 日付を <span class="command__date"> から取得する。
- * フォーマットは YYYY-MM-DD。
+ * 日付を取得する。フォーマットは YYYY-MM-DD。
+ * 旧形式: <span class="command__date">YYYY-MM-DD</span>
+ * 新形式: <p class="view__date">開催日: <time>YYYY-MM-DD</time></p>
  */
 /** @internal テスト用にexport */
 export function extractDate(html: string): string | null {
-  const m = html.match(/class="command__date">(\d{4}-\d{2}-\d{2})<\/span>/);
+  const m =
+    html.match(/class="command__date">(\d{4}-\d{2}-\d{2})<\/span>/) ??
+    html.match(/class="view__date">[^<]*<time>(\d{4}-\d{2}-\d{2})<\/time>/);
   return m?.[1] ?? null;
 }
 
@@ -206,23 +213,28 @@ export function stripSpeakerPrefix(content: string): string {
   // ◯総務課長（小海途　聡君）　… のような先頭ヘッダーを除去
   // ◯役職（氏名）〔登壇〕 のような先頭ヘッダーを除去（〔〕の補足表記は任意）
   return content
-    .replace(/^[◯○◎●][^（\n]*(?:（[^）]*）)?(?:〔[^〕]*〕)?[\s\u3000\n]+/, "")
+    .replace(/^[◯○◎●][^（\n]*(?:（[^）]*）)?(?:〔[^〕]*〕)?[\s\u3000\n]*/, "")
     .trim();
 }
 
 /**
  * dbsr.jp の議事録詳細 HTML から ParsedStatement 配列を生成する。
  *
- * <ul class="page-list"> の各 <li class="voice-block"> を1発言として抽出する。
- * 発言者は data-voice-title 属性から、本文は <p class="voice__text"> から取得する。
+ * 旧形式: <li class="voice-block" data-voice-title="..."> + <p class="voice__text">
+ * 新形式: <li> 内の <span class="voice__title"> + <p class="js-textwrap-container">
  */
 /** @internal テスト用にexport */
 export function extractStatements(html: string): ParsedStatement[] {
+  // 旧形式を試行し、見つからなければ新形式を使う
+  const oldStatements = extractStatementsOld(html);
+  if (oldStatements.length > 0) return oldStatements;
+  return extractStatementsNew(html);
+}
+
+function extractStatementsOld(html: string): ParsedStatement[] {
   const statements: ParsedStatement[] = [];
   let offset = 0;
 
-  // voice-block の li を順番に抽出
-  // data-voice-title 属性と voice__text p タグをペアで取得
   const voiceBlockPattern =
     /<li[^>]+class="[^"]*voice[_-]block[^"]*"[^>]*data-voice-title="([^"]*)"[^>]*>([\s\S]*?)<\/li>/gi;
 
@@ -231,13 +243,69 @@ export function extractStatements(html: string): ParsedStatement[] {
     const voiceTitle = m[1] ?? "";
     const liInner = m[2] ?? "";
 
-    // <p class="voice__text"> の内容を抽出
     const textMatch = liInner.match(
       /<p[^>]+class="[^"]*voice__text[^"]*"[^>]*>([\s\S]*?)<\/p>/i
     );
     if (!textMatch?.[1]) continue;
 
     const rawContent = cleanVoiceText(textMatch[1]);
+    if (!rawContent) continue;
+
+    const content = stripSpeakerPrefix(rawContent);
+    if (!content) continue;
+
+    const { speakerName, speakerRole } = parseSpeakerFromTitle(voiceTitle);
+    const contentHash = createHash("sha256").update(content).digest("hex");
+    const startOffset = offset;
+    const endOffset = offset + content.length;
+
+    statements.push({
+      kind: classifyKind(speakerRole),
+      speakerName,
+      speakerRole,
+      content,
+      contentHash,
+      startOffset,
+      endOffset,
+    });
+
+    offset = endOffset + 1;
+  }
+
+  return statements;
+}
+
+function extractStatementsNew(html: string): ParsedStatement[] {
+  const statements: ParsedStatement[] = [];
+  let offset = 0;
+
+  // 新形式: voice__list 内の各 <li> から voice__title と js-textwrap-container を抽出
+  const liPattern =
+    /<li>\s*<div[^>]+class="[^"]*voice__header[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<div[^>]+class="[^"]*voice__textwrap[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/li>/gi;
+
+  let m: RegExpExecArray | null;
+  while ((m = liPattern.exec(html)) !== null) {
+    const headerInner = m[1] ?? "";
+    const textInner = m[2] ?? "";
+
+    // <span class="voice__title"> から発言者を取得
+    const titleMatch = headerInner.match(
+      /<span[^>]+class="[^"]*voice__title[^"]*"[^>]*>([^<]+)<\/span>/i
+    );
+    const voiceTitle = titleMatch?.[1]?.trim() ?? "";
+
+    // <p class="js-textwrap-container"> から本文を取得
+    const textMatch = textInner.match(
+      /<p[^>]+class="[^"]*js-textwrap-container[^"]*"[^>]*>([\s\S]*?)<\/p>/i
+    );
+    if (!textMatch?.[1]) continue;
+
+    // 印刷用の番号 span を除去してからテキスト化する
+    const cleanedHtml = textMatch[1].replace(
+      /<span[^>]+class="[^"]*visible-print-block[^"]*"[^>]*>[^<]*<\/span>/gi,
+      ""
+    );
+    const rawContent = cleanVoiceText(cleanedHtml);
     if (!rawContent) continue;
 
     const content = stripSpeakerPrefix(rawContent);

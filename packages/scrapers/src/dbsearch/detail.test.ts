@@ -22,6 +22,11 @@ describe("extractTitle", () => {
     expect(extractTitle(html)).toBe("令和６年 第１回 定例会");
   });
 
+  test("新形式 view__title から抽出", () => {
+    const html = '<p class="view__title">令和７年第４回定例会（第７日目）　本文</p>';
+    expect(extractTitle(html)).toBe("令和７年第４回定例会（第７日目） 本文");
+  });
+
   test("マッチしない場合はnull", () => {
     expect(extractTitle("<div>タイトルなし</div>")).toBeNull();
   });
@@ -31,6 +36,11 @@ describe("extractDate", () => {
   test("YYYY-MM-DD 形式の日付を抽出", () => {
     const html = '<span class="command__date">2024-03-15</span>';
     expect(extractDate(html)).toBe("2024-03-15");
+  });
+
+  test("新形式 view__date + time タグから抽出", () => {
+    const html = '<p class="view__date">開催日: <time>2025-12-17</time></p>';
+    expect(extractDate(html)).toBe("2025-12-17");
   });
 
   test("マッチしない場合はnull", () => {
@@ -231,5 +241,68 @@ describe("extractStatements", () => {
     `;
     const stmts = extractStatements(html);
     expect(stmts[0]!.contentHash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  test("新形式: voice__title + js-textwrap-container から発言を抽出する", () => {
+    const html = `
+      <ul class="voice__list list-unstyled">
+        <li>
+          <div class="row voice__header hidden-print" role="button" aria-expanded="true" aria-controls="collapsible-1">
+            <div class="col-md-9">
+              <div class="voice__name">
+                <span class="voice__number">1: </span>
+                <span class="voice__title">◯議長（野田譲）</span>
+              </div>
+            </div>
+            <div class="col-md-2 hidden-print">
+              <p class="voice__hits">検索語: なし</p>
+            </div>
+          </div>
+          <div class="voice__textwrap">
+            <div class="row voice__text voice__text--print" aria-hidden="false" id="collapsible-1">
+              <div class="col-md-12">
+                <p class="js-textwrap-container">
+                  <span class="visible-print-block">1: </span>◯議長（野田譲）これより本日の会議を開きます。
+                </p>
+              </div>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="row voice__header hidden-print" role="button" aria-expanded="true" aria-controls="collapsible-2">
+            <div class="col-md-9">
+              <div class="voice__name">
+                <span class="voice__number">2: </span>
+                <span class="voice__title">◯議員（田中太郎）</span>
+              </div>
+            </div>
+            <div class="col-md-2 hidden-print">
+              <p class="voice__hits">検索語: なし</p>
+            </div>
+          </div>
+          <div class="voice__textwrap">
+            <div class="row voice__text voice__text--print" aria-hidden="false" id="collapsible-2">
+              <div class="col-md-12">
+                <p class="js-textwrap-container">
+                  <span class="visible-print-block">2: </span>◯議員（田中太郎）質問があります。
+                </p>
+              </div>
+            </div>
+          </div>
+        </li>
+      </ul>
+    `;
+    const stmts = extractStatements(html);
+    expect(stmts).toHaveLength(2);
+
+    expect(stmts[0]!.speakerRole).toBe("議長");
+    expect(stmts[0]!.speakerName).toBe("野田譲");
+    expect(stmts[0]!.kind).toBe("remark");
+    expect(stmts[0]!.content).toBe("これより本日の会議を開きます。");
+
+    expect(stmts[1]!.speakerRole).toBe("議員");
+    expect(stmts[1]!.speakerName).toBe("田中太郎");
+    expect(stmts[1]!.kind).toBe("question");
+    expect(stmts[1]!.content).toBe("質問があります。");
   });
 });
