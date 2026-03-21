@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "type-check": "tsc --noEmit",
+    "test": "vitest run",
     "scrape:ndjson": "bun src/scrape-to-ndjson.ts",
     "import:ndjson": "bun src/import-ndjson.ts"
   },
@@ -17,6 +18,8 @@
   "devDependencies": {
     "dotenv": "catalog:",
     "@open-gikai/config": "workspace:*",
-    "typescript": "catalog:"
+    "@types/pg": "^8.18.0",
+    "typescript": "catalog:",
+    "vitest": "^4.1.0"
   }
 }

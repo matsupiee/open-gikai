@@ -23,7 +23,7 @@ import { scrapeAll as scrapeDbsearch } from "./bulk-scrapers/dbsearch";
 import { scrapeAll as scrapeDiscussnetSsp } from "./bulk-scrapers/discussnet-ssp";
 import { scrapeAll as scrapeKensakusystem } from "./bulk-scrapers/kensakusystem";
 import { scrapeAll as scrapeGijirokuCom } from "./bulk-scrapers/gijiroku-com";
-import { buildChunksFromStatements } from "./statement-chunking";
+import { buildChunksFromStatements } from "@open-gikai/scrapers/statement-chunking";
 
 const EMBEDDING_BATCH_SIZE = 20;
 
@@ -161,32 +161,14 @@ async function main() {
       );
       totalMeetings++;
 
-      // statements の ID を生成して NDJSON に書き出し
+      // statements の ID を生成
       const statementsWithIds = meetingData.statements.map((s) => ({
         id: createId(),
         meetingId,
         ...s,
       }));
 
-      for (const s of statementsWithIds) {
-        statementsStream.write(
-          JSON.stringify({
-            id: s.id,
-            meetingId: s.meetingId,
-            kind: s.kind,
-            speakerName: s.speakerName,
-            speakerRole: s.speakerRole,
-            content: s.content,
-            contentHash: s.contentHash,
-            startOffset: s.startOffset,
-            endOffset: s.endOffset,
-            chunkId: null,
-          }) + "\n"
-        );
-        totalStatements++;
-      }
-
-      // statement_chunks の生成
+      // statement_chunks の生成（statements より先に生成し、chunkId を紐付ける）
       const chunkInputs = buildChunksFromStatements(
         statementsWithIds.map((s) => ({
           id: s.id,
@@ -196,9 +178,9 @@ async function main() {
         }))
       );
 
-      if (chunkInputs.length === 0) continue;
+      // chunk を生成し、statementId → chunkId のマッピングを構築
+      const stmtToChunkId = new Map<string, string>();
 
-      // embedding 生成 + NDJSON 出力
       for (let i = 0; i < chunkInputs.length; i += EMBEDDING_BATCH_SIZE) {
         const batch = chunkInputs.slice(i, i + EMBEDDING_BATCH_SIZE);
 
@@ -217,6 +199,11 @@ async function main() {
             .update(chunk.content)
             .digest("hex");
 
+          // statementId → chunkId を記録
+          for (const stmtId of chunk.statementIds) {
+            stmtToChunkId.set(stmtId, chunkId);
+          }
+
           chunksStream.write(
             JSON.stringify({
               id: chunkId,
@@ -231,6 +218,25 @@ async function main() {
           );
           totalChunks++;
         }
+      }
+
+      // statements を NDJSON に書き出し（chunkId を紐付け済み）
+      for (const s of statementsWithIds) {
+        statementsStream.write(
+          JSON.stringify({
+            id: s.id,
+            meetingId: s.meetingId,
+            kind: s.kind,
+            speakerName: s.speakerName,
+            speakerRole: s.speakerRole,
+            content: s.content,
+            contentHash: s.contentHash,
+            startOffset: s.startOffset,
+            endOffset: s.endOffset,
+            chunkId: stmtToChunkId.get(s.id) ?? null,
+          }) + "\n"
+        );
+        totalStatements++;
       }
     }
   }
