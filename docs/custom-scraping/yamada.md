@@ -1,0 +1,13 @@
+# 山田町議会
+
+## ステータス
+
+会議録検索システム未導入
+
+## PDF掲載ページ
+
+- https://www.town.yamada.iwate.jp/docs/99.html
+
+## 備考
+
+PDF形式(2016年〜)
