@@ -63,9 +63,16 @@ export function getTestDb(): TestDb {
 
 /**
  * テスト DB にマイグレーションを実行する。
+ * 並列実行時の競合を防ぐため、アドバイザリロックで直列化する。
  */
 export async function runMigrations(db: TestDb) {
-  await migrate(db, { migrationsFolder });
+  const LOCK_ID = 736874; // 任意の固定値
+  await db.$client`SELECT pg_advisory_lock(${LOCK_ID})`;
+  try {
+    await migrate(db, { migrationsFolder });
+  } finally {
+    await db.$client`SELECT pg_advisory_unlock(${LOCK_ID})`;
+  }
 }
 
 /**
