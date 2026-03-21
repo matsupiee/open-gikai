@@ -40,8 +40,8 @@ export async function fetchMeetingList(
     if (!initRes.ok) return null;
 
     const initHtml = await initRes.text();
-    const csrfToken = extractCsrfToken(initHtml);
-    if (!csrfToken) return null;
+    // CSRFトークンがないサイトもあるため、見つからなくても続行する
+    const csrfToken = extractCsrfToken(initHtml) ?? "";
 
     const cookie = buildCookieHeader(initRes.headers);
     // トップページの form action からIDを取得できない場合は baseUrl 自体から抽出する
