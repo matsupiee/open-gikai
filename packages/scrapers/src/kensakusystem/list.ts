@@ -290,13 +290,22 @@ export async function fetchFromCgi(
 }
 
 /**
- * index.html ページから議事録一覧を取得
+ * index.html ページから議事録一覧を取得。
+ *
+ * index.html にはナビゲーション用の See.exe リンク（例: "会議録の閲覧"）が
+ * 含まれるが日付情報を持たない場合がある（弘前市・下妻市など）。
+ * 日付つきリンクが見つからない場合は sapphire フローにフォールバックする。
  */
 export async function fetchFromIndexHtml(
   baseUrl: string
 ): Promise<KensakusystemSchedule[] | null> {
   const html = await fetchWithEncoding(baseUrl);
   if (!html) return null;
+
   const schedules = extractSeeLinks(html, baseUrl);
-  return schedules.length > 0 ? schedules : null;
+  if (schedules.length > 0) return schedules;
+
+  // 日付つき See.exe リンクが見つからない場合:
+  // sapphire フロー（treedepth ナビゲーション）で再試行する。
+  return fetchFromSapphire(baseUrl);
 }
