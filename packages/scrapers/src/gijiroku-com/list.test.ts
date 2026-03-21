@@ -46,8 +46,28 @@ describe("buildListUrl", () => {
     );
   });
 
-  test("voices/ を含まない URL は null", () => {
-    expect(buildListUrl("http://example.com/other/path.asp", 2024)).toBeNull();
+  test("voices/ を含まない gijiroku.com URL からも CGI URL を構築", () => {
+    const url = buildListUrl(
+      "https://www13.gijiroku.com/kawasaki_council/g07v_search.asp?Sflg=2",
+      2024
+    );
+    expect(url).toBe(
+      "https://www13.gijiroku.com/kawasaki_council/cgi/voiweb.exe?ACT=100&KTYP=0,1,2,3&SORT=0&FYY=2024&TYY=2024&KGTP=1,3"
+    );
+  });
+
+  test("末尾スラッシュのみの gijiroku.com URL からも CGI URL を構築", () => {
+    const url = buildListUrl(
+      "http://www06.gijiroku.com/niigata/",
+      2024
+    );
+    expect(url).toBe(
+      "https://www06.gijiroku.com/niigata/cgi/voiweb.exe?ACT=100&KTYP=0,1,2,3&SORT=0&FYY=2024&TYY=2024&KGTP=1,3"
+    );
+  });
+
+  test("ルートパスのみの URL は null", () => {
+    expect(buildListUrl("http://example.com/", 2024)).toBeNull();
   });
 
   test("不正な URL は null", () => {

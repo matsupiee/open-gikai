@@ -4,6 +4,7 @@ import {
   buildSidebarUrl,
   buildDetailUrlWithHuid,
   extractDateFromContent,
+  parseDateFromLabel,
   detectMeetingType,
   parseSpeakerHeader,
   classifyKind,
@@ -34,9 +35,18 @@ describe("buildDetailUrl", () => {
     expect(url).toContain("FINO=100");
   });
 
-  test("voices/ を含まない URL は null", () => {
+  test("voices/ を含まない gijiroku.com URL からも ACT=203 URL を構築", () => {
+    const url = buildDetailUrl(
+      "https://www13.gijiroku.com/kawasaki_council/g07v_search.asp?Sflg=2",
+      "100"
+    );
+    expect(url).toContain("/kawasaki_council/cgi/voiweb.exe");
+    expect(url).toContain("FINO=100");
+  });
+
+  test("ルートパスのみの URL は null", () => {
     expect(
-      buildDetailUrl("http://example.com/other/path.asp", "100")
+      buildDetailUrl("http://example.com/", "100")
     ).toBeNull();
   });
 
@@ -113,6 +123,38 @@ describe("extractDateFromContent", () => {
 
   test("日付がない場合は null", () => {
     expect(extractDateFromContent("テキストのみ")).toBeNull();
+  });
+});
+
+describe("parseDateFromLabel", () => {
+  test("タイトルから和暦年を取得して日付を構築", () => {
+    expect(
+      parseDateFromLabel(
+        "12月05日-01号",
+        "令和 7年第6回12月定例会,12月05日-01号"
+      )
+    ).toBe("2025-12-05");
+  });
+
+  test("HTML から和暦年を取得して日付を構築", () => {
+    expect(
+      parseDateFromLabel(
+        "12月05日-01号",
+        "令和　７年第　６回１２月定例会"
+      )
+    ).toBe("2025-12-05");
+  });
+
+  test("yearSource なしの場合は null", () => {
+    expect(parseDateFromLabel("12月05日-01号")).toBeNull();
+  });
+
+  test("yearSource に和暦がない場合は null", () => {
+    expect(parseDateFromLabel("12月05日-01号", "定例会")).toBeNull();
+  });
+
+  test("dateLabel に月日がない場合は null", () => {
+    expect(parseDateFromLabel("目次", "令和7年")).toBeNull();
   });
 });
 
