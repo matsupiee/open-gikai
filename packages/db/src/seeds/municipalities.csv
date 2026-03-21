@@ -1395,7 +1395,7 @@
 350001,山口県,,ﾔﾏｸﾞﾁｹﾝ,,https://ssp.kaigiroku.net/tenant/prefyamaguchi/MinuteSearch.html,1271761,2025
 352012,山口県,下関市,ﾔﾏｸﾞﾁｹﾝ,ｼﾓﾉｾｷｼ,https://ssp.kaigiroku.net/tenant/shimonoseki/MinuteSearch.html,238188,2025
 352021,山口県,宇部市,ﾔﾏｸﾞﾁｹﾝ,ｳﾍﾞｼ,https://ssp.kaigiroku.net/tenant/ube/MinuteSearch.html,153924,2025
-352039,山口県,山口市,ﾔﾏｸﾞﾁｹﾝ,ﾔﾏｸﾞﾁｼ,,183457,2025
+352039,山口県,山口市,ﾔﾏｸﾞﾁｹﾝ,ﾔﾏｸﾞﾁｼ,https://www.city.yamaguchi.yamaguchi.dbsr.jp/,183457,2025
 352047,山口県,萩市,ﾔﾏｸﾞﾁｹﾝ,ﾊｷﾞｼ,https://ssp.kaigiroku.net/tenant/hagi/MinuteSearch.html,41156,2025
 352063,山口県,防府市,ﾔﾏｸﾞﾁｹﾝ,ﾎｳﾌｼ,https://ssp.kaigiroku.net/tenant/hofu/MinuteSearch.html,111061,2025
 352071,山口県,下松市,ﾔﾏｸﾞﾁｹﾝ,ｸﾀﾞﾏﾂｼ,https://ssp.kaigiroku.net/tenant/kudamatsu/MinuteSearch.html,55795,2025
@@ -1410,7 +1410,7 @@
 353213,山口県,和木町,ﾔﾏｸﾞﾁｹﾝ,ﾜｷﾁｮｳ,,5604,2025
 353418,山口県,上関町,ﾔﾏｸﾞﾁｹﾝ,ｶﾐﾉｾｷﾁｮｳ,,2186,2025
 353434,山口県,田布施町,ﾔﾏｸﾞﾁｹﾝ,ﾀﾌﾞｾﾁｮｳ,,13945,2025
-353442,山口県,平生町,ﾔﾏｸﾞﾁｹﾝ,ﾋﾗｵﾁｮｳ,,10605,2025
+353442,山口県,平生町,ﾔﾏｸﾞﾁｹﾝ,ﾋﾗｵﾁｮｳ,https://ssp.kaigiroku.net/tenant/hirao/SpTop.html,10605,2025
 355020,山口県,阿武町,ﾔﾏｸﾞﾁｹﾝ,ｱﾌﾞﾁｮｳ,,2916,2025
 360007,徳島県,,ﾄｸｼﾏｹﾝ,,https://ssp.kaigiroku.net/tenant/tokushimapref/MinuteSearch.html,691640,2025
 362018,徳島県,徳島市,ﾄｸｼﾏｹﾝ,ﾄｸｼﾏｼ,http://voices.city.tokushima.tokushima.jp/VOICES/index2.html,241798,2025
