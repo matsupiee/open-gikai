@@ -122,7 +122,12 @@ async function main() {
     }
   }
 
-  const db = createDb(process.env.DATABASE_URL!);
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    console.error("[import-ndjson] DATABASE_URL が設定されていません");
+    process.exit(1);
+  }
+  const db = createDb(dbUrl);
 
   const meetingIds = meetingRecords.map((r) => r.id as string);
 
@@ -157,7 +162,7 @@ async function main() {
       .onConflictDoNothing();
   }
 
-  // statement_chunks の INSERT（statements より先。chunkId FK のため）
+  // statement_chunks の INSERT（statements.chunkId → statement_chunks.id の FK があるため先に INSERT する）
   console.log("  statement_chunks を INSERT 中...");
   for (let i = 0; i < chunkRecords.length; i += INSERT_BATCH_SIZE) {
     const batch = chunkRecords.slice(i, i + INSERT_BATCH_SIZE);

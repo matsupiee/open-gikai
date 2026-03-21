@@ -24,7 +24,7 @@ import {
   detectMeetingType,
   classifyKind,
 } from "@open-gikai/scrapers/gijiroku-com";
-import { buildChunksFromStatements } from "../statement-chunking";
+import { buildChunksFromStatements } from "@open-gikai/scrapers/statement-chunking";
 
 const __dirname = resolve(fileURLToPath(import.meta.url), "..");
 const fixturesDir = resolve(__dirname, "../__fixtures__");
@@ -178,43 +178,42 @@ describe("gijiroku-com HTMLフィクスチャパース + DB統合テスト", () 
         })
         .returning();
 
-      const meetingId = "test-gijiroku-meeting-001";
+      // meetings: id は DB 自動生成
+      const [dbMeeting] = await tx
+        .insert(meetings)
+        .values({
+          municipalityId: municipality!.id,
+          title,
+          meetingType,
+          heldOn,
+          sourceUrl: "https://test-town.gijiroku.com/voices/cgi/voiweb.exe?ACT=203&FINO=5002",
+          externalId: "gijiroku_K_R06031500011",
+          status: "processed",
+        })
+        .returning();
 
-      await tx.insert(meetings).values({
-        id: meetingId,
-        municipalityId: municipality!.id,
-        title,
-        meetingType,
-        heldOn,
-        sourceUrl: "https://test-town.gijiroku.com/voices/cgi/voiweb.exe?ACT=203&FINO=5002",
-        externalId: "gijiroku_K_R06031500011",
-        status: "processed",
-      });
-
-      // statements をインポート
-      const statementsWithIds = statementsData.map((s, i) => ({
-        id: `test-gijiroku-stmt-${i}`,
-        meetingId,
-        ...s,
-      }));
-
-      for (const s of statementsWithIds) {
-        await tx.insert(statements).values({
-          id: s.id,
-          meetingId: s.meetingId,
-          kind: s.kind,
-          speakerName: s.speakerName,
-          speakerRole: s.speakerRole,
-          content: s.content,
-          contentHash: s.contentHash,
-          startOffset: s.startOffset,
-          endOffset: s.endOffset,
-        });
+      // statements: id は DB 自動生成
+      const dbStatements = [];
+      for (const s of statementsData) {
+        const [row] = await tx
+          .insert(statements)
+          .values({
+            meetingId: dbMeeting!.id,
+            kind: s.kind,
+            speakerName: s.speakerName,
+            speakerRole: s.speakerRole,
+            content: s.content,
+            contentHash: s.contentHash,
+            startOffset: s.startOffset,
+            endOffset: s.endOffset,
+          })
+          .returning();
+        dbStatements.push(row!);
       }
 
       // statement_chunks を生成してインポート
       const chunkInputs = buildChunksFromStatements(
-        statementsWithIds.map((s) => ({
+        dbStatements.map((s) => ({
           id: s.id,
           speakerName: s.speakerName,
           speakerRole: s.speakerRole,
@@ -222,14 +221,12 @@ describe("gijiroku-com HTMLフィクスチャパース + DB統合テスト", () 
         })),
       );
 
-      for (let i = 0; i < chunkInputs.length; i++) {
-        const chunk = chunkInputs[i]!;
+      for (const chunk of chunkInputs) {
         const contentHash = createHash("sha256")
           .update(chunk.content)
           .digest("hex");
         await tx.insert(statement_chunks).values({
-          id: `test-gijiroku-chunk-${i}`,
-          meetingId,
+          meetingId: dbMeeting!.id,
           speakerName: chunk.speakerName,
           speakerRole: chunk.speakerRole,
           chunkIndex: chunk.chunkIndex,
@@ -243,26 +240,26 @@ describe("gijiroku-com HTMLフィクスチャパース + DB統合テスト", () 
       const dbMeetings = await tx
         .select()
         .from(meetings)
-        .where(eq(meetings.id, meetingId));
+        .where(eq(meetings.id, dbMeeting!.id));
       expect(dbMeetings).toHaveLength(1);
       expect(dbMeetings[0]!.heldOn).toBe("2024-03-15");
       expect(dbMeetings[0]!.meetingType).toBe("plenary");
 
-      const dbStatements = await tx
+      const dbStatementsResult = await tx
         .select()
         .from(statements)
-        .where(eq(statements.meetingId, meetingId));
-      expect(dbStatements).toHaveLength(3);
+        .where(eq(statements.meetingId, dbMeeting!.id));
+      expect(dbStatementsResult).toHaveLength(3);
 
       // kind の分布を確認
-      const kinds = dbStatements.map((s) => s.kind).sort();
+      const kinds = dbStatementsResult.map((s) => s.kind).sort();
       expect(kinds).toEqual(["answer", "question", "remark"]);
 
       // statement_chunks が正しく作成されていることを確認
       const dbChunks = await tx
         .select()
         .from(statement_chunks)
-        .where(eq(statement_chunks.meetingId, meetingId));
+        .where(eq(statement_chunks.meetingId, dbMeeting!.id));
       expect(dbChunks.length).toBeGreaterThan(0);
 
       for (const chunk of dbChunks) {
