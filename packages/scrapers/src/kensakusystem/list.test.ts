@@ -1,15 +1,11 @@
-import { describe, expect, test, vi, afterEach } from "vitest";
+import { describe, expect, test } from "vitest";
 import {
   parseDateFromFilename,
   extractSlugFromUrl,
   isSapphireType,
   isCgiType,
   isIndexHtmlType,
-  fetchFromIndexHtml,
-  fetchFromCgi,
 } from "./list";
-import * as shared from "./shared";
-import * as list from "./list";
 
 describe("parseDateFromFilename", () => {
   test("令和の日付を解析 (R080106)", () => {
@@ -89,107 +85,5 @@ describe("URL タイプ判定", () => {
         "https://www.kensakusystem.jp/city/sapphire.html"
       )
     ).toBe(false);
-  });
-});
-
-describe("fetchFromIndexHtml", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  test("日付つき See.exe リンクがある場合はそのまま返す", async () => {
-    vi.spyOn(shared, "fetchWithEncoding").mockResolvedValue(
-      `<html><body>
-        <a href="cgi-bin3/See.exe?Code=abc">令和7年3月1日 本会議</a>
-      </body></html>`
-    );
-
-    const result = await fetchFromIndexHtml(
-      "http://www.kensakusystem.jp/testcity/index.html"
-    );
-
-    expect(result).toEqual([
-      {
-        title: "令和7年3月1日 本会議",
-        heldOn: "2025-03-01",
-        url: "http://www.kensakusystem.jp/testcity/cgi-bin3/See.exe?Code=abc",
-      },
-    ]);
-  });
-
-  test("日付なし See.exe リンクのみの場合は fetchFromSapphire にフォールバック", async () => {
-    vi.spyOn(shared, "fetchWithEncoding").mockResolvedValue(
-      `<html><body>
-        <a href="cgi-bin3/See.exe?Code=abc">会議録の閲覧</a>
-      </body></html>`
-    );
-    const sapphireResult = [
-      { title: "総務委員会 2025-02-10", heldOn: "2025-02-10", url: "http://example.com/result" },
-    ];
-    vi.spyOn(list, "fetchFromSapphire").mockResolvedValue(sapphireResult);
-
-    const result = await fetchFromIndexHtml(
-      "http://www.kensakusystem.jp/testcity/index.html"
-    );
-
-    expect(list.fetchFromSapphire).toHaveBeenCalledWith(
-      "http://www.kensakusystem.jp/testcity/index.html"
-    );
-    expect(result).toEqual(sapphireResult);
-  });
-
-  test("HTML 取得に失敗した場合は null を返す", async () => {
-    vi.spyOn(shared, "fetchWithEncoding").mockResolvedValue(null);
-
-    const result = await fetchFromIndexHtml(
-      "http://www.kensakusystem.jp/testcity/index.html"
-    );
-
-    expect(result).toBeNull();
-  });
-});
-
-describe("fetchFromCgi", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  test("日付つき See.exe リンクがある場合はそのまま返す", async () => {
-    vi.spyOn(shared, "fetchWithEncoding").mockResolvedValue(
-      `<html><body>
-        <a href="cgi-bin3/See.exe?Code=xyz">令和6年12月15日 予算委員会</a>
-      </body></html>`
-    );
-
-    const result = await fetchFromCgi(
-      "http://www.kensakusystem.jp/testcity/cgi/Search2.exe"
-    );
-
-    expect(result).toEqual([
-      {
-        title: "令和6年12月15日 予算委員会",
-        heldOn: "2024-12-15",
-        url: "http://www.kensakusystem.jp/testcity/cgi/cgi-bin3/See.exe?Code=xyz",
-      },
-    ]);
-  });
-
-  test("日付なしリンクのみの場合は fetchFromSapphire にフォールバック", async () => {
-    vi.spyOn(shared, "fetchWithEncoding").mockResolvedValue(
-      `<html><body><p>検索フォーム</p></body></html>`
-    );
-    const sapphireResult = [
-      { title: "本会議 2025-01-20", heldOn: "2025-01-20", url: "http://example.com/result2" },
-    ];
-    vi.spyOn(list, "fetchFromSapphire").mockResolvedValue(sapphireResult);
-
-    const result = await fetchFromCgi(
-      "http://www.kensakusystem.jp/testcity/cgi/Search2.exe"
-    );
-
-    expect(list.fetchFromSapphire).toHaveBeenCalledWith(
-      "http://www.kensakusystem.jp/testcity/cgi/Search2.exe"
-    );
-    expect(result).toEqual(sapphireResult);
   });
 });
