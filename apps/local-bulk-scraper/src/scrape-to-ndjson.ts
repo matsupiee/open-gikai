@@ -9,6 +9,7 @@
  *   bun run scrape:ndjson -- --year 2025
  *   bun run scrape:ndjson -- --system-type dbsearch
  *   bun run scrape:ndjson -- --year 2025 --system-type discussnet_ssp
+ *   bun run scrape:ndjson -- --system-type discussnet_ssp --council-limit 2
  */
 
 import { createHash } from "node:crypto";
@@ -80,6 +81,17 @@ function parseYear(): number | undefined {
   return val;
 }
 
+function parseCouncilLimit(): number | undefined {
+  const idx = process.argv.indexOf("--council-limit");
+  if (idx === -1) return undefined;
+  const val = Number(process.argv[idx + 1]);
+  if (Number.isNaN(val) || val < 1) {
+    console.error(`[scrape-to-ndjson] 無効な council-limit: ${process.argv[idx + 1]}`);
+    process.exit(1);
+  }
+  return val;
+}
+
 const VALID_SYSTEM_TYPES: SystemType[] = ["discussnet_ssp", "dbsearch", "kensakusystem", "gijiroku_com"];
 
 function parseSystemType(): SystemType | undefined {
@@ -133,6 +145,7 @@ function runGroupedByHost(
 async function main() {
   const targetYear = parseYear();
   const targetSystemType = parseSystemType();
+  const councilLimit = parseCouncilLimit();
 
   // 1. 出力ディレクトリの準備（ログ記録のため最初に作成）
   const today = new Date().toISOString().slice(0, 10);
@@ -171,6 +184,9 @@ async function main() {
   }
   if (targetSystemType) {
     log("INFO", `[scrape-to-ndjson] システムタイプ: ${targetSystemType} のみ対象`);
+  }
+  if (councilLimit) {
+    log("INFO", `[scrape-to-ndjson] council 数制限: 各自治体 ${councilLimit} 件まで`);
   }
   log("INFO", "[scrape-to-ndjson] Starting...");
 
@@ -223,7 +239,8 @@ async function main() {
         target.name,
         target.baseUrl!,
         target.systemTypeName!,
-        targetYear
+        targetYear,
+        councilLimit
       );
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
@@ -382,13 +399,14 @@ async function scrapeMunicipality(
   municipalityName: string,
   baseUrl: string,
   systemTypeName: string,
-  targetYear?: number
+  targetYear?: number,
+  councilLimit?: number
 ): Promise<MeetingData[]> {
   switch (systemTypeName) {
     case "dbsearch":
       return scrapeDbsearch(municipalityId, municipalityName, baseUrl, targetYear);
     case "discussnet_ssp":
-      return scrapeDiscussnetSsp(municipalityId, municipalityName, baseUrl, targetYear);
+      return scrapeDiscussnetSsp(municipalityId, municipalityName, baseUrl, targetYear, councilLimit);
     case "kensakusystem":
       return scrapeKensakusystem(municipalityId, municipalityName, baseUrl, targetYear);
     case "gijiroku_com":

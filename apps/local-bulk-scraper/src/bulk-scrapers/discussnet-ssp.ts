@@ -19,7 +19,8 @@ export async function scrapeAll(
   municipalityId: string,
   municipalityName: string,
   baseUrl: string,
-  targetYear?: number
+  targetYear?: number,
+  councilLimit?: number
 ): Promise<MeetingData[]> {
   const results: MeetingData[] = [];
 
@@ -52,11 +53,16 @@ export async function scrapeAll(
     return results;
   }
 
+  const limitedCouncils = councilLimit
+    ? councils.slice(0, councilLimit)
+    : councils;
+
   console.log(
-    `  [discussnet-ssp] ${municipalityName}: ${councils.length} 件の council`
+    `  [discussnet-ssp] ${municipalityName}: ${councils.length} 件の council` +
+      (councilLimit ? `（${limitedCouncils.length} 件に制限）` : "")
   );
 
-  for (const council of councils) {
+  for (const council of limitedCouncils) {
     const schedules = await fetchSchedules(
       tenantId,
       council.councilId,
