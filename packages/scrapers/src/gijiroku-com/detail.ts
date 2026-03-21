@@ -23,6 +23,7 @@
 import { createHash } from "node:crypto";
 import type { MeetingData, ParsedStatement } from "../types";
 import { decodeShiftJis } from "./decode-shift-jis";
+import { extractBaseInfo } from "./url";
 
 const USER_AGENT =
   "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
@@ -51,7 +52,9 @@ export async function fetchMeetingDetail(
     if (!headerHtml) return null;
 
     const heldOn =
-      extractDateFromContent(headerHtml) ?? parseDateFromLabel(dateLabel);
+      extractDateFromContent(headerHtml) ??
+      parseDateFromLabel(dateLabel, title) ??
+      parseDateFromLabel(dateLabel, headerHtml);
     if (!heldOn) return null;
 
     // 2. サイドバーから全 HUID 一覧を取得
@@ -138,16 +141,10 @@ async function fetchShiftJisPage(url: string): Promise<string | null> {
 /** @internal テスト用にexport */
 export function buildDetailUrl(baseUrl: string, fino: string): string | null {
   try {
-    const url = new URL(baseUrl);
-    if (url.hostname.endsWith("gijiroku.com")) {
-      url.protocol = "https:";
-    }
+    const info = extractBaseInfo(baseUrl);
+    if (!info) return null;
 
-    const voicesMatch = url.pathname.match(/^(.*\/voices)\//i);
-    if (!voicesMatch?.[1]) return null;
-
-    const voicesPath = voicesMatch[1];
-    return `${url.origin}${voicesPath}/cgi/voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&FINO=${fino}&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0`;
+    return `${info.origin}${info.basePath}/cgi/voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&FINO=${fino}&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0`;
   } catch (err) {
     console.warn(`[gijiroku-com] buildDetailUrl failed for ${baseUrl}:`, err instanceof Error ? err.message : err);
     return null;
@@ -160,16 +157,10 @@ export function buildDetailUrl(baseUrl: string, fino: string): string | null {
 /** @internal テスト用にexport */
 export function buildSidebarUrl(baseUrl: string, fino: string): string | null {
   try {
-    const url = new URL(baseUrl);
-    if (url.hostname.endsWith("gijiroku.com")) {
-      url.protocol = "https:";
-    }
+    const info = extractBaseInfo(baseUrl);
+    if (!info) return null;
 
-    const voicesMatch = url.pathname.match(/^(.*\/voices)\//i);
-    if (!voicesMatch?.[1]) return null;
-
-    const voicesPath = voicesMatch[1];
-    return `${url.origin}${voicesPath}/cgi/voiweb.exe?ACT=202&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&FINO=${fino}&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0`;
+    return `${info.origin}${info.basePath}/cgi/voiweb.exe?ACT=202&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&FINO=${fino}&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0`;
   } catch (err) {
     console.warn(`[gijiroku-com] buildSidebarUrl failed for ${baseUrl}:`, err instanceof Error ? err.message : err);
     return null;
@@ -186,16 +177,10 @@ export function buildDetailUrlWithHuid(
   huid: string
 ): string | null {
   try {
-    const url = new URL(baseUrl);
-    if (url.hostname.endsWith("gijiroku.com")) {
-      url.protocol = "https:";
-    }
+    const info = extractBaseInfo(baseUrl);
+    if (!info) return null;
 
-    const voicesMatch = url.pathname.match(/^(.*\/voices)\//i);
-    if (!voicesMatch?.[1]) return null;
-
-    const voicesPath = voicesMatch[1];
-    return `${url.origin}${voicesPath}/cgi/voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=${huid}&FINO=${fino}&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0`;
+    return `${info.origin}${info.basePath}/cgi/voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=${huid}&FINO=${fino}&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0`;
   } catch (err) {
     console.warn(`[gijiroku-com] buildDetailUrlWithHuid failed for ${baseUrl}:`, err instanceof Error ? err.message : err);
     return null;
@@ -292,14 +277,37 @@ export function extractDateFromContent(html: string): string | null {
 
 /**
  * 日付ラベル（例: "12月05日-01号"）から月日を抽出し、
- * 年を推定して YYYY-MM-DD を返す。フォールバック用。
+ * yearSource（タイトルや HTML）から和暦年を取得して YYYY-MM-DD を返す。
+ *
+ * yearSource の例:
+ *   - タイトル: "令和 7年第6回12月定例会,12月05日-01号"
+ *   - HTML: "令和　７年第　６回１２月定例会"
  */
 /** @internal テスト用にexport */
-export function parseDateFromLabel(dateLabel: string): string | null {
+export function parseDateFromLabel(
+  dateLabel: string,
+  yearSource?: string
+): string | null {
   const m = dateLabel.match(/(\d{1,2})月(\d{1,2})日/);
   if (!m) return null;
-  // 年が不明なのでフォールバック用としては null を返す
-  return null;
+
+  if (!yearSource) return null;
+
+  // yearSource から「令和X年」「平成X年」「昭和X年」を探す
+  const eraMatch = yearSource.match(
+    /(令和|平成|昭和)\s*([0-9０-９]+)\s*年/
+  );
+  if (!eraMatch) return null;
+
+  const era = eraMatch[1]!;
+  const eraYear = toHalfWidth(eraMatch[2]!);
+  const gregorianYear = eraToGregorian(era, Number.parseInt(eraYear, 10));
+  if (!gregorianYear) return null;
+
+  const month = m[1]!.padStart(2, "0");
+  const day = m[2]!.padStart(2, "0");
+
+  return `${gregorianYear}-${month}-${day}`;
 }
 
 /**

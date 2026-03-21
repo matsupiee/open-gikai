@@ -15,6 +15,7 @@
  */
 
 import { decodeShiftJis } from "./decode-shift-jis";
+import { extractBaseInfo } from "./url";
 
 export interface GijirokuMeetingRecord {
   /** FINO パラメータ（ファイル番号） */
@@ -72,18 +73,10 @@ export async function fetchMeetingList(
 /** @internal テスト用にexport */
 export function buildListUrl(baseUrl: string, year: number): string | null {
   try {
-    const url = new URL(baseUrl);
-    // gijiroku.com SaaS は HTTPS を使用、自前ホストは元のプロトコルを保持
-    if (url.hostname.endsWith("gijiroku.com")) {
-      url.protocol = "https:";
-    }
+    const info = extractBaseInfo(baseUrl);
+    if (!info) return null;
 
-    // voices/ を含むパスの前半部分を取得
-    const voicesMatch = url.pathname.match(/^(.*\/voices)\//i);
-    if (!voicesMatch?.[1]) return null;
-
-    const voicesPath = voicesMatch[1];
-    return `${url.origin}${voicesPath}/cgi/voiweb.exe?ACT=100&KTYP=0,1,2,3&SORT=0&FYY=${year}&TYY=${year}&KGTP=1,3`;
+    return `${info.origin}${info.basePath}/cgi/voiweb.exe?ACT=100&KTYP=0,1,2,3&SORT=0&FYY=${year}&TYY=${year}&KGTP=1,3`;
   } catch (err) {
     console.warn(`[gijiroku-com] buildListUrl failed for ${baseUrl}:`, err instanceof Error ? err.message : err);
     return null;
