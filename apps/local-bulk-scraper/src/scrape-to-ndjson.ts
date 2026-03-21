@@ -6,6 +6,7 @@
  *
  * 使い方:
  *   bun run scrape:ndjson
+ *   bun run scrape:ndjson -- --year 2025
  */
 
 import { createHash } from "node:crypto";
@@ -64,7 +65,22 @@ async function generateEmbeddingsBatch(
   }
 }
 
+function parseYear(): number | undefined {
+  const idx = process.argv.indexOf("--year");
+  if (idx === -1) return undefined;
+  const val = Number(process.argv[idx + 1]);
+  if (Number.isNaN(val) || val < 2000 || val > 2100) {
+    console.error(`[scrape-to-ndjson] 無効な年: ${process.argv[idx + 1]}`);
+    process.exit(1);
+  }
+  return val;
+}
+
 async function main() {
+  const targetYear = parseYear();
+  if (targetYear) {
+    console.log(`[scrape-to-ndjson] ${targetYear}年を対象にスクレイピングします`);
+  }
   console.log("[scrape-to-ndjson] Starting...");
 
   // 1. DB から enabled な municipalities + system_types を取得
@@ -124,7 +140,8 @@ async function main() {
         target.id,
         target.name,
         target.baseUrl!,
-        target.systemTypeName!
+        target.systemTypeName!,
+        targetYear
       );
     } catch (err) {
       console.error(`  [ERROR] ${target.name}: スクレイピング失敗:`, err);
@@ -261,17 +278,18 @@ async function scrapeMunicipality(
   municipalityId: string,
   municipalityName: string,
   baseUrl: string,
-  systemTypeName: string
+  systemTypeName: string,
+  targetYear?: number
 ): Promise<MeetingData[]> {
   switch (systemTypeName) {
     case "dbsearch":
-      return scrapeDbsearch(municipalityId, municipalityName, baseUrl);
+      return scrapeDbsearch(municipalityId, municipalityName, baseUrl, targetYear);
     case "discussnet_ssp":
-      return scrapeDiscussnetSsp(municipalityId, municipalityName, baseUrl);
+      return scrapeDiscussnetSsp(municipalityId, municipalityName, baseUrl, targetYear);
     case "kensakusystem":
-      return scrapeKensakusystem(municipalityId, municipalityName, baseUrl);
+      return scrapeKensakusystem(municipalityId, municipalityName, baseUrl, targetYear);
     case "gijiroku_com":
-      return scrapeGijirokuCom(municipalityId, municipalityName, baseUrl);
+      return scrapeGijirokuCom(municipalityId, municipalityName, baseUrl, targetYear);
     default:
       console.warn(`  未対応の systemType: ${systemTypeName}`);
       return [];

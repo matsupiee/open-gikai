@@ -18,7 +18,8 @@ import type { MeetingData } from "@open-gikai/scrapers";
 export async function scrapeAll(
   municipalityId: string,
   municipalityName: string,
-  baseUrl: string
+  baseUrl: string,
+  targetYear?: number
 ): Promise<MeetingData[]> {
   const results: MeetingData[] = [];
 
@@ -77,6 +78,12 @@ export async function scrapeAll(
         results.push(meeting);
       }
     }
+  }
+
+  if (targetYear) {
+    return results.filter(
+      (m) => new Date(m.heldOn).getFullYear() === targetYear
+    );
   }
 
   return results;
