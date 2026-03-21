@@ -76,12 +76,14 @@ function parseYear(): number | undefined {
   return val;
 }
 
+// 同一ホスト内の並列数。SaaS系サーバーへの過負荷を避けつつ高速化するため 3 に設定。
+const HOST_CONCURRENCY = 3;
+
 /**
- * タスクをホスト単位でグループ化し、同一ホストはシリアル・ホスト間は並列で実行する。
+ * タスクをホスト単位でグループ化し、同一ホストは HOST_CONCURRENCY 並列・ホスト間は並列で実行する。
  *
  * discussnet-ssp (ssp.kaigiroku.net) や kensakusystem (kensakusystem.jp) のように
- * 複数自治体が同一ホストを共有するシステムでは、並列アクセスによる IP 制限を避けるため
- * 同一ホストへのリクエストをシリアル化する。
+ * 複数自治体が同一ホストを共有するシステムでは、並列数を抑えて IP 制限を回避する。
  */
 function runGroupedByHost(
   targets: { baseUrl: string | null }[],
@@ -95,13 +97,17 @@ function runGroupedByHost(
     hostGroups.get(host)!.push(tasks[i]!);
   }
 
-  const hostTasks = [...hostGroups.values()].map(
-    (groupTasks) => async () => {
-      for (const task of groupTasks) {
-        await task();
+  const hostTasks = [...hostGroups.values()].map((groupTasks) => async () => {
+    const executing = new Set<Promise<void>>();
+    for (const task of groupTasks) {
+      const p: Promise<void> = task().finally(() => executing.delete(p));
+      executing.add(p);
+      if (executing.size >= HOST_CONCURRENCY) {
+        await Promise.race(executing);
       }
     }
-  );
+    await Promise.all(executing);
+  });
 
   return Promise.all(hostTasks).then(() => undefined);
 }
