@@ -26,7 +26,10 @@ export async function scrapeAll(
     );
 
     const records = await fetchMeetingList(baseUrl, year);
-    if (!records) continue;
+    if (!records) {
+      console.log(`  [dbsearch] ${municipalityName}: ${year}年 → 一覧取得失敗またはデータなし`);
+      continue;
+    }
 
     console.log(
       `  [dbsearch] ${municipalityName}: ${year}年 → ${records.length} 件`

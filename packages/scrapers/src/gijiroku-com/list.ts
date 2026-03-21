@@ -53,7 +53,8 @@ export async function fetchMeetingList(
 
     const records = parseListHtml(html);
     return records.length > 0 ? records : null;
-  } catch {
+  } catch (err) {
+    console.warn(`[gijiroku-com] fetchMeetingList failed for ${baseUrl} (year=${year}):`, err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -83,7 +84,8 @@ export function buildListUrl(baseUrl: string, year: number): string | null {
 
     const voicesPath = voicesMatch[1];
     return `${url.origin}${voicesPath}/cgi/voiweb.exe?ACT=100&KTYP=0,1,2,3&SORT=0&FYY=${year}&TYY=${year}&KGTP=1,3`;
-  } catch {
+  } catch (err) {
+    console.warn(`[gijiroku-com] buildListUrl failed for ${baseUrl}:`, err instanceof Error ? err.message : err);
     return null;
   }
 }

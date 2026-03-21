@@ -111,7 +111,8 @@ export async function fetchMeetingList(
     }
 
     return allRecords.length > 0 ? allRecords : null;
-  } catch {
+  } catch (err) {
+    console.warn(`[dbsearch] fetchMeetingList failed for ${baseUrl} (year=${year}):`, err instanceof Error ? err.message : err);
     return null;
   }
 }
