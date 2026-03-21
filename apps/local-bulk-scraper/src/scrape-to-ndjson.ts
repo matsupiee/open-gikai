@@ -109,17 +109,46 @@ function runGroupedByHost(
     await Promise.all(executing);
   });
 
-  return Promise.all(hostTasks).then(() => undefined);
+  return Promise.all(hostTasks.map((t) => t())).then(() => undefined);
 }
 
 async function main() {
   const targetYear = parseYear();
-  if (targetYear) {
-    console.log(`[scrape-to-ndjson] ${targetYear}年を対象にスクレイピングします`);
-  }
-  console.log("[scrape-to-ndjson] Starting...");
 
-  // 1. DB から enabled な municipalities + system_types を取得
+  // 1. 出力ディレクトリの準備（ログ記録のため最初に作成）
+  const today = new Date().toISOString().slice(0, 10);
+  const outputDir = resolve(
+    fileURLToPath(import.meta.url),
+    "../../output",
+    today
+  );
+  if (!existsSync(outputDir)) {
+    mkdirSync(outputDir, { recursive: true });
+  }
+
+  const logStream = createWriteStream(resolve(outputDir, "scrape.log"), {
+    flags: "a",
+  });
+
+  const log = (level: "INFO" | "WARN" | "ERROR", ...args: unknown[]) => {
+    const ts = new Date().toISOString();
+    const line = `[${ts}] [${level}] ${args.map(String).join(" ")}`;
+    if (level === "ERROR") {
+      console.error(line);
+    } else if (level === "WARN") {
+      console.warn(line);
+    } else {
+      console.log(line);
+    }
+    logStream.write(line + "\n");
+  };
+
+  if (targetYear) {
+    log("INFO", `[scrape-to-ndjson] ${targetYear}年を対象にスクレイピングします`);
+  }
+  log("INFO", "[scrape-to-ndjson] Starting...");
+
+  // 2. DB から enabled な municipalities + system_types を取得
   const targets = await db
     .select({
       id: municipalities.id,
@@ -134,21 +163,9 @@ async function main() {
 
   const enabledTargets = targets.filter((t) => t.baseUrl && t.systemTypeName);
 
-  console.log(
-    `[scrape-to-ndjson] ${enabledTargets.length} 自治体を処理します`
-  );
+  log("INFO", `[scrape-to-ndjson] ${enabledTargets.length} 自治体を処理します`);
 
-  // 2. 出力ディレクトリの準備
-  const today = new Date().toISOString().slice(0, 10);
-  const outputDir = resolve(
-    fileURLToPath(import.meta.url),
-    "../../output",
-    today
-  );
-  if (!existsSync(outputDir)) {
-    mkdirSync(outputDir, { recursive: true });
-  }
-
+  // 3. NDJSON 出力ストリームの準備
   const meetingsStream = createWriteStream(
     resolve(outputDir, "meetings.ndjson")
   );
@@ -164,11 +181,9 @@ async function main() {
   let totalStatements = 0;
   let totalChunks = 0;
 
-  // 3. 自治体を並列スクレイピング
+  // 4. 自治体を並列スクレイピング
   const tasks = enabledTargets.map((target) => async () => {
-    console.log(
-      `\n[scrape-to-ndjson] ${target.prefecture} ${target.name} (${target.systemTypeName})`
-    );
+    log("INFO", `[scrape-to-ndjson] ${target.prefecture} ${target.name} (${target.systemTypeName})`);
 
     let meetingDataList: MeetingData[];
     try {
@@ -180,18 +195,16 @@ async function main() {
         targetYear
       );
     } catch (err) {
-      console.error(`  [ERROR] ${target.name}: スクレイピング失敗:`, err);
+      log("ERROR", `${target.name}: スクレイピング失敗: ${err}`);
       return;
     }
 
     if (meetingDataList.length === 0) {
-      console.log(`  ${target.name}: 0 件`);
+      log("INFO", `${target.name}: 0 件`);
       return;
     }
 
-    console.log(
-      `  ${target.name}: ${meetingDataList.length} 件の会議を処理中...`
-    );
+    log("INFO", `${target.name}: ${meetingDataList.length} 件の会議を処理中...`);
 
     // 4. 各会議を NDJSON に書き出す
     for (const meetingData of meetingDataList) {
@@ -303,11 +316,13 @@ async function main() {
     new Promise<void>((resolve) => chunksStream.end(resolve)),
   ]);
 
-  console.log(`\n[scrape-to-ndjson] 完了!`);
-  console.log(`  出力先: ${outputDir}`);
-  console.log(`  meetings: ${totalMeetings} 件`);
-  console.log(`  statements: ${totalStatements} 件`);
-  console.log(`  statement_chunks: ${totalChunks} 件`);
+  log("INFO", "[scrape-to-ndjson] 完了!");
+  log("INFO", `  出力先: ${outputDir}`);
+  log("INFO", `  meetings: ${totalMeetings} 件`);
+  log("INFO", `  statements: ${totalStatements} 件`);
+  log("INFO", `  statement_chunks: ${totalChunks} 件`);
+
+  await new Promise<void>((resolve) => logStream.end(resolve));
 
   process.exit(0);
 }
