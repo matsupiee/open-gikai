@@ -110,10 +110,32 @@ function parseSystemType(): SystemType | undefined {
 const HOST_CONCURRENCY = 3;
 
 /**
- * タスクをホスト単位でグループ化し、同一ホストは HOST_CONCURRENCY 並列・ホスト間は並列で実行する。
+ * ホスト名からグループ化キーを抽出する。
  *
- * discussnet-ssp (ssp.kaigiroku.net) や kensakusystem (kensakusystem.jp) のように
- * 複数自治体が同一ホストを共有するシステムでは、並列数を抑えて IP 制限を回避する。
+ * dbsr.jp のように複数の自治体がサブドメイン違いで同一サーバーを共有している
+ * SaaS 型システムでは、フルホスト名ではなくサービスドメイン単位でグループ化する。
+ * これにより同一サーバーへの過負荷を防ぐ。
+ */
+const SHARED_SERVICE_DOMAINS = new Set([
+  "dbsr.jp",
+  "kaigiroku.net",
+  "kensakusystem.jp",
+  "gijiroku.com",
+]);
+
+function extractGroupKey(hostname: string): string {
+  const parts = hostname.split(".");
+  if (parts.length <= 2) return hostname;
+  const last2 = parts.slice(-2).join(".");
+  if (SHARED_SERVICE_DOMAINS.has(last2)) return last2;
+  return hostname;
+}
+
+/**
+ * タスクをサーバー単位でグループ化し、同一サーバーは HOST_CONCURRENCY 並列・サーバー間は並列で実行する。
+ *
+ * dbsr.jp (*.dbsr.jp)、discussnet-ssp (ssp.kaigiroku.net)、kensakusystem (*.kensakusystem.jp) のように
+ * 複数自治体が同一サーバーを共有するシステムでは、並列数を抑えて IP 制限を回避する。
  */
 function runGroupedByHost(
   targets: { baseUrl: string | null }[],
@@ -122,7 +144,7 @@ function runGroupedByHost(
   const hostGroups = new Map<string, (() => Promise<void>)[]>();
 
   for (let i = 0; i < targets.length; i++) {
-    const host = new URL(targets[i]!.baseUrl!).hostname;
+    const host = extractGroupKey(new URL(targets[i]!.baseUrl!).hostname);
     if (!hostGroups.has(host)) hostGroups.set(host, []);
     hostGroups.get(host)!.push(tasks[i]!);
   }
