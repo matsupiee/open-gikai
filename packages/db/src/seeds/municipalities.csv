@@ -533,7 +533,7 @@
 112062,埼玉県,行田市,ｻｲﾀﾏｹﾝ,ｷﾞﾖｳﾀﾞｼ,https://ssp.kaigiroku.net/tenant/gyoda/SpMinuteSearch.html,75425,2025
 112071,埼玉県,秩父市,ｻｲﾀﾏｹﾝ,ﾁﾁﾌﾞｼ,https://ssp.kaigiroku.net/tenant/chichibu/MinuteSearch.html?tab=detail,56442,2025
 112089,埼玉県,所沢市,ｻｲﾀﾏｹﾝ,ﾄｺﾛｻﾞﾜｼ,https://ssp.kaigiroku.net/tenant/tokorozawa/SpMinuteSearch.html,334691,2025
-112097,埼玉県,飯能市,ｻｲﾀﾏｹﾝ,ﾊﾝﾉｳｼ,,76460,2025
+112097,埼玉県,飯能市,ｻｲﾀﾏｹﾝ,ﾊﾝﾉｳｼ,https://ssp.kaigiroku.net/tenant/hanno/pg/index.html,76460,2025
 112101,埼玉県,加須市,ｻｲﾀﾏｹﾝ,ｶｿﾞｼ,https://ssp.kaigiroku.net/tenant/kazo/SpMinuteSearch.html,108175,2025
 112119,埼玉県,本庄市,ｻｲﾀﾏｹﾝ,ﾎﾝｼﾞﾖｳｼ,https://ssp.kaigiroku.net/tenant/honjo/MinuteSearch.html?tab=detail,73504,2025
 112127,埼玉県,東松山市,ｻｲﾀﾏｹﾝ,ﾋｶﾞｼﾏﾂﾔﾏｼ,https://ssp.kaigiroku.net/tenant/higashimatsuyama/MinuteSearch.html?tab=detail,87223,2025
@@ -546,7 +546,7 @@
 112216,埼玉県,草加市,ｻｲﾀﾏｹﾝ,ｿｳｶｼ,http://www.soka-shigikai.jp/voices/g07v_search.asp,240555,2025
 112224,埼玉県,越谷市,ｻｲﾀﾏｹﾝ,ｺｼｶﾞﾔｼ,https://ssp.kaigiroku.net/tenant/koshigaya/SpMinuteSearch.html,333149,2025
 112232,埼玉県,蕨市,ｻｲﾀﾏｹﾝ,ﾜﾗﾋﾞｼ,http://warabi.gijiroku.com/gikai/voices/g08v_search.asp,66812,2025
-112241,埼玉県,戸田市,ｻｲﾀﾏｹﾝ,ﾄﾀﾞｼ,,133225,2025
+112241,埼玉県,戸田市,ｻｲﾀﾏｹﾝ,ﾄﾀﾞｼ,https://toda.gijiroku.com/,133225,2025
 112259,埼玉県,入間市,ｻｲﾀﾏｹﾝ,ｲﾙﾏｼ,http://www3.city.iruma.saitama.jp/voices/g07v_search.asp?Sflg=2&FBKEY1=,140055,2025
 112275,埼玉県,朝霞市,ｻｲﾀﾏｹﾝ,ｱｻｶｼ,https://ssp.kaigiroku.net/tenant/asaka/SpMinuteSearch.html,140934,2025
 112283,埼玉県,志木市,ｻｲﾀﾏｹﾝ,ｼｷｼ,https://ssp.kaigiroku.net/tenant/shiki/SpMinuteSearch.html,73771,2025
@@ -582,8 +582,8 @@
 113638,埼玉県,長瀞町,ｻｲﾀﾏｹﾝ,ﾅｶﾞﾄﾛﾏﾁ,,6316,2025
 113654,埼玉県,小鹿野町,ｻｲﾀﾏｹﾝ,ｵｶﾞﾉﾏﾁ,,9899,2025
 113697,埼玉県,東秩父村,ｻｲﾀﾏｹﾝ,ﾋｶﾞｼﾁﾁﾌﾞﾑﾗ,https://ssp.kaigiroku.net/tenant/higashichichibu/SpMinuteSearch.html,2396,2025
-113816,埼玉県,美里町,ｻｲﾀﾏｹﾝ,ﾐｻﾄﾏﾁ,,10454,2025
-113832,埼玉県,神川町,ｻｲﾀﾏｹﾝ,ｶﾐｶﾜﾏﾁ,,12099,2025
+113816,埼玉県,美里町,ｻｲﾀﾏｹﾝ,ﾐｻﾄﾏﾁ,https://ssp.kaigiroku.net/tenant/saimisato/pg/index.html,10454,2025
+113832,埼玉県,神川町,ｻｲﾀﾏｹﾝ,ｶﾐｶﾜﾏﾁ,https://ssp.kaigiroku.net/tenant/kamikawa/pg/index.html,12099,2025
 113859,埼玉県,上里町,ｻｲﾀﾏｹﾝ,ｶﾐｻﾄﾏﾁ,https://ssp.kaigiroku.net/tenant/kamikawa/MinuteSearch.html,29069,2025
 114081,埼玉県,寄居町,ｻｲﾀﾏｹﾝ,ﾖﾘｲﾏﾁ,https://ssp.kaigiroku.net/tenant/yorii/SpMinuteSearch.html,30691,2025
 114421,埼玉県,宮代町,ｻｲﾀﾏｹﾝ,ﾐﾔｼﾛﾏﾁ,https://ssp.kaigiroku.net/tenant/miyashiro/SpMinuteSearch.html,32874,2025
