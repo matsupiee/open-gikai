@@ -22,11 +22,8 @@
 
 import { createHash } from "node:crypto";
 import type { MeetingData, ParsedStatement } from "../types";
-import { decodeShiftJis } from "./decode-shift-jis";
+import { fetchShiftJisPage } from "./fetch-page";
 import { extractBaseInfo } from "./url";
-
-const USER_AGENT =
-  "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
 
 /**
  * voiweb.exe から議事録本文を取得し、MeetingData に変換する。
@@ -117,23 +114,6 @@ export async function fetchMeetingDetail(
   }
 }
 
-/**
- * Shift_JIS エンコーディングのページを取得し、UTF-8 文字列として返す。
- */
-async function fetchShiftJisPage(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": USER_AGENT },
-    });
-    if (!res.ok) return null;
-
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    return decodeShiftJis(bytes);
-  } catch (err) {
-    console.warn(`[gijiroku-com] fetchShiftJisPage failed for ${url}:`, err instanceof Error ? err.message : err);
-    return null;
-  }
-}
 
 /**
  * baseUrl と FINO から ACT=203（本文フレーム）の URL を構築する。
