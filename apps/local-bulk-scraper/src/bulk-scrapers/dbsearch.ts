@@ -11,7 +11,8 @@ export async function scrapeAll(
   municipalityId: string,
   municipalityName: string,
   baseUrl: string,
-  targetYear?: number
+  targetYear?: number,
+  meetingLimit?: number
 ): Promise<MeetingData[]> {
   const results: MeetingData[] = [];
 
@@ -21,6 +22,8 @@ export async function scrapeAll(
     : Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   for (const year of years) {
+    if (meetingLimit && results.length >= meetingLimit) break;
+
     console.log(
       `  [dbsearch] ${municipalityName}: ${year}年の一覧を取得中...`
     );
@@ -31,11 +34,15 @@ export async function scrapeAll(
       continue;
     }
 
+    const remaining = meetingLimit ? meetingLimit - results.length : records.length;
+    const limited = records.slice(0, remaining);
+    const limitNote = meetingLimit ? ` (${limited.length}/${records.length} 件処理)` : "";
+
     console.log(
-      `  [dbsearch] ${municipalityName}: ${year}年 → ${records.length} 件`
+      `  [dbsearch] ${municipalityName}: ${year}年 → ${records.length} 件${limitNote}`
     );
 
-    for (const record of records) {
+    for (const record of limited) {
       const meeting = await fetchMeetingDetail(
         record.url,
         municipalityId,

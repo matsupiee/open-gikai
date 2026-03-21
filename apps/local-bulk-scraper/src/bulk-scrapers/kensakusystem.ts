@@ -21,7 +21,8 @@ export async function scrapeAll(
   municipalityId: string,
   municipalityName: string,
   baseUrl: string,
-  targetYear?: number
+  targetYear?: number,
+  meetingLimit?: number
 ): Promise<MeetingData[]> {
   const results: MeetingData[] = [];
 
@@ -55,11 +56,14 @@ export async function scrapeAll(
     return results;
   }
 
+  const limited = meetingLimit ? schedules.slice(0, meetingLimit) : schedules;
+  const limitNote = meetingLimit ? ` (上限 ${meetingLimit} 件に制限)` : "";
+
   console.log(
-    `  [kensakusystem] ${municipalityName}: ${schedules.length} 件のスケジュール`
+    `  [kensakusystem] ${municipalityName}: ${limited.length} 件のスケジュールを処理${limitNote} (${schedules.length} 件中)`
   );
 
-  for (const schedule of schedules) {
+  for (const schedule of limited) {
     const meeting = await fetchMeetingDataFromSchedule(
       schedule,
       municipalityId,
