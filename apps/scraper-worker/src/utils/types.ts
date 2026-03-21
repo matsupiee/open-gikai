@@ -90,6 +90,8 @@ export type ScraperQueueMessage =
       municipalityName: string;
       baseUrl: string;
       year: number;
+      /** 取得する会議数の上限（省略時は全件取得） */
+      meetingLimit?: number;
     }
   | {
       /** kensakusystem.jp: 議事録詳細ページを取得・保存するメッセージ */

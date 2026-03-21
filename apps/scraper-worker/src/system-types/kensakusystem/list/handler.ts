@@ -68,10 +68,18 @@ export async function handleKensakusystemList(
   }
 
   const yearPrefix = String(msg.year);
-  const filtered = schedules.filter((s) => s.heldOn.startsWith(yearPrefix));
+  const allFiltered = schedules.filter((s) => s.heldOn.startsWith(yearPrefix));
+
+  const filtered = msg.meetingLimit
+    ? allFiltered.slice(0, msg.meetingLimit)
+    : allFiltered;
+
+  const limitNote = msg.meetingLimit
+    ? ` (上限 ${msg.meetingLimit} 件に制限)`
+    : "";
 
   await logger.info(
-    `kensakusystem [${msg.municipalityName}] ${filtered.length} 件の議事録を検出 (${schedules.length} 件中 ${msg.year} 年分)`
+    `kensakusystem [${msg.municipalityName}] ${filtered.length} 件の議事録を処理${limitNote} (${allFiltered.length} 件検出, ${schedules.length} 件中 ${msg.year} 年分)`
   );
 
   if (filtered.length === 0) {
