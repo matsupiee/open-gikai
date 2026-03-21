@@ -29,8 +29,10 @@
       },
       "devDependencies": {
         "@open-gikai/config": "workspace:*",
+        "@types/pg": "^8.18.0",
         "dotenv": "catalog:",
         "typescript": "catalog:",
+        "vitest": "^4.1.0",
       },
     },
     "apps/scraper-worker": {
