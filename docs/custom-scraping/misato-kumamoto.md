@@ -1,0 +1,13 @@
+# 美里町議会
+
+## ステータス
+
+会議録検索システム未導入
+
+## PDF掲載ページ
+
+- https://www.town.kumamoto-misato.lg.jp/
+
+## 備考
+
+会議録PDF掲載
