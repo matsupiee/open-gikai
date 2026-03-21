@@ -59,7 +59,8 @@ export async function fetchTenantId(
     const match = text.match(/tenant_id\s*=\s*(\d+)/);
     if (!match?.[1]) return null;
     return parseInt(match[1], 10);
-  } catch {
+  } catch (err) {
+    console.warn(`[discussnet-ssp] fetchTenantId failed for ${tenantSlug}:`, err instanceof Error ? err.message : err);
     return null;
   }
 }

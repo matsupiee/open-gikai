@@ -291,7 +291,8 @@ export async function fetchMeetingStatements(
   let plainText: string;
   try {
     plainText = decodeShiftJis(rawBytes);
-  } catch {
+  } catch (err) {
+    console.warn(`[kensakusystem] Shift-JIS decode failed:`, err instanceof Error ? err.message : err);
     return null;
   }
 

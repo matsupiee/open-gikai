@@ -57,7 +57,8 @@ export async function fetchMeetingDetail(
       externalId,
       statements,
     };
-  } catch {
+  } catch (err) {
+    console.warn(`[dbsearch] fetchMeetingDetail failed for ${detailUrl}:`, err instanceof Error ? err.message : err);
     return null;
   }
 }

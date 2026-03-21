@@ -60,7 +60,8 @@ async function generateEmbeddingsBatch(
       result[item.index] = item.embedding;
     }
     return result;
-  } catch {
+  } catch (err) {
+    console.warn(`[embeddings] batch failed:`, err instanceof Error ? err.message : err);
     return texts.map(() => null);
   }
 }
@@ -180,6 +181,7 @@ async function main() {
   let totalMeetings = 0;
   let totalStatements = 0;
   let totalChunks = 0;
+  const failedMunicipalities: { name: string; prefecture: string; systemType: string; reason: string }[] = [];
 
   // 4. 自治体を並列スクレイピング
   const tasks = enabledTargets.map((target) => async () => {
@@ -195,12 +197,15 @@ async function main() {
         targetYear
       );
     } catch (err) {
-      log("ERROR", `${target.name}: スクレイピング失敗: ${err}`);
+      const reason = err instanceof Error ? err.message : String(err);
+      log("ERROR", `${target.name}: スクレイピング失敗: ${reason}`);
+      failedMunicipalities.push({ name: target.name, prefecture: target.prefecture, systemType: target.systemTypeName!, reason });
       return;
     }
 
     if (meetingDataList.length === 0) {
       log("INFO", `${target.name}: 0 件`);
+      failedMunicipalities.push({ name: target.name, prefecture: target.prefecture, systemType: target.systemTypeName!, reason: "0 件（データなし）" });
       return;
     }
 
@@ -321,6 +326,22 @@ async function main() {
   log("INFO", `  meetings: ${totalMeetings} 件`);
   log("INFO", `  statements: ${totalStatements} 件`);
   log("INFO", `  statement_chunks: ${totalChunks} 件`);
+
+  if (failedMunicipalities.length > 0) {
+    log("INFO", "");
+    log("INFO", `[scrape-to-ndjson] 失敗・0件の自治体: ${failedMunicipalities.length} 件`);
+    const byType = new Map<string, number>();
+    for (const f of failedMunicipalities) {
+      byType.set(f.systemType, (byType.get(f.systemType) ?? 0) + 1);
+    }
+    for (const [type, count] of byType) {
+      log("INFO", `  ${type}: ${count} 件`);
+    }
+    log("INFO", "");
+    for (const f of failedMunicipalities) {
+      log("INFO", `  [FAIL] ${f.prefecture} ${f.name} (${f.systemType}): ${f.reason}`);
+    }
+  }
 
   await new Promise<void>((resolve) => logStream.end(resolve));
 

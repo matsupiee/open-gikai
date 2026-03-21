@@ -108,7 +108,8 @@ export async function fetchMeetingDetail(
       externalId,
       statements,
     };
-  } catch {
+  } catch (err) {
+    console.warn(`[gijiroku-com] fetchMeetingDetail failed for fino=${fino}:`, err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -125,7 +126,8 @@ async function fetchShiftJisPage(url: string): Promise<string | null> {
 
     const bytes = new Uint8Array(await res.arrayBuffer());
     return decodeShiftJis(bytes);
-  } catch {
+  } catch (err) {
+    console.warn(`[gijiroku-com] fetchShiftJisPage failed for ${url}:`, err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -146,7 +148,8 @@ export function buildDetailUrl(baseUrl: string, fino: string): string | null {
 
     const voicesPath = voicesMatch[1];
     return `${url.origin}${voicesPath}/cgi/voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&FINO=${fino}&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0`;
-  } catch {
+  } catch (err) {
+    console.warn(`[gijiroku-com] buildDetailUrl failed for ${baseUrl}:`, err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -167,7 +170,8 @@ export function buildSidebarUrl(baseUrl: string, fino: string): string | null {
 
     const voicesPath = voicesMatch[1];
     return `${url.origin}${voicesPath}/cgi/voiweb.exe?ACT=202&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&FINO=${fino}&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0`;
-  } catch {
+  } catch (err) {
+    console.warn(`[gijiroku-com] buildSidebarUrl failed for ${baseUrl}:`, err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -192,7 +196,8 @@ export function buildDetailUrlWithHuid(
 
     const voicesPath = voicesMatch[1];
     return `${url.origin}${voicesPath}/cgi/voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=${huid}&FINO=${fino}&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0`;
-  } catch {
+  } catch (err) {
+    console.warn(`[gijiroku-com] buildDetailUrlWithHuid failed for ${baseUrl}:`, err instanceof Error ? err.message : err);
     return null;
   }
 }
