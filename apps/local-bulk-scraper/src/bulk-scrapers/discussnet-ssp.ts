@@ -45,7 +45,7 @@ export async function scrapeAll(
     return results;
   }
 
-  const councils = await fetchCouncils(tenantId, undefined, apiBase);
+  const councils = await fetchCouncils(tenantId, targetYear, apiBase);
   if (councils.length === 0) {
     console.warn(
       `  [discussnet-ssp] ${municipalityName}: council が見つかりません`
