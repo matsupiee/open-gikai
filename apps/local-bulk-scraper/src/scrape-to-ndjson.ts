@@ -10,6 +10,7 @@
  *   bun run scrape:ndjson -- --system-type dbsearch
  *   bun run scrape:ndjson -- --year 2025 --system-type discussnet_ssp
  *   bun run scrape:ndjson -- --system-type discussnet_ssp --council-limit 2
+ *   bun run scrape:ndjson -- --system-type kensakusystem --meeting-limit 2
  */
 
 import { createHash } from "node:crypto";
@@ -92,6 +93,17 @@ function parseCouncilLimit(): number | undefined {
   return val;
 }
 
+function parseMeetingLimit(): number | undefined {
+  const idx = process.argv.indexOf("--meeting-limit");
+  if (idx === -1) return undefined;
+  const val = Number(process.argv[idx + 1]);
+  if (Number.isNaN(val) || val < 1) {
+    console.error(`[scrape-to-ndjson] 無効な meeting-limit: ${process.argv[idx + 1]}`);
+    process.exit(1);
+  }
+  return val;
+}
+
 const VALID_SYSTEM_TYPES: SystemType[] = ["discussnet_ssp", "dbsearch", "kensakusystem", "gijiroku_com"];
 
 function parseSystemType(): SystemType | undefined {
@@ -168,6 +180,7 @@ async function main() {
   const targetYear = parseYear();
   const targetSystemType = parseSystemType();
   const councilLimit = parseCouncilLimit();
+  const meetingLimit = parseMeetingLimit();
 
   // 1. 出力ディレクトリの準備（ログ記録のため最初に作成）
   const today = new Date().toISOString().slice(0, 10);
@@ -209,6 +222,9 @@ async function main() {
   }
   if (councilLimit) {
     log("INFO", `[scrape-to-ndjson] council 数制限: 各自治体 ${councilLimit} 件まで`);
+  }
+  if (meetingLimit) {
+    log("INFO", `[scrape-to-ndjson] meeting 数制限: 各自治体 ${meetingLimit} 件まで`);
   }
   log("INFO", "[scrape-to-ndjson] Starting...");
 
@@ -262,7 +278,8 @@ async function main() {
         target.baseUrl!,
         target.systemTypeName!,
         targetYear,
-        councilLimit
+        councilLimit,
+        meetingLimit
       );
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
@@ -422,7 +439,8 @@ async function scrapeMunicipality(
   baseUrl: string,
   systemTypeName: string,
   targetYear?: number,
-  councilLimit?: number
+  councilLimit?: number,
+  meetingLimit?: number
 ): Promise<MeetingData[]> {
   switch (systemTypeName) {
     case "dbsearch":
@@ -430,7 +448,7 @@ async function scrapeMunicipality(
     case "discussnet_ssp":
       return scrapeDiscussnetSsp(municipalityId, municipalityName, baseUrl, targetYear, councilLimit);
     case "kensakusystem":
-      return scrapeKensakusystem(municipalityId, municipalityName, baseUrl, targetYear);
+      return scrapeKensakusystem(municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
     case "gijiroku_com":
       return scrapeGijirokuCom(municipalityId, municipalityName, baseUrl, targetYear);
     default:
