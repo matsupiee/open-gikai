@@ -76,12 +76,47 @@ function parseYear(): number | undefined {
   return val;
 }
 
+function parseConcurrency(): number {
+  const idx = process.argv.indexOf("--concurrency");
+  if (idx === -1) return 100;
+  const val = Number(process.argv[idx + 1]);
+  if (Number.isNaN(val) || val < 1) {
+    console.error(`[scrape-to-ndjson] 無効な concurrency: ${process.argv[idx + 1]}`);
+    process.exit(1);
+  }
+  return val;
+}
+
+async function runWithConcurrency<T>(
+  tasks: (() => Promise<T>)[],
+  concurrency: number
+): Promise<T[]> {
+  const results: (T | undefined)[] = new Array(tasks.length);
+  const executing = new Set<Promise<void>>();
+  let index = 0;
+
+  for (const task of tasks) {
+    const i = index++;
+    const p: Promise<void> = task().then((result) => {
+      results[i] = result;
+      executing.delete(p);
+    });
+    executing.add(p);
+    if (executing.size >= concurrency) {
+      await Promise.race(executing);
+    }
+  }
+  await Promise.all(executing);
+  return results as T[];
+}
+
 async function main() {
   const targetYear = parseYear();
+  const concurrency = parseConcurrency();
   if (targetYear) {
     console.log(`[scrape-to-ndjson] ${targetYear}年を対象にスクレイピングします`);
   }
-  console.log("[scrape-to-ndjson] Starting...");
+  console.log(`[scrape-to-ndjson] Starting... (concurrency=${concurrency})`);
 
   // 1. DB から enabled な municipalities + system_types を取得
   const targets = await db
@@ -128,8 +163,8 @@ async function main() {
   let totalStatements = 0;
   let totalChunks = 0;
 
-  // 3. 自治体ごとにスクレイピング
-  for (const target of enabledTargets) {
+  // 3. 自治体を並列スクレイピング
+  const tasks = enabledTargets.map((target) => async () => {
     console.log(
       `\n[scrape-to-ndjson] ${target.prefecture} ${target.name} (${target.systemTypeName})`
     );
@@ -145,12 +180,12 @@ async function main() {
       );
     } catch (err) {
       console.error(`  [ERROR] ${target.name}: スクレイピング失敗:`, err);
-      continue;
+      return;
     }
 
     if (meetingDataList.length === 0) {
       console.log(`  ${target.name}: 0 件`);
-      continue;
+      return;
     }
 
     console.log(
@@ -256,7 +291,9 @@ async function main() {
         totalStatements++;
       }
     }
-  }
+  });
+
+  await runWithConcurrency(tasks, concurrency);
 
   // ストリームを閉じる
   await Promise.all([
