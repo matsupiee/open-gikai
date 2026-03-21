@@ -95,6 +95,18 @@ describe("parseListHtml", () => {
     const records = parseListHtml(html, "https://foo.dbsr.jp");
     expect(records[0]!.url.startsWith("https://foo.dbsr.jp")).toBe(true);
   });
+
+  test("新形式の DocumentID パラメータからレコードを抽出", () => {
+    const html = `
+      <a href="/index.php/7519522?Template=view&amp;VoiceType=all&amp;DocumentID=3650">令和７年 意見書第０４号</a>
+      <a href="/index.php/7519522?Template=view&amp;VoiceType=all&amp;DocumentID=3651">令和７年 意見書第０５号</a>
+    `;
+    const records = parseListHtml(html, "https://www.city.sendai.miyagi.dbsr.jp");
+    expect(records).toHaveLength(2);
+    expect(records[0]!.id).toBe("3650");
+    expect(records[0]!.title).toBe("令和７年 意見書第０４号");
+    expect(records[1]!.id).toBe("3651");
+  });
 });
 
 describe("hasNextPage", () => {

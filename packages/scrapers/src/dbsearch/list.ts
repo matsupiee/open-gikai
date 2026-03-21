@@ -182,8 +182,9 @@ export function parseListHtml(
   const records: DbsearchMeetingRecord[] = [];
   const seen = new Set<string>();
 
+  // 旧形式: &Id=123 / 新形式: &DocumentID=123
   const anchorPattern =
-    /<a\s[^>]*href="([^"]+Template=(?:view|document)[^"]*(?:&amp;|&)Id=(\d+)[^"]*)"[^>]*>([^<]+)<\/a>/gi;
+    /<a\s[^>]*href="([^"]+Template=(?:view|document)[^"]*(?:&amp;|&)(?:Document)?Id=(\d+)[^"]*)"[^>]*>([^<]+)<\/a>/gi;
 
   let match;
   while ((match = anchorPattern.exec(html)) !== null) {
