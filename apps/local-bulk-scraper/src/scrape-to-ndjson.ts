@@ -76,6 +76,42 @@ function parseYear(): number | undefined {
   return val;
 }
 
+// 同一ホスト内の並列数。SaaS系サーバーへの過負荷を避けつつ高速化するため 3 に設定。
+const HOST_CONCURRENCY = 3;
+
+/**
+ * タスクをホスト単位でグループ化し、同一ホストは HOST_CONCURRENCY 並列・ホスト間は並列で実行する。
+ *
+ * discussnet-ssp (ssp.kaigiroku.net) や kensakusystem (kensakusystem.jp) のように
+ * 複数自治体が同一ホストを共有するシステムでは、並列数を抑えて IP 制限を回避する。
+ */
+function runGroupedByHost(
+  targets: { baseUrl: string | null }[],
+  tasks: (() => Promise<void>)[]
+): Promise<void> {
+  const hostGroups = new Map<string, (() => Promise<void>)[]>();
+
+  for (let i = 0; i < targets.length; i++) {
+    const host = new URL(targets[i]!.baseUrl!).hostname;
+    if (!hostGroups.has(host)) hostGroups.set(host, []);
+    hostGroups.get(host)!.push(tasks[i]!);
+  }
+
+  const hostTasks = [...hostGroups.values()].map((groupTasks) => async () => {
+    const executing = new Set<Promise<void>>();
+    for (const task of groupTasks) {
+      const p: Promise<void> = task().finally(() => executing.delete(p));
+      executing.add(p);
+      if (executing.size >= HOST_CONCURRENCY) {
+        await Promise.race(executing);
+      }
+    }
+    await Promise.all(executing);
+  });
+
+  return Promise.all(hostTasks).then(() => undefined);
+}
+
 async function main() {
   const targetYear = parseYear();
   if (targetYear) {
@@ -128,8 +164,8 @@ async function main() {
   let totalStatements = 0;
   let totalChunks = 0;
 
-  // 3. 自治体ごとにスクレイピング
-  for (const target of enabledTargets) {
+  // 3. 自治体を並列スクレイピング
+  const tasks = enabledTargets.map((target) => async () => {
     console.log(
       `\n[scrape-to-ndjson] ${target.prefecture} ${target.name} (${target.systemTypeName})`
     );
@@ -145,12 +181,12 @@ async function main() {
       );
     } catch (err) {
       console.error(`  [ERROR] ${target.name}: スクレイピング失敗:`, err);
-      continue;
+      return;
     }
 
     if (meetingDataList.length === 0) {
       console.log(`  ${target.name}: 0 件`);
-      continue;
+      return;
     }
 
     console.log(
@@ -256,7 +292,9 @@ async function main() {
         totalStatements++;
       }
     }
-  }
+  });
+
+  await runGroupedByHost(enabledTargets, tasks);
 
   // ストリームを閉じる
   await Promise.all([
