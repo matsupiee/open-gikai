@@ -7,6 +7,8 @@
  * 使い方:
  *   bun run scrape:ndjson
  *   bun run scrape:ndjson -- --year 2025
+ *   bun run scrape:ndjson -- --system-type dbsearch
+ *   bun run scrape:ndjson -- --year 2025 --system-type discussnet_ssp
  */
 
 import { createHash } from "node:crypto";
@@ -19,6 +21,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { eq, and } from "drizzle-orm";
 import dotenv from "dotenv";
 import type { MeetingData } from "@open-gikai/scrapers";
+import type { SystemType } from "@open-gikai/db/schema";
 
 import { scrapeAll as scrapeDbsearch } from "./bulk-scrapers/dbsearch";
 import { scrapeAll as scrapeDiscussnetSsp } from "./bulk-scrapers/discussnet-ssp";
@@ -77,6 +80,20 @@ function parseYear(): number | undefined {
   return val;
 }
 
+const VALID_SYSTEM_TYPES: SystemType[] = ["discussnet_ssp", "dbsearch", "kensakusystem", "gijiroku_com"];
+
+function parseSystemType(): SystemType | undefined {
+  const idx = process.argv.indexOf("--system-type");
+  if (idx === -1) return undefined;
+  const val = process.argv[idx + 1];
+  if (!val || !VALID_SYSTEM_TYPES.includes(val as SystemType)) {
+    console.error(`[scrape-to-ndjson] 無効なシステムタイプ: ${val}`);
+    console.error(`  有効な値: ${VALID_SYSTEM_TYPES.join(", ")}`);
+    process.exit(1);
+  }
+  return val as SystemType;
+}
+
 // 同一ホスト内の並列数。SaaS系サーバーへの過負荷を避けつつ高速化するため 3 に設定。
 const HOST_CONCURRENCY = 3;
 
@@ -115,6 +132,7 @@ function runGroupedByHost(
 
 async function main() {
   const targetYear = parseYear();
+  const targetSystemType = parseSystemType();
 
   // 1. 出力ディレクトリの準備（ログ記録のため最初に作成）
   const today = new Date().toISOString().slice(0, 10);
@@ -147,6 +165,9 @@ async function main() {
   if (targetYear) {
     log("INFO", `[scrape-to-ndjson] ${targetYear}年を対象にスクレイピングします`);
   }
+  if (targetSystemType) {
+    log("INFO", `[scrape-to-ndjson] システムタイプ: ${targetSystemType} のみ対象`);
+  }
   log("INFO", "[scrape-to-ndjson] Starting...");
 
   // 2. DB から enabled な municipalities + system_types を取得
@@ -162,7 +183,11 @@ async function main() {
     .leftJoin(system_types, eq(municipalities.systemTypeId, system_types.id))
     .where(and(eq(municipalities.enabled, true)));
 
-  const enabledTargets = targets.filter((t) => t.baseUrl && t.systemTypeName);
+  const enabledTargets = targets.filter((t) => {
+    if (!t.baseUrl || !t.systemTypeName) return false;
+    if (targetSystemType && t.systemTypeName !== targetSystemType) return false;
+    return true;
+  });
 
   log("INFO", `[scrape-to-ndjson] ${enabledTargets.length} 自治体を処理します`);
 
