@@ -145,9 +145,13 @@ async function main() {
     mkdirSync(outputDir, { recursive: true });
   }
 
-  const logStream = createWriteStream(resolve(outputDir, "scrape.log"), {
-    flags: "a",
-  });
+  const runTimestamp = new Date()
+    .toISOString()
+    .replace(/[:.]/g, "-")
+    .slice(0, 19);
+  const logStream = createWriteStream(
+    resolve(outputDir, `scrape-${runTimestamp}.log`)
+  );
 
   const log = (level: "INFO" | "WARN" | "ERROR", ...args: unknown[]) => {
     const ts = new Date().toISOString();
