@@ -444,13 +444,13 @@ async function scrapeMunicipality(
 ): Promise<MeetingData[]> {
   switch (systemTypeName) {
     case "dbsearch":
-      return scrapeDbsearch(municipalityId, municipalityName, baseUrl, targetYear);
+      return scrapeDbsearch(municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
     case "discussnet_ssp":
-      return scrapeDiscussnetSsp(municipalityId, municipalityName, baseUrl, targetYear, councilLimit);
+      return scrapeDiscussnetSsp(municipalityId, municipalityName, baseUrl, targetYear, councilLimit, meetingLimit);
     case "kensakusystem":
       return scrapeKensakusystem(municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
     case "gijiroku_com":
-      return scrapeGijirokuCom(municipalityId, municipalityName, baseUrl, targetYear);
+      return scrapeGijirokuCom(municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
     default:
       console.warn(`  未対応の systemType: ${systemTypeName}`);
       return [];

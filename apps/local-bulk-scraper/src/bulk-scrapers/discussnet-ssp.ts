@@ -20,7 +20,8 @@ export async function scrapeAll(
   municipalityName: string,
   baseUrl: string,
   targetYear?: number,
-  councilLimit?: number
+  councilLimit?: number,
+  meetingLimit?: number
 ): Promise<MeetingData[]> {
   const results: MeetingData[] = [];
 
@@ -63,6 +64,8 @@ export async function scrapeAll(
   );
 
   for (const council of limitedCouncils) {
+    if (meetingLimit && results.length >= meetingLimit) break;
+
     const schedules = await fetchSchedules(
       tenantId,
       council.councilId,
@@ -70,7 +73,10 @@ export async function scrapeAll(
     );
     if (schedules.length === 0) continue;
 
-    for (const schedule of schedules) {
+    const remaining = meetingLimit ? meetingLimit - results.length : schedules.length;
+    const limited = schedules.slice(0, remaining);
+
+    for (const schedule of limited) {
       const meeting = await fetchMinuteData(
         tenantId,
         tenantSlug,
