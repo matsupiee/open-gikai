@@ -10,12 +10,17 @@ import type { MeetingData } from "@open-gikai/scrapers";
 export async function scrapeAll(
   municipalityId: string,
   municipalityName: string,
-  baseUrl: string
+  baseUrl: string,
+  targetYear?: number
 ): Promise<MeetingData[]> {
   const results: MeetingData[] = [];
 
   const currentYear = new Date().getFullYear();
-  for (let year = currentYear; year >= currentYear - 4; year--) {
+  const years = targetYear
+    ? [targetYear]
+    : Array.from({ length: 5 }, (_, i) => currentYear - i);
+
+  for (const year of years) {
     console.log(
       `  [gijiroku-com] ${municipalityName}: ${year}年の一覧を取得中...`
     );
