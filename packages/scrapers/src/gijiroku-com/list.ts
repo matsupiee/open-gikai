@@ -14,7 +14,7 @@
  * エンコーディング: Shift_JIS
  */
 
-import { decodeShiftJis } from "./decode-shift-jis";
+import { fetchShiftJisPage } from "./fetch-page";
 import { extractBaseInfo } from "./url";
 
 export interface GijirokuMeetingRecord {
@@ -30,9 +30,6 @@ export interface GijirokuMeetingRecord {
   dateLabel: string;
 }
 
-const USER_AGENT =
-  "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
-
 /**
  * gijiroku.com の voiweb.exe CGI から指定年の会議一覧を取得する。
  */
@@ -44,13 +41,8 @@ export async function fetchMeetingList(
     const cgiUrl = buildListUrl(baseUrl, year);
     if (!cgiUrl) return null;
 
-    const res = await fetch(cgiUrl, {
-      headers: { "User-Agent": USER_AGENT },
-    });
-    if (!res.ok) return null;
-
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    const html = decodeShiftJis(bytes);
+    const html = await fetchShiftJisPage(cgiUrl);
+    if (!html) return null;
 
     const records = parseListHtml(html);
     return records.length > 0 ? records : null;
