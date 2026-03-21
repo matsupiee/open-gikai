@@ -3,6 +3,7 @@ import {
   parseSpeaker,
   classifyKind,
   parseStatementsFromPlainText,
+  extractSpeakerPageInfo,
 } from "./detail";
 
 describe("parseSpeaker", () => {
@@ -120,5 +121,60 @@ describe("parseStatementsFromPlainText", () => {
     expect(stmts[0]!.startOffset).toBe(0);
     expect(stmts[0]!.endOffset).toBe(stmts[0]!.content.length);
     expect(stmts[1]!.startOffset).toBe(stmts[0]!.endOffset + 1);
+  });
+});
+
+describe("extractSpeakerPageInfo", () => {
+  test("パターンA: download フォームから抽出", () => {
+    const html = `
+      <FORM NAME="download" ACTION="/city/cgi-bin3/GetPerson.exe" METHOD="POST">
+        <INPUT type="hidden" name="Code" value="abc123">
+        <INPUT type="hidden" name="fileName" value="R050130A">
+        <input type="checkbox" name="downloadPos" value="14">
+        <input type="checkbox" name="downloadPos" value="2978">
+      </FORM>
+    `;
+    const result = extractSpeakerPageInfo(html);
+    expect(result.actionUrl).toBe("/city/cgi-bin3/GetPerson.exe");
+    expect(result.code).toBe("abc123");
+    expect(result.fileName).toBe("R050130A");
+    expect(result.downloadPositions).toEqual(["14", "2978"]);
+  });
+
+  test("パターンB: download フォームなし — r_TextFrame.exe リンクから fallback", () => {
+    const html = `
+      <table>
+        <tr><td>
+          <A HREF="/city/cgi-bin3/r_TextFrame.exe?abc123/R030106A/0/0//10/1/3804//0/0/0" TARGET="TEXTW">議事日程</A>
+        </td></tr>
+        <tr><td>
+          <A HREF="/city/cgi-bin3/r_TextFrame.exe?abc123/R030106A/3231/0//10/1/3804//0/0/0" TARGET="TEXTW">議長（斎藤武弘）</A>
+        </td></tr>
+        <tr><td>
+          <A HREF="/city/cgi-bin3/r_TextFrame.exe?abc123/R030106A/5474/0//10/1/3804//0/0/0" TARGET="TEXTW">市長（佐藤孝弘）</A>
+        </td></tr>
+      </table>
+    `;
+    const speakersUrl = "http://www.kensakusystem.jp/city/cgi-bin3/r_Speakers.exe?abc123/R030106A/0/0//10/1/32767:0/3804/1//0/0/0";
+    const result = extractSpeakerPageInfo(html, speakersUrl);
+    expect(result.actionUrl).toBe("http://www.kensakusystem.jp/city/cgi-bin3/GetPerson.exe");
+    expect(result.code).toBe("abc123");
+    expect(result.fileName).toBe("R030106A");
+    expect(result.downloadPositions).toEqual(["3231", "5474"]);
+  });
+
+  test("パターンB: position=0 の議事日程リンクはスキップ", () => {
+    const html = `
+      <A HREF="r_TextFrame.exe?abc/FILE/0/rest">議事日程</A>
+      <A HREF="r_TextFrame.exe?abc/FILE/100/rest">議長</A>
+    `;
+    const result = extractSpeakerPageInfo(html, "http://example.com/cgi-bin3/r_Speakers.exe?test");
+    expect(result.downloadPositions).toEqual(["100"]);
+  });
+
+  test("フォームもリンクもない場合は null を返す", () => {
+    const result = extractSpeakerPageInfo("<html></html>", "http://example.com/r_Speakers.exe?test");
+    expect(result.actionUrl).toBeNull();
+    expect(result.downloadPositions).toEqual([]);
   });
 });

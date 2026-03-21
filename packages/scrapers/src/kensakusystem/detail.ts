@@ -197,14 +197,23 @@ export function parseStatementsFromPlainText(text: string): ParsedStatement[] {
 
 /**
  * r_Speakers.exe HTML から GetPerson.exe への POST に必要な情報を抽出する。
+ *
+ * 2つのパターンに対応:
+ * A) download フォームがある場合 — フォームから Code, fileName, downloadPos を取得
+ * B) download フォームがない場合 — r_TextFrame.exe リンクの position をfallback として使い、
+ *    Code/fileName は speakers URL のパスから取得する
  */
-function extractSpeakerPageInfo(html: string): {
+/** @internal テスト用にexport */
+export function extractSpeakerPageInfo(
+  html: string,
+  speakersUrl?: string
+): {
   actionUrl: string | null;
   code: string | null;
   fileName: string | null;
   downloadPositions: string[];
 } {
-  // フォーム action URL（name="download" のフォーム）
+  // パターン A: download フォームがある場合
   const actionMatch = html.match(
     /<form[^>]*name=["\']download["\'][^>]*action=["\']([^"\']+)["\']|<form[^>]*action=["\']([^"\']+)["\'][^>]*name=["\']download["\']/i
   );
@@ -214,13 +223,13 @@ function extractSpeakerPageInfo(html: string): {
   const codeMatch = html.match(
     /<input[^>]*name=["\']Code["\'][^>]*value=["\']([^"\']*)["\']|<input[^>]*value=["\']([^"\']*)["\'][^>]*name=["\']Code["\'][^>]*/i
   );
-  const code = codeMatch?.[1] ?? codeMatch?.[2] ?? null;
+  let code = codeMatch?.[1] ?? codeMatch?.[2] ?? null;
 
   // hidden: fileName
   const fileNameMatch = html.match(
     /<input[^>]*name=["\']fileName["\'][^>]*value=["\']([^"\']*)["\']|<input[^>]*value=["\']([^"\']*)["\'][^>]*name=["\']fileName["\'][^>]*/i
   );
-  const fileName = fileNameMatch?.[1] ?? fileNameMatch?.[2] ?? null;
+  let fileName = fileNameMatch?.[1] ?? fileNameMatch?.[2] ?? null;
 
   // checkbox: downloadPos（全て収集）
   const downloadPositions: string[] = [];
@@ -229,6 +238,48 @@ function extractSpeakerPageInfo(html: string): {
   )) {
     const val = m[1] ?? m[2];
     if (val) downloadPositions.push(val);
+  }
+
+  if (actionUrl && code && fileName && downloadPositions.length > 0) {
+    return { actionUrl, code, fileName, downloadPositions };
+  }
+
+  // パターン B: download フォームがない場合
+  // r_TextFrame.exe リンクから position（第3セグメント）を抽出し、downloadPos として使う
+  // URL パス形式: r_TextFrame.exe?{Code}/{fileName}/{position}/...
+  if (speakersUrl) {
+    const textFramePositions: string[] = [];
+    for (const m of html.matchAll(
+      /href=["'](?:[^"']*\/)?r_TextFrame\.exe\?([^"']+)["']/gi
+    )) {
+      const params = m[1];
+      if (!params) continue;
+      const segments = params.split("/");
+      // segments[0] = Code, segments[1] = fileName, segments[2] = position
+      if (segments.length >= 3) {
+        if (!code) code = segments[0] ?? null;
+        if (!fileName) fileName = segments[1] ?? null;
+        const pos = segments[2];
+        // position "0" は議事日程（目次）なのでスキップ
+        if (pos && pos !== "0") {
+          textFramePositions.push(pos);
+        }
+      }
+    }
+
+    if (code && fileName && textFramePositions.length > 0) {
+      // GetPerson.exe のパスを speakers URL から推測
+      const fallbackActionUrl = speakersUrl.replace(
+        /r_Speakers\.exe.*/,
+        "GetPerson.exe"
+      );
+      return {
+        actionUrl: fallbackActionUrl,
+        code,
+        fileName,
+        downloadPositions: textFramePositions,
+      };
+    }
   }
 
   return { actionUrl, code, fileName, downloadPositions };
@@ -269,7 +320,7 @@ export async function fetchMeetingStatements(
   if (!speakersHtml) return null;
 
   const { actionUrl, code, fileName, downloadPositions } =
-    extractSpeakerPageInfo(speakersHtml);
+    extractSpeakerPageInfo(speakersHtml, speakersUrl);
 
   if (!actionUrl || !code || !fileName || downloadPositions.length === 0) {
     return null;
