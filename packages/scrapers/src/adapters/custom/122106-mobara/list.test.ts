@@ -53,12 +53,12 @@ describe("parseYearPage", () => {
     const html = `
       <p class="mol_attachfileblock_title">12月定例会　会議録</p>
       <ul>
-        <li><a href="./cmsfiles/contents/0000008/8934/25.11.26.pdf">第1号　令和7年11月26日　（PDF形式、534.27KB）</a></li>
-        <li><a href="./cmsfiles/contents/0000008/8934/25.12.03.pdf">第2号　令和7年12月3日　（PDF形式、600KB）</a></li>
+        <li><a href="./cmsfiles/contents/0000008/8934/25.11.26.pdf"><img src="images/pdf.gif" alt="" width="22" height="24" class="icon" >第1号　令和7年11月26日　（PDF形式、534.27KB）</a></li>
+        <li><a href="./cmsfiles/contents/0000008/8934/25.12.03.pdf"><img src="images/pdf.gif" alt="" width="22" height="24" class="icon" >第2号　令和7年12月3日　（PDF形式、600KB）</a></li>
       </ul>
       <p class="mol_attachfileblock_title">9月定例会　会議録</p>
       <ul>
-        <li><a href="./cmsfiles/contents/0000008/8934/25.09.01.pdf">第1号　令和7年9月1日　（PDF形式、400KB）</a></li>
+        <li><a href="./cmsfiles/contents/0000008/8934/25.09.01.pdf"><img src="images/pdf.gif" alt="" width="22" height="24" class="icon" >第1号　令和7年9月1日　（PDF形式、400KB）</a></li>
       </ul>
     `;
 
@@ -84,7 +84,7 @@ describe("parseYearPage", () => {
     const html = `
       <p class="mol_attachfileblock_title">5月臨時会　会議録</p>
       <ul>
-        <li><a href="./cmsfiles/contents/0000008/8934/25.05.15.pdf">第1号　令和7年5月15日　（PDF形式、300KB）</a></li>
+        <li><a href="./cmsfiles/contents/0000008/8934/25.05.15.pdf"><img src="images/pdf.gif" alt="" class="icon" >第1号　令和7年5月15日　（PDF形式、300KB）</a></li>
       </ul>
     `;
 
@@ -98,8 +98,8 @@ describe("parseYearPage", () => {
     const html = `
       <p class="mol_attachfileblock_title">12月定例会　会議録</p>
       <ul>
-        <li><a href="./cmsfiles/contents/0000008/8934/25.11.26.pdf">第1号　令和7年11月26日　（PDF形式、534.27KB）</a></li>
-        <li><a href="./cmsfiles/some-doc.pdf">資料一覧</a></li>
+        <li><a href="./cmsfiles/contents/0000008/8934/25.11.26.pdf"><img src="images/pdf.gif" alt="" class="icon" >第1号　令和7年11月26日　（PDF形式、534.27KB）</a></li>
+        <li><a href="./cmsfiles/some-doc.pdf"><img src="images/pdf.gif" alt="" class="icon" >資料一覧</a></li>
       </ul>
     `;
 

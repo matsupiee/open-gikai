@@ -99,9 +99,9 @@ export function parseYearPage(
 
   sections.sort((a, b) => a.index - b.index);
 
-  // PDF リンクを抽出
+  // PDF リンクを抽出（<a> 内に <img> タグが含まれるケースに対応）
   const linkPattern =
-    /<a[^>]+href="([^"]+\.pdf)"[^>]*>([^<]+)<\/a>/gi;
+    /<a[^>]+href="([^"]+\.pdf)"[^>]*>([\s\S]*?)<\/a>/gi;
 
   // pageUrl からベース URL を構築
   const baseUrl = pageUrl.replace(/\/[^/]+$/, "/");
@@ -109,7 +109,8 @@ export function parseYearPage(
   for (const match of html.matchAll(linkPattern)) {
     const linkIndex = match.index!;
     const href = match[1]!;
-    const linkText = match[2]!.trim();
+    // HTML タグを除去してテキストのみ取得
+    const linkText = match[2]!.replace(/<[^>]+>/g, "").trim();
 
     // 現在のセクションを特定
     let currentSection = "";
