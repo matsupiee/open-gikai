@@ -11,6 +11,7 @@ import { adapter as gijirokuCom } from "./adapters/gijiroku-com";
 import { adapter as shinagawaKaigiroku } from "./adapters/custom/131091-shinagawa";
 import { adapter as ebetsu } from "./adapters/custom/012173-ebetsu";
 import { adapter as higashimurayama } from "./adapters/custom/132136-higashimurayama";
+import { adapter as nakanoKugikai } from "./adapters/custom/131148-nakano";
 
 const registry = new Map<string, ScraperAdapter>([
   [dbsearch.name, dbsearch],
@@ -20,6 +21,7 @@ const registry = new Map<string, ScraperAdapter>([
   [shinagawaKaigiroku.name, shinagawaKaigiroku],
   [ebetsu.name, ebetsu],
   [higashimurayama.name, higashimurayama],
+  [nakanoKugikai.name, nakanoKugikai],
 ]);
 
 /**
