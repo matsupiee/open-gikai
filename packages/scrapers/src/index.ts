@@ -9,6 +9,7 @@ import { adapter as discussnetSsp } from "./adapters/discussnet-ssp";
 import { adapter as kensakusystem } from "./adapters/kensakusystem";
 import { adapter as gijirokuCom } from "./adapters/gijiroku-com";
 import { adapter as shinagawaKaigiroku } from "./adapters/custom/131091-shinagawa";
+import { adapter as ebetsu } from "./adapters/custom/012173-ebetsu";
 import { adapter as higashimurayama } from "./adapters/custom/132136-higashimurayama";
 
 const registry = new Map<string, ScraperAdapter>([
@@ -17,6 +18,7 @@ const registry = new Map<string, ScraperAdapter>([
   [kensakusystem.name, kensakusystem],
   [gijirokuCom.name, gijirokuCom],
   [shinagawaKaigiroku.name, shinagawaKaigiroku],
+  [ebetsu.name, ebetsu],
   [higashimurayama.name, higashimurayama],
 ]);
 
