@@ -126,7 +126,7 @@ const contentHash = createHash("sha256").update(content).digest("hex");
 import type { ScraperAdapter, ListRecord } from "../../adapter";
 
 export const adapter: ScraperAdapter = {
-  name: "{system_type名}",  // DB の system_types.name と一致させる
+  name: "{6桁自治体コード}",  // カスタムアダプターは自治体コードを使用する
 
   async fetchList({ baseUrl, year }): Promise<ListRecord[]> {
     // 一覧を取得し、各ドキュメントの detailParams を返す
@@ -170,16 +170,7 @@ const registry = new Map<string, ScraperAdapter>([
 ]);
 ```
 
-### Step 9: DB スキーマ・シードを更新
-
-**`packages/db/src/schema/system-types.ts`**:
-1. `SystemType` union に新しい名前を追加
-2. `SYSTEM_TYPES_SEED` に seed データを追加
-
-**`packages/db/src/seeds/seed-municipality.ts`**:
-- `detectSystemType()` に URL 判定ルールを追加
-
-### Step 10: 型チェック・テスト実行
+### Step 9: 型チェック・テスト実行
 
 ```bash
 # 型チェック（新規コードにエラーがないこと）
@@ -189,7 +180,7 @@ bun tsc --noEmit 2>&1 | grep {adapter-dir}
 cd packages/scrapers && bun test src/adapters/custom/{dir}/
 ```
 
-### Step 11: コミット・プッシュ・PR
+### Step 10: コミット・プッシュ・PR
 
 worktree ルールに従い、PR まで自動で作成する。
 
@@ -201,8 +192,6 @@ worktree ルールに従い、PR まで自動で作成する。
 |---------|---------|
 | `packages/scrapers/src/adapters/custom/{code}-{name}/` | スクレイパー実装（新規） |
 | `packages/scrapers/src/index.ts` | adapter registry に登録 |
-| `packages/db/src/schema/system-types.ts` | SystemType union + SEED |
-| `packages/db/src/seeds/seed-municipality.ts` | detectSystemType() に URL 判定追加 |
 
 **変更不要なファイル（汎用ハンドラーが処理するため）:**
 - `apps/scraper-worker/src/handlers/` — 個別ハンドラー不要

@@ -41,11 +41,11 @@ export async function dispatchJob(
     return;
   }
 
-  const adapterName = systemType?.name;
+  const adapterName = systemType?.name ?? (getAdapter(municipalities.code) ? municipalities.code : null);
   if (!adapterName || !getAdapter(adapterName)) {
-    await logger.error(`未対応の systemType: ${adapterName ?? "null"}`);
+    await logger.error(`未対応の systemType: ${systemType?.name ?? "null"} (code=${municipalities.code})`);
     await updateJobStatus(db, scraper_jobs.id, "failed", {
-      errorMessage: `未対応の systemType: ${adapterName ?? "null"}`,
+      errorMessage: `未対応の systemType: ${systemType?.name ?? "null"} (code=${municipalities.code})`,
     });
     return;
   }

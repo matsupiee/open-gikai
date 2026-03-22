@@ -66,9 +66,6 @@ function detectSystemType(baseUrl: string): SystemType | null {
   if (/\/VOICES\//i.test(baseUrl)) return "gijiroku_com";
   // voiweb.exe ベースの検索ページ（大田区等、/voices/ パスを持たない自前ホスト）
   if (/g0[78]v_search\.asp/i.test(baseUrl)) return "gijiroku_com";
-  // 品川区議会 会議録検索システム
-  if (baseUrl.includes("kaigiroku.city.shinagawa.tokyo.jp")) return "shinagawa_kaigiroku";
-
   return null;
 }
 

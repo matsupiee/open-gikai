@@ -242,7 +242,9 @@ async function main() {
     .where(and(...conditions));
 
   const enabledTargets = targets.filter((t) => {
-    if (!t.baseUrl || !t.systemTypeName) return false;
+    if (!t.baseUrl) return false;
+    // systemTypeName またはカスタムアダプター（自治体コード）のいずれかで adapter が見つかる必要がある
+    if (!t.systemTypeName && !getAdapter(t.code)) return false;
     if (targetSystemType && t.systemTypeName !== targetSystemType) return false;
     return true;
   });
@@ -268,28 +270,30 @@ async function main() {
 
   // 4. 自治体を並列スクレイピング
   const tasks = enabledTargets.map((target) => async () => {
-    log("INFO", `[scrape-to-ndjson] ${target.prefecture} ${target.name} (${target.systemTypeName})`);
+    const adapterKey = target.systemTypeName ?? target.code;
+    log("INFO", `[scrape-to-ndjson] ${target.prefecture} ${target.name} (${adapterKey})`);
 
     let meetingDataList: MeetingData[];
     try {
       meetingDataList = await scrapeMunicipality(
         target.id,
         target.name,
+        target.code,
         target.baseUrl!,
-        target.systemTypeName!,
+        target.systemTypeName,
         targetYear,
         meetingLimit
       );
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       log("ERROR", `${target.name}: スクレイピング失敗: ${reason}`);
-      failedMunicipalities.push({ name: target.name, prefecture: target.prefecture, systemType: target.systemTypeName!, reason });
+      failedMunicipalities.push({ name: target.name, prefecture: target.prefecture, systemType: adapterKey, reason });
       return;
     }
 
     if (meetingDataList.length === 0) {
       log("INFO", `${target.name}: 0 件`);
-      failedMunicipalities.push({ name: target.name, prefecture: target.prefecture, systemType: target.systemTypeName!, reason: "0 件（データなし）" });
+      failedMunicipalities.push({ name: target.name, prefecture: target.prefecture, systemType: adapterKey, reason: "0 件（データなし）" });
       return;
     }
 
@@ -435,17 +439,18 @@ async function main() {
 async function scrapeMunicipality(
   municipalityId: string,
   municipalityName: string,
+  municipalityCode: string,
   baseUrl: string,
-  systemTypeName: string,
+  systemTypeName: string | null,
   targetYear?: number,
   meetingLimit?: number
 ): Promise<MeetingData[]> {
-  const adapter = getAdapter(systemTypeName);
+  const adapter = (systemTypeName && getAdapter(systemTypeName)) || getAdapter(municipalityCode);
   if (adapter) {
     return scrapeWithAdapter(adapter, municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
   }
 
-  console.warn(`  未対応の systemType: ${systemTypeName}`);
+  console.warn(`  未対応の systemType: ${systemTypeName ?? "null"} (code=${municipalityCode})`);
   return [];
 }
 
