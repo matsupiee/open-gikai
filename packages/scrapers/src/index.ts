@@ -23,10 +23,12 @@ let registry: Map<string, ScraperAdapter> | undefined;
 async function discoverAdapters(
   dir: string,
   map: Map<string, ScraperAdapter>,
+  skip?: Set<string>,
 ): Promise<void> {
   if (!existsSync(dir)) return;
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (!entry.isDirectory() || entry.name.startsWith("_") || entry.name.startsWith(".")) continue;
+    if (skip?.has(entry.name)) continue;
     try {
       // Bun でソース (.ts) を直接実行する前提。ビルド後の環境では拡張子解決がランタイム依存になる。
       const mod = await import(join(dir, entry.name));
@@ -51,8 +53,7 @@ export async function initAdapterRegistry(): Promise<void> {
   if (registry) return;
   const map = new Map<string, ScraperAdapter>();
   // adapters/ 直下のサブディレクトリ（汎用アダプター）— "custom" は除外
-  await discoverAdapters(adaptersDir, map);
-  map.delete("custom"); // custom ディレクトリ自体が登録されるのを防ぐ
+  await discoverAdapters(adaptersDir, map, new Set(["custom"]));
   // adapters/custom/ 配下のサブディレクトリ（カスタムアダプター）
   await discoverAdapters(join(adaptersDir, "custom"), map);
   registry = map;
