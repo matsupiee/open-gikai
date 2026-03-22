@@ -1,0 +1,515 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML LANG="ja-JP">
+	<HEAD>
+		<META HTTP-EQUIV="Content-Type"			CONTENT="text/html; charset=Shift_JIS">
+		<META HTTP-EQUIV="Content-Language"		CONTENT="text/ja-JP">
+		<META HTTP-EQUIV="Content-Script-Type"	CONTENT="text/JavaScript">
+		<META HTTP-EQUIV="Content-Style-Type"	CONTENT="text/css">
+<TITLE>発言一覧</TITLE>
+<style TYPE="text/css">
+<!--
+	body,table,td,th,tr,font,pre {
+	font-size:99%;
+	letter-spacing:1px;
+	line-height:170%;
+}
+//-->
+</style>
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+parent.comp_sidebar = 0;
+function sidebar_hash( huid ){
+    if( parent.comp_sidebar == 0){
+        alert("発言者リストをすべて読み込むまでお待ち下さい。");
+        return(false);
+    }
+	parent.sidebar.location.hash = huid;
+	return(true);
+}
+var first_hit_huid			= '';
+var first_hit_url			= '';
+var first_hit_movie_url	= '';
+function Set_First_Hit(){
+	if( parent.sidebar.location.hash=='' && first_hit_huid!='' && first_hit_url!='' ){
+		parent.sidebar.location.hash = first_hit_huid;
+		parent.hat.location = first_hit_url; 
+	}
+}
+		parent.huid_list.length = '0';
+		parent.huid_shi_list.length = '0';
+		parent.huid_tou_list.length = '0';
+		function Set_Arr_List( mode, huid, url, p_c_url, p_c_huid ){
+			var cnt;
+			if( mode == '1' ){
+				cnt = parent.huid_list.length;
+				parent.huid_list[cnt] = huid;
+				parent.url_list[cnt]  = url;
+			}else if( mode == '2' ){
+				cnt = parent.huid_shi_list.length;
+				parent.huid_shi_list[cnt] = huid;
+				parent.url_shi_list[cnt]  = url;
+				parent.pac_shi_url_list[cnt]  = p_c_url;
+				parent.pac_shi_huid_list[cnt] = p_c_huid;
+			}else if( mode == '3' ){
+				cnt = parent.huid_tou_list.length;
+				parent.huid_tou_list[cnt] = huid;
+				parent.url_tou_list[cnt]  = url;
+				parent.pac_tou_url_list[cnt]  = p_c_url;
+				parent.pac_tou_huid_list[cnt] = p_c_huid;
+			}
+		}
+	function c_col( i_no, c_mode ){
+		if( c_mode=='0' ){
+			document.images[i_no].src = "/kaigiroku/image/hat0.gif";
+		}else if( c_mode=='1' ){
+			document.images[i_no].src = "/kaigiroku/image/hat1.gif";
+			if( parent.v_img_01 != -1 && document.images[ i_no ].name != document.images[ parent.v_img_01 ].name ){
+				c_col( parent.v_img_01, '0' );
+			}
+			parent.v_img_01 =  document.images[ i_no ].name;
+		}else if( c_mode=='2' ){
+			document.images[i_no].src = "/kaigiroku/image/hat2.gif";
+			if( parent.v_img_02 != -1 && document.images[ i_no ].name != document.images[ parent.v_img_02 ].name ){
+				c_col( parent.v_img_02, '0' );
+			}
+			parent.v_img_02 =  document.images[ i_no ].name;
+		}else if( c_mode=='3' ){
+			i_no = i_no.split(",");
+			if( i_no[0]!='-1' ){
+				c_col( i_no[0], '1' );
+			}else{
+				if( parent.v_img_01 != -1 ){
+					c_col( parent.v_img_01, '0' );
+				}
+			}
+			if( i_no[1]!='-1' ){
+				c_col( i_no[1], '2' );
+			}else{
+				if( parent.v_img_02 != -1 ){
+					c_col( parent.v_img_02, '0' );
+				}
+			}
+		}
+	}
+	function set_hat_check( id ){
+		var obj = document.getElementById( id );
+		for( i=0; i<  parent.sidebar.document.Form_Word.length; i++ ){ 
+			if( parent.sidebar.document.Form_Word.elements[i].type == "checkbox" ){
+				if( obj.checked == true ){
+					parent.sidebar.document.Form_Word.elements[i].checked = true;
+				}else{
+					parent.sidebar.document.Form_Word.elements[i].checked = false;
+				}
+			}
+		}
+		if( obj.checked == true ){
+			parent.sidebar.document.Form_Word.all_check_t.checked = true;
+			parent.sidebar.document.Form_Word.all_check_b.checked = true;
+		}else{
+			parent.sidebar.document.Form_Word.all_check_t.checked = false;
+			parent.sidebar.document.Form_Word.all_check_b.checked = false;
+		}
+	}
+	function video_disp(openclose){
+        if(openclose == 1)
+            window.parent.side_fs.rows = window.parent.side_fs.attributes.OPENROWS.value;
+        else
+            window.parent.side_fs.rows = window.parent.side_fs.attributes.CLOSEROWS.value;
+	}
+//-->
+</SCRIPT>
+</HEAD>
+<BODY BGCOLOR="#F0F8FF">
+<FORM NAME="Form_Word">
+<table><tr><td nowrap><input type="checkbox" name="all_check_t" id="all_check_t" onClick="set_hat_check('all_check_t');"></td><td style="font-size:80%;"><label for="all_check_t">全ての発言を選択</label></td><tr></table>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220279"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_0" VALUE="220279"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220279"></TD><TD NOWRAP>&nbsp;&nbsp;</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220279&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220279', '1' );return( sidebar_hash( '220279' ) );"><B>(名簿)</B></A></TD><TD NOWRAP>(P.1)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220280"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_1" VALUE="220280"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220280"></TD><TD NOWRAP>○</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220280&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220280', '1' );return( sidebar_hash( '220280' ) );"><B>委員長(中村)</B></A></TD><TD NOWRAP>(P.1)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220281"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_2" VALUE="220281"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220281"></TD><TD NOWRAP>○</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220281&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220281', '1' );return( sidebar_hash( '220281' ) );"><B>委員長(中村)</B></A></TD><TD NOWRAP>(P.2)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220282"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_3" VALUE="220282"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220282"></TD><TD NOWRAP>○</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220282&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220282', '1' );return( sidebar_hash( '220282' ) );"><B>委員長(中村)</B></A></TD><TD NOWRAP>(P.2)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220283"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_4" VALUE="220283"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220283"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220283&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220283', '1' );return( sidebar_hash( '220283' ) );"><B>こども健康部長(秋山)</B></A></TD><TD NOWRAP>(P.2)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220284"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_5" VALUE="220284"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220284"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220284&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220284', '1' );return( sidebar_hash( '220284' ) );"><B>こども未来課長(夏井)</B></A></TD><TD NOWRAP>(P.2)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220285"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_6" VALUE="220285"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220285"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220285&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220285', '1' );return( sidebar_hash( '220285' ) );"><B>こども健康部長(秋山)</B></A></TD><TD NOWRAP>(P.3)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220286"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_7" VALUE="220286"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220286"></TD><TD NOWRAP>○</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220286&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220286', '1' );return( sidebar_hash( '220286' ) );"><B>委員長(中村)</B></A></TD><TD NOWRAP>(P.3)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220287"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_8" VALUE="220287"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220287"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220287&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220287', '1' );return( sidebar_hash( '220287' ) );"><B>委員(伊藤)</B></A></TD><TD NOWRAP>(P.3)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220288"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_9" VALUE="220288"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220288"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220288&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220288', '1' );return( sidebar_hash( '220288' ) );"><B>こども未来課長(夏井)</B></A></TD><TD NOWRAP>(P.3)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220289"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_10" VALUE="220289"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220289"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220289&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220289', '1' );return( sidebar_hash( '220289' ) );"><B>委員(伊藤)</B></A></TD><TD NOWRAP>(P.3)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220290"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_11" VALUE="220290"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220290"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220290&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220290', '1' );return( sidebar_hash( '220290' ) );"><B>こども未来課長(夏井)</B></A></TD><TD NOWRAP>(P.4)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220291"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_12" VALUE="220291"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220291"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220291&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220291', '1' );return( sidebar_hash( '220291' ) );"><B>委員(伊藤)</B></A></TD><TD NOWRAP>(P.4)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220292"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_13" VALUE="220292"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220292"></TD><TD NOWRAP>○</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220292&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220292', '1' );return( sidebar_hash( '220292' ) );"><B>委員長(中村)</B></A></TD><TD NOWRAP>(P.4)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220293"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_14" VALUE="220293"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220293"></TD><TD NOWRAP>○</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220293&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220293', '1' );return( sidebar_hash( '220293' ) );"><B>委員長(中村)</B></A></TD><TD NOWRAP>(P.4)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220294"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_15" VALUE="220294"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220294"></TD><TD NOWRAP>○</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220294&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220294', '1' );return( sidebar_hash( '220294' ) );"><B>委員長(中村)</B></A></TD><TD NOWRAP>(P.4)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220295"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_16" VALUE="220295"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220295"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220295&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220295', '1' );return( sidebar_hash( '220295' ) );"><B>清掃事務所長(高舘)</B></A></TD><TD NOWRAP>(P.4)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220296"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_17" VALUE="220296"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220296"></TD><TD NOWRAP>○</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220296&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220296', '1' );return( sidebar_hash( '220296' ) );"><B>委員長(中村)</B></A></TD><TD NOWRAP>(P.5)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220297"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_18" VALUE="220297"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220297"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220297&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220297', '1' );return( sidebar_hash( '220297' ) );"><B>委員(伊藤)</B></A></TD><TD NOWRAP>(P.5)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220298"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_19" VALUE="220298"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220298"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220298&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220298', '1' );return( sidebar_hash( '220298' ) );"><B>清掃事務所長(高舘)</B></A></TD><TD NOWRAP>(P.5)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220299"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_20" VALUE="220299"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220299"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220299&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220299', '1' );return( sidebar_hash( '220299' ) );"><B>委員(伊藤)</B></A></TD><TD NOWRAP>(P.5)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220300"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_21" VALUE="220300"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220300"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220300&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220300', '1' );return( sidebar_hash( '220300' ) );"><B>清掃事務所長(高舘)</B></A></TD><TD NOWRAP>(P.5)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220301"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_22" VALUE="220301"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220301"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220301&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220301', '1' );return( sidebar_hash( '220301' ) );"><B>委員(伊藤)</B></A></TD><TD NOWRAP>(P.6)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220302"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_23" VALUE="220302"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220302"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220302&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220302', '1' );return( sidebar_hash( '220302' ) );"><B>清掃事務所長(高舘)</B></A></TD><TD NOWRAP>(P.6)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220303"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_24" VALUE="220303"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220303"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220303&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220303', '1' );return( sidebar_hash( '220303' ) );"><B>委員(伊藤)</B></A></TD><TD NOWRAP>(P.6)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220304"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_25" VALUE="220304"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220304"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220304&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220304', '1' );return( sidebar_hash( '220304' ) );"><B>清掃事務所長(高舘)</B></A></TD><TD NOWRAP>(P.6)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220305"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_26" VALUE="220305"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220305"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220305&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220305', '1' );return( sidebar_hash( '220305' ) );"><B>委員(伊藤)</B></A></TD><TD NOWRAP>(P.7)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220306"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_27" VALUE="220306"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220306"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220306&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220306', '1' );return( sidebar_hash( '220306' ) );"><B>清掃事務所長(高舘)</B></A></TD><TD NOWRAP>(P.7)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220307"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_28" VALUE="220307"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220307"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220307&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220307', '1' );return( sidebar_hash( '220307' ) );"><B>委員(伊藤)</B></A></TD><TD NOWRAP>(P.7)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220308"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_29" VALUE="220308"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220308"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220308&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220308', '1' );return( sidebar_hash( '220308' ) );"><B>清掃事務所長(高舘)</B></A></TD><TD NOWRAP>(P.7)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220309"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_30" VALUE="220309"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220309"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220309&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220309', '1' );return( sidebar_hash( '220309' ) );"><B>委員(伊藤)</B></A></TD><TD NOWRAP>(P.7)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220310"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_31" VALUE="220310"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220310"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220310&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220310', '1' );return( sidebar_hash( '220310' ) );"><B>清掃事務所長(高舘)</B></A></TD><TD NOWRAP>(P.7)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220311"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_32" VALUE="220311"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220311"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220311&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220311', '1' );return( sidebar_hash( '220311' ) );"><B>委員(伊藤)</B></A></TD><TD NOWRAP>(P.8)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220312"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_33" VALUE="220312"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220312"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220312&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220312', '1' );return( sidebar_hash( '220312' ) );"><B>清掃事務所長(高舘)</B></A></TD><TD NOWRAP>(P.8)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220313"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_34" VALUE="220313"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220313"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220313&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220313', '1' );return( sidebar_hash( '220313' ) );"><B>委員(伊藤)</B></A></TD><TD NOWRAP>(P.8)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220314"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_35" VALUE="220314"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220314"></TD><TD NOWRAP>○</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220314&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220314', '1' );return( sidebar_hash( '220314' ) );"><B>委員長(中村)</B></A></TD><TD NOWRAP>(P.8)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220315"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_36" VALUE="220315"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220315"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220315&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220315', '1' );return( sidebar_hash( '220315' ) );"><B>副委員長(吉田〔洸〕)</B></A></TD><TD NOWRAP>(P.8)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220316"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_37" VALUE="220316"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220316"></TD><TD NOWRAP>◎</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220316&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220316', '1' );return( sidebar_hash( '220316' ) );"><B>清掃事務所長(高舘)</B></A></TD><TD NOWRAP>(P.8)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220317"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_38" VALUE="220317"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220317"></TD><TD NOWRAP>◆</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220317&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220317', '1' );return( sidebar_hash( '220317' ) );"><B>副委員長(吉田〔洸〕)</B></A></TD><TD NOWRAP>(P.8)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220318"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_39" VALUE="220318"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220318"></TD><TD NOWRAP>○</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220318&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220318', '1' );return( sidebar_hash( '220318' ) );"><B>委員長(中村)</B></A></TD><TD NOWRAP>(P.8)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220319"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_40" VALUE="220319"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220319"></TD><TD NOWRAP>○</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220319&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220319', '1' );return( sidebar_hash( '220319' ) );"><B>委員長(中村)</B></A></TD><TD NOWRAP>(P.8)</TD></TR></TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+    var checkparent = function(){
+   	if (parent.movie_files) 
+   		return true;
+   	else
+   		return false;
+   	}
+</SCRIPT>
+<A NAME="220320"></A><TABLE BORDER="0"><TR><TD NOWRAP><INPUT TYPE="checkbox" NAME="W_41" VALUE="220320"></TD><TD NOWRAP><IMG SRC="/kaigiroku/image/hat0.gif" BORDER="0" name="i220320"></TD><TD NOWRAP>○</TD><TD NOWRAP><A HREF="voiweb.exe?ACT=203&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&HUID=220320&KGNO=&FINO=4285&HATSUGENMODE=0&HYOUJIMODE=0&STYLE=0" target="hat" onClick="if(checkparent()){video_disp(0);parent.movie_files.location.href='voiweb.exe?ACT=206&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3';}c_col( 'i220320', '1' );return( sidebar_hash( '220320' ) );"><B>委員長(中村)</B></A></TD><TD NOWRAP>(P.8)</TD></TR></TABLE>
+<table border="0"><tr><td nowrap><input type="checkbox" name="all_check_b" id="all_check_b" onClick="set_hat_check('all_check_b');"></td><td style="font-size:80%;"><label for="all_check_b">全ての発言を選択</label></td><tr></table>
+</FORM>
+　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR>　<BR><SCRIPT LANGUAGE="JavaScript">
+<!--
+	parent.comp_sidebar = -1;
+	if( parent.v_img_01=='-1' && parent.v_img_02=='-1' ){
+		parent.v_img_01='0';
+	}
+	c_col( parent.v_img_01+","+parent.v_img_02, '3' );
+//-->
+</SCRIPT>
+</BODY>
+</HTML>
