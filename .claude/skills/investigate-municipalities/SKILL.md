@@ -138,7 +138,13 @@ ls /tmp/investigate-results/
 
 表示後、**ユーザーの承認を待たずに Step 4 に進む。**
 
-### Step 4: CSV への URL 書き込み → PR (CRITICAL)
+### Step 4: 実装フェーズ（worktree 並列実行）
+
+結果の分類が完了したら、**即座に全カテゴリの Agent を worktree で並列起動**して実装する。ユーザーへの確認は不要。
+
+CSV 更新 Agent（下記）とドキュメント Agent（カテゴリ B・C）は独立した worktree で動くため、**全て同時に並列起動してよい**。
+
+#### CSV への URL 書き込み → PR (CRITICAL)
 
 カテゴリ A・B・C 全ての自治体（URL が見つかったもの）について、**1 つの Agent を `isolation: "worktree"` で起動**し、`packages/db/src/seeds/municipalities.csv` の該当行に URL を書き込んでコミット・PR 作成まで行う。
 
@@ -154,27 +160,15 @@ Agent 起動パラメータ:
     ## CSV 書き込み手順
 
     1. `git checkout -b feat/add-municipality-urls` でブランチを作成
-    2. `packages/db/src/seeds/municipalities.csv` を行単位で読み込む
+    2. `packages/db/src/seeds/municipalities.csv` を Read ツールで読み込む
     3. 各行の団体コード（1列目）を見て、対象の団体コードと一致する行の 6 列目（議事録検索URL）に URL をセットする
     4. **URL にカンマが含まれる場合はダブルクォートで囲む**（例: `"https://example.com/index.cfm/9,html"`）
-    5. **元のフォーマット（クォーティング・改行）を維持する** — CSV ライブラリで全体を書き直すとフォーマットが変わるため、行単位で処理する
-    6. 変更をコミット
-    7. `git push -u origin feat/add-municipality-urls`
-    8. `gh pr create` で PR を作成
-
-    ## カンマ入り URL のハンドリング例（Python）
-
-    ```python
-    for i, line in enumerate(lines):
-        parts = line.rstrip('\n').split(',')
-        code = parts[0]
-        if code in url_map and parts[5].strip() == '':
-            url = url_map[code]
-            if ',' in url:
-                url = f'"{url}"'
-            parts[5] = url
-            lines[i] = ','.join(parts) + '\n'
-    ```
+    5. **既にダブルクォートで囲まれたフィールドがある行は、フィールド境界を正しく認識する** — 単純な `split(',')` ではなく、クォート内のカンマを無視して分割する
+    6. **元のフォーマット（クォーティング・改行）を維持する**
+    7. Edit ツールで該当行の URL 列のみを書き換える（CSV 全体を書き直さない）
+    8. 変更をコミット
+    9. `git push -u origin feat/add-municipality-urls`
+    10. `gh pr create` で PR を作成
 
     ## コミットメッセージ
     feat: {N}自治体の会議録検索URLを追加
@@ -183,11 +177,7 @@ Agent 起動パラメータ:
     feat: {都道府県名}の自治体会議録検索URL追加
 ```
 
-### Step 5: 実装フェーズ — ドキュメント作成（worktree 並列実行）
-
-CSV 更新は Step 4 で完了済み。ここでは**ドキュメント作成のみ**を行う。ユーザーへの確認は不要。
-
-#### カテゴリ B: カスタムスクレイピング方針ドキュメント → PR
+#### カテゴリ B: カスタムスクレイピング方針ドキュメント → PR（CSV は Step 4 の CSV Agent が処理済み）
 
 カテゴリ B の自治体**それぞれについて個別の Agent を `isolation: "worktree"` で並列起動**し、方針ドキュメントを作成して PR を作成する。
 
@@ -272,13 +262,14 @@ Agent 起動パラメータ:
 ```
 
 **並列度のガイドライン（実装フェーズ）:**
+- CSV PR: 常に 1 Agent（CSV は 1 ファイルなので分割不要）
 - カテゴリ B のドキュメント: 5 件以下は全件同時、6 件以上は 5 件ずつバッチ
 - カテゴリ C: 常に 1 Agent（簡易ファイルなので一括作成）
-- B ドキュメント Agent と C Agent は同時に並列起動してよい（worktree で分離されるため衝突しない）
+- CSV Agent, B ドキュメント Agent, C Agent は全て同時に並列起動してよい（worktree で分離されるため衝突しない）
 
-### Step 6: Worktree のクリーンアップ (CRITICAL)
+### Step 5: Worktree のクリーンアップ (CRITICAL)
 
-Step 5 の全 Agent が完了したら、**返却された worktree パスを `git worktree remove` で削除する**。
+Step 4 の全 Agent が完了したら、**返却された worktree パスを `git worktree remove` で削除する**。
 
 Agent が `isolation: "worktree"` で起動され、変更をコミット・プッシュした場合、worktree ディレクトリがディスク上に残る。PR 作成済みであれば不要なので、必ず削除する。
 
