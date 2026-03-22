@@ -41,13 +41,27 @@ export async function fetchPage(url: string): Promise<string | null> {
 }
 
 /**
- * 年度別一覧ページの URL を組み立てる。
- * 2024以降: /site/gikai/kaigiroku{year}.html
- * 2023以前: /soshiki/gikai/kaigiroku{year}.html
+ * 年度別一覧ページの候補 URL を返す。
+ *
+ * 最新年は /site/gikai/gikai-kaigiroku.html（固定URL）が使われ、
+ * kaigiroku{year}.html は 404 になることがある。
+ * そのため最新年は固定URLを先に、年別URLをフォールバックとして返す。
+ * 2023以前は /soshiki/gikai/ 配下にある。
  */
-export function buildListUrl(year: number): string {
-  const prefix = year >= 2024 ? "/site/gikai" : "/soshiki/gikai";
-  return `${BASE_ORIGIN}${prefix}/kaigiroku${year}.html`;
+export function buildListUrls(year: number): string[] {
+  const urls: string[] = [];
+
+  // 最新年は固定URL（gikai-kaigiroku.html）を先に試す
+  urls.push(`${BASE_ORIGIN}/site/gikai/gikai-kaigiroku.html`);
+
+  // 年別ページ
+  if (year >= 2024) {
+    urls.push(`${BASE_ORIGIN}/site/gikai/kaigiroku${year}.html`);
+  } else {
+    urls.push(`${BASE_ORIGIN}/soshiki/gikai/kaigiroku${year}.html`);
+  }
+
+  return urls;
 }
 
 /**
