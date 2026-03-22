@@ -5,7 +5,7 @@
  */
 
 import { createHash } from "node:crypto";
-import type { MeetingData, ParsedStatement } from "../types";
+import type { MeetingData, ParsedStatement } from "../../utils/types";
 import { postJson, normalizeFullWidth, SSP_HOST } from "./shared";
 import type { SspSchedule } from "./schedule";
 

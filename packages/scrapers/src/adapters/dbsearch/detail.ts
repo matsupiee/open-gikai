@@ -22,7 +22,7 @@
  */
 
 import { createHash } from "node:crypto";
-import type { MeetingData, ParsedStatement } from "../types";
+import type { MeetingData, ParsedStatement } from "../../utils/types";
 
 const USER_AGENT =
   "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";

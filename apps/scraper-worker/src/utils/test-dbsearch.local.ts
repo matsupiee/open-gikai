@@ -3,8 +3,7 @@
  * Usage: bun --env-file ../web/.env src/utils/test-dbsearch.ts
  */
 
-import { fetchMeetingList } from "@open-gikai/scrapers/dbsearch";
-import { fetchMeetingDetail } from "@open-gikai/scrapers/dbsearch";
+import { getAdapter } from "@open-gikai/scrapers";
 
 // 音更町（シンプルな dbsr.jp URL）
 const BASE_URL =
@@ -13,32 +12,33 @@ const MUNICIPALITY_ID = "cezm3fpz2st0u233txdipfeu";
 const YEAR = 2024;
 
 async function main() {
+  const adapter = getAdapter("dbsearch");
+  if (!adapter) {
+    console.error("❌ dbsearch adapter が見つかりません");
+    process.exit(1);
+  }
+
   console.log("=== Step 1: 議事録一覧取得 ===");
   console.log(`baseUrl: ${BASE_URL}, year: ${YEAR}`);
 
-  const records = await fetchMeetingList(BASE_URL, YEAR);
-  if (!records || records.length === 0) {
+  const records = await adapter.fetchList({ baseUrl: BASE_URL, year: YEAR });
+  if (records.length === 0) {
     console.error("❌ 一覧取得失敗または0件");
     process.exit(1);
   }
 
   console.log(`✅ ${records.length} 件取得`);
   for (const r of records.slice(0, 3)) {
-    console.log(`  id=${r.id}  title=${r.title}`);
-    console.log(`  url=${r.url}`);
+    console.log(`  detailParams:`, JSON.stringify(r.detailParams).slice(0, 100));
   }
 
-  // 名簿ではなく本文を選ぶ
-  const first = records.find((r) => !r.title.includes("名簿")) ?? records[0]!;
-  console.log(`\n=== Step 2: 詳細取得 (id=${first.id}) ===`);
-  console.log(`url: ${first.url}`);
+  const first = records[0]!;
+  console.log(`\n=== Step 2: 詳細取得 ===`);
 
-  const meeting = await fetchMeetingDetail(
-    first.url,
-    MUNICIPALITY_ID,
-    first.id,
-    first.title
-  );
+  const meeting = await adapter.fetchDetail({
+    detailParams: first.detailParams,
+    municipalityId: MUNICIPALITY_ID,
+  });
 
   if (!meeting) {
     console.error("❌ 詳細取得失敗");
