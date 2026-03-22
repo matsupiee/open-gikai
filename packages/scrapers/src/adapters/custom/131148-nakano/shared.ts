@@ -2,7 +2,7 @@
  * 中野区議会 議事録検索システム — 共通ユーティリティ
  *
  * サイト: https://kugikai-nakano.jp/
- * エンコーディング: Shift_JIS
+ * エンコーディング: UTF-8
  */
 
 export const BASE_ORIGIN = "https://kugikai-nakano.jp";
@@ -20,7 +20,7 @@ export function detectMeetingType(title: string): string {
 }
 
 /**
- * Shift_JIS エンコーディングのページを取得し、UTF-8 文字列として返す。
+ * ページを取得して UTF-8 文字列として返す。
  * HTTPS で失敗した場合は HTTP にフォールバック。
  */
 export async function fetchPage(url: string): Promise<string | null> {
@@ -30,9 +30,7 @@ export async function fetchPage(url: string): Promise<string | null> {
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!res.ok) return null;
-
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    return new TextDecoder("shift_jis").decode(bytes);
+    return await res.text();
   } catch {
     // HTTPS → HTTP フォールバック
     if (url.startsWith("https://")) {
@@ -43,9 +41,7 @@ export async function fetchPage(url: string): Promise<string | null> {
           signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
         });
         if (!res.ok) return null;
-
-        const bytes = new Uint8Array(await res.arrayBuffer());
-        return new TextDecoder("shift_jis").decode(bytes);
+        return await res.text();
       } catch {
         // HTTP でも失敗
       }
