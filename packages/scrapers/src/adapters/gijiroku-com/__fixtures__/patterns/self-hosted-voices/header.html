@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML LANG="ja-JP">
+	<HEAD>
+		<META HTTP-EQUIV="Content-Type"			CONTENT="text/html; charset=Shift_JIS">
+		<META HTTP-EQUIV="Content-Language"		CONTENT="text/ja-JP">
+		<META HTTP-EQUIV="Content-Script-Type"	CONTENT="text/JavaScript">
+		<META HTTP-EQUIV="Content-Style-Type"	CONTENT="text/css">
+<TITLE></TITLE>
+<style TYPE="text/css">
+<!--
+body,table,td,th,tr,font {
+	font-family:'ＭＳ ゴシック';
+	font-size:100%;
+	letter-spacing:1px;
+	line-height:170%;
+}
+//-->
+</style>
+</HEAD>
+<BODY BGCOLOR="#ffffff" onLoad="init_h(); parent.hat.focus();">
+<SCRIPT LANGUAGE="JavaScript">
+var hitp = -1;
+	parent.comp_hat = 0;
+</SCRIPT>
+<A NAME="HUID104611"></A>令和　６年第　４回定例会<BR><BR>　　　　　　　　　　　　　　　　　令和６年第４回<BR>　　　　　　　　　　　　　鴨川市議会定例会会議録（第１号）<BR><BR>１．招集年月日　令和６年１１月２９日（金曜日）<BR>１．招集の場所　鴨川市議会議場<BR>１．出席議員　　１８名<BR>　　１番　福　岡　　　梓　君　　　２番　石　川　弘白三　君　　　３番　入　江　裕　一　君<BR>　　４番　高　橋　和　夫　君　　　５番　藤　本　省　幸　君　　　６番　秋　山　貢　輔　君<BR>　　７番　長谷川　倫　秀　君　　　８番　松　井　寛　徳　君　　　９番　本　吉　正　和　君<BR>　　10番　杉　田　　　至　君　　　11番　佐　藤　和　幸　君　　　12番　佐々木　久　之　君<BR>　　13番　川　股　盛　二　君　　　14番　川　崎　浩　之　君　　　15番　佐久間　　　章　君<BR>　　16番　福　原　三枝子　君　　　17番　庄　司　朋　代　君　　　18番　鈴　木　美　一　君<BR>１．欠席議員　　なし<BR>１．地方自治法第１２１条の規定により出席した者の職氏名<BR>　　市長　　　　　　　　長谷川　孝　夫　君　　　　副市長　　　　　　　平　川　　　潔　君<BR>　　企画総務部長　　　　野　村　敏　弘　君　　　　市民福祉部長　　　　鈴　木　克　己　君<BR>　　建設経済部長　　　　角　田　敬　夫　君　　　　代表監査委員　　　　川　名　敏　昭　君<BR>　　選挙管理委員会委員長小　泉　秀　男　君　　　　農業委員会会長　　　鈴　木　正　彦　君<BR>　　教育長　　　　　　　鈴　木　希　彦　君　　　　教育次長　　　　　　山　口　昌　宏　君<BR>　　水道課長　　　　　　佐　藤　信　二　君　　　　国保病院事務長　　　加　藤　道　明　君<BR>１．職務のため議場に出席した事務局職員の職氏名<BR>　　事務局長　　　　　　小　柴　則　明　　　　　　次長　　　　　　　　鈴　木　　　諭<BR>　　議事係長　　　　　　吉　田　　　勝<BR><BR>　　　　　　　　　 ────────────────────────<BR><BR><P><FORM METHOD="POST"><INPUT TYPE="hidden" NAME="hitcount" VALUE="0"></FORM>
+<SCRIPT LANGUAGE="JavaScript">
+function get_view_no( huid ){
+	var i;
+	var cnt;
+	if( self.frames.name == 'hat' ){
+		parent.v_n_no=null; parent.v_n_shi_no=null;		parent.v_b_no=null; parent.v_b_shi_no=null;		cnt = parent.huid_list.length;
+		for( i=0; i<cnt; i++ ){
+			if( parseInt( huid ) > parseInt( parent.huid_list[i] ) ){
+				parent.v_b_no= i
+			}else if( parseInt( huid ) < parseInt( parent.huid_list[i] ) ){
+				if( parent.v_n_no==null ){
+					parent.v_n_no= i
+				}
+			}
+		}
+		cnt = parent.huid_shi_list.length;
+		for( i=0; i<cnt; i++ ){
+			if( parseInt( huid ) > parseInt( parent.huid_shi_list[i] ) ){
+				parent.v_b_shi_no= i
+			}else if( parseInt( huid ) < parseInt( parent.huid_shi_list[i] ) ){
+				if( parent.v_n_shi_no==null ){
+					parent.v_n_shi_no= i
+				}
+			}
+		}
+	}
+	if( self.frames.name == 'hat_02' ){
+		parent.v_n_tou_no=null;		parent.v_b_tou_no=null;		cnt = parent.huid_tou_list.length;
+		for( i=0; i<cnt; i++ ){
+			if( parseInt( huid ) > parseInt( parent.huid_tou_list[i] ) ){
+				parent.v_b_tou_no= i
+			}else if( parseInt( huid ) < parseInt( parent.huid_tou_list[i] ) ){
+				if( parent.v_n_tou_no==null ){
+					parent.v_n_tou_no= i
+				}
+			}
+		}
+	}
+}
+if( self.frames.name == 'hat' ){
+	parent.attach_view_flg = false;
+}
+var hitcount=0;
+timerid = -1;
+function NaviCheck(version) {
+    if ((navigator.appName.indexOf("Netscape") >= 0)
+        &&
+        (version <= parseInt(navigator.appVersion.substring(0, 3))))
+    {
+        return true;
+    }else if ((navigator.appName.indexOf("Microsoft") >= 0)
+        &&
+        (version <= parseInt(navigator.appVersion.substring(0, 3))))
+    {
+        return true;
+    } else {
+        return false;
+    }
+}
+function get_view_no_of_timer( huid ){
+        if(parent.comp_sidebar == -1){
+			if(timerid != -1){
+				clearInterval(timerid)
+	        }
+	     }
+	get_view_no( '104611' );
+}
+function init_h(){
+    parent.hitp = -1;
+    parent.v_shi_hitp = -1;
+    parent.v_tou_hitp = -1;
+    parent.comp_hat = -1;
+    parent.v_hitp     = -1;
+    if(NaviCheck(4)){
+        if(parent.comp_sidebar != -1){
+			if(timerid != -1){
+				clearInterval(timerid)
+	        }
+            timerid = setInterval("get_view_no_of_timer('104611')", 800);
+        }else{
+			get_view_no( '104611' );
+        }
+    }
+}
+</SCRIPT>
+</BODY>
+</HTML>

@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML LANG="ja-JP">
+	<HEAD>
+		<META HTTP-EQUIV="Content-Type"			CONTENT="text/html; charset=Shift_JIS">
+		<META HTTP-EQUIV="Content-Language"		CONTENT="text/ja-JP">
+		<META HTTP-EQUIV="Content-Script-Type"	CONTENT="text/JavaScript">
+		<META HTTP-EQUIV="Content-Style-Type"	CONTENT="text/css">
+<TITLE> 委員長(塩田) P.2</TITLE>
+<style TYPE="text/css">
+<!--
+body,table,td,th,tr,font {
+	font-family:'ＭＳ ゴシック';
+	font-size:100%;
+	letter-spacing:1px;
+	line-height:170%;
+}
+//-->
+</style>
+</HEAD>
+<BODY BGCOLOR="#ffffff" onLoad="init_h(); parent.hat.focus();">
+<SCRIPT LANGUAGE="JavaScript">
+var hitp = -1;
+	parent.comp_hat = 0;
+</SCRIPT>
+<A NAME="HUID338564"></A>○塩田　委員長　　改めましておはようございます。議会運営委員各位にはお忙しい中御出席を賜り、お礼を申し上げます。<BR>　本日御参集いただきましたのは、委員会提出議案として意見書案第５号　国による学校給食費無償化の早期実現を求める意見書、議員提出議案として意見書案第６号　北朝鮮による日本人拉致問題の早期解決に関する意見書、予算決算委員会から議案第50号　令和６年度つくば市一般会計補正予算（第６号）に対する修正案が提出されましたので、御協議願いたくお集りいただいた次第であります。<BR>　　　　　　　────────────────────────────────────<BR><P><FORM METHOD="POST"><INPUT TYPE="hidden" NAME="hitcount" VALUE="0"></FORM>
+<SCRIPT LANGUAGE="JavaScript">
+function get_view_no( huid ){
+	var i;
+	var cnt;
+	if( self.frames.name == 'hat' ){
+		parent.v_n_no=null; parent.v_n_shi_no=null;		parent.v_b_no=null; parent.v_b_shi_no=null;		cnt = parent.huid_list.length;
+		for( i=0; i<cnt; i++ ){
+			if( parseInt( huid ) > parseInt( parent.huid_list[i] ) ){
+				parent.v_b_no= i
+			}else if( parseInt( huid ) < parseInt( parent.huid_list[i] ) ){
+				if( parent.v_n_no==null ){
+					parent.v_n_no= i
+				}
+			}
+		}
+		cnt = parent.huid_shi_list.length;
+		for( i=0; i<cnt; i++ ){
+			if( parseInt( huid ) > parseInt( parent.huid_shi_list[i] ) ){
+				parent.v_b_shi_no= i
+			}else if( parseInt( huid ) < parseInt( parent.huid_shi_list[i] ) ){
+				if( parent.v_n_shi_no==null ){
+					parent.v_n_shi_no= i
+				}
+			}
+		}
+	}
+	if( self.frames.name == 'hat_02' ){
+		parent.v_n_tou_no=null;		parent.v_b_tou_no=null;		cnt = parent.huid_tou_list.length;
+		for( i=0; i<cnt; i++ ){
+			if( parseInt( huid ) > parseInt( parent.huid_tou_list[i] ) ){
+				parent.v_b_tou_no= i
+			}else if( parseInt( huid ) < parseInt( parent.huid_tou_list[i] ) ){
+				if( parent.v_n_tou_no==null ){
+					parent.v_n_tou_no= i
+				}
+			}
+		}
+	}
+}
+if( self.frames.name == 'hat' ){
+	parent.attach_view_flg = false;
+}
+var hitcount=0;
+timerid = -1;
+function NaviCheck(version) {
+    if ((navigator.appName.indexOf("Netscape") >= 0)
+        &&
+        (version <= parseInt(navigator.appVersion.substring(0, 3))))
+    {
+        return true;
+    }else if ((navigator.appName.indexOf("Microsoft") >= 0)
+        &&
+        (version <= parseInt(navigator.appVersion.substring(0, 3))))
+    {
+        return true;
+    } else {
+        return false;
+    }
+}
+function get_view_no_of_timer( huid ){
+        if(parent.comp_sidebar == -1){
+			if(timerid != -1){
+				clearInterval(timerid)
+	        }
+	     }
+	get_view_no( '338564' );
+}
+function init_h(){
+    parent.hitp = -1;
+    parent.v_shi_hitp = -1;
+    parent.v_tou_hitp = -1;
+    parent.comp_hat = -1;
+    parent.v_hitp     = -1;
+    if(NaviCheck(4)){
+        if(parent.comp_sidebar != -1){
+			if(timerid != -1){
+				clearInterval(timerid)
+	        }
+            timerid = setInterval("get_view_no_of_timer('338564')", 800);
+        }else{
+			get_view_no( '338564' );
+        }
+    }
+}
+</SCRIPT>
+</BODY>
+</HTML>

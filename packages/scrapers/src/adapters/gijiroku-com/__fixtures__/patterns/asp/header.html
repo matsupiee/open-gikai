@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML LANG="ja-JP">
+	<HEAD>
+		<META HTTP-EQUIV="Content-Type"			CONTENT="text/html; charset=Shift_JIS">
+		<META HTTP-EQUIV="Content-Language"		CONTENT="text/ja-JP">
+		<META HTTP-EQUIV="Content-Script-Type"	CONTENT="text/JavaScript">
+		<META HTTP-EQUIV="Content-Style-Type"	CONTENT="text/css">
+<TITLE></TITLE>
+<style TYPE="text/css">
+<!--
+body,table,td,th,tr,font {
+	font-family:'ＭＳ ゴシック';
+	font-size:100%;
+	letter-spacing:1px;
+	line-height:170%;
+}
+//-->
+</style>
+</HEAD>
+<BODY BGCOLOR="#ffffff" onLoad="init_h(); parent.hat.focus();">
+<SCRIPT LANGUAGE="JavaScript">
+var hitp = -1;
+	parent.comp_hat = 0;
+</SCRIPT>
+<A NAME="HUID220279"></A>令和　６年１２月　民生環境協議会<BR><BR>　　民生環境協議会記録<BR>　──────────────────────────────────────<BR>開催日時及び場所<BR>　令和６年12月17日（火）午前10時40分～午前11時11分　第３委員会室<BR>　──────────────────────────────────────<BR>本日の会議に付した事件<BR>　●　所管事項の報告について<BR>　　１　令和６年度保育料等の算定誤りについて<BR>　　２　八戸市一般廃棄物最終処分場の火災について<BR>　──────────────────────────────────────<BR>出席委員（７名）<BR>　委員長　　中　村　益　則　君<BR>　副委員長　吉　田　洸　龍　君<BR>　委　員　　長谷川ひろゆき　君<BR>　　〃　　　間　　　盛　仁　君<BR>　　〃　　　山　名　文　世　君<BR>　　〃　　　伊　藤　圓　子　君<BR>　　〃　　　坂　本　美　洋　君<BR><BR>欠席委員（なし）<BR><BR>委員外議員（なし）<BR>　──────────────────────────────────────<BR>出席理事者<BR>　こども健康部長　　　　　　　　　　　　秋　山　直　仁　君<BR>　市民環境部長　　　　　　　　　　　　　前　田　　　晃　君<BR>　こども健康部こども・子育て政策推進監　岩　崎　郁　子　君<BR>　こども未来課長　　　　　　　　　　　　夏　井　幸　子　君<BR>　清掃事務所長　　　　　　　　　　　　　高　舘　　　強　君<BR>　清掃事務所副所長　　　　　　　　　　　飯　塚　輝　樹　君<BR>　──────────────────────────────────────<BR>出席事務局職員<BR>　主査　長　畑　真　司<BR>　──────────────────────────────────────<BR>　　　午前10時40分　開会<BR><P><FORM METHOD="POST"><INPUT TYPE="hidden" NAME="hitcount" VALUE="0"></FORM>
+<SCRIPT LANGUAGE="JavaScript">
+function get_view_no( huid ){
+	var i;
+	var cnt;
+	if( self.frames.name == 'hat' ){
+		parent.v_n_no=null; parent.v_n_shi_no=null;		parent.v_b_no=null; parent.v_b_shi_no=null;		cnt = parent.huid_list.length;
+		for( i=0; i<cnt; i++ ){
+			if( parseInt( huid ) > parseInt( parent.huid_list[i] ) ){
+				parent.v_b_no= i
+			}else if( parseInt( huid ) < parseInt( parent.huid_list[i] ) ){
+				if( parent.v_n_no==null ){
+					parent.v_n_no= i
+				}
+			}
+		}
+		cnt = parent.huid_shi_list.length;
+		for( i=0; i<cnt; i++ ){
+			if( parseInt( huid ) > parseInt( parent.huid_shi_list[i] ) ){
+				parent.v_b_shi_no= i
+			}else if( parseInt( huid ) < parseInt( parent.huid_shi_list[i] ) ){
+				if( parent.v_n_shi_no==null ){
+					parent.v_n_shi_no= i
+				}
+			}
+		}
+	}
+	if( self.frames.name == 'hat_02' ){
+		parent.v_n_tou_no=null;		parent.v_b_tou_no=null;		cnt = parent.huid_tou_list.length;
+		for( i=0; i<cnt; i++ ){
+			if( parseInt( huid ) > parseInt( parent.huid_tou_list[i] ) ){
+				parent.v_b_tou_no= i
+			}else if( parseInt( huid ) < parseInt( parent.huid_tou_list[i] ) ){
+				if( parent.v_n_tou_no==null ){
+					parent.v_n_tou_no= i
+				}
+			}
+		}
+	}
+}
+if( self.frames.name == 'hat' ){
+	parent.attach_view_flg = false;
+}
+var hitcount=0;
+timerid = -1;
+function NaviCheck(version) {
+    if ((navigator.appName.indexOf("Netscape") >= 0)
+        &&
+        (version <= parseInt(navigator.appVersion.substring(0, 3))))
+    {
+        return true;
+    }else if ((navigator.appName.indexOf("Microsoft") >= 0)
+        &&
+        (version <= parseInt(navigator.appVersion.substring(0, 3))))
+    {
+        return true;
+    } else {
+        return false;
+    }
+}
+function get_view_no_of_timer( huid ){
+        if(parent.comp_sidebar == -1){
+			if(timerid != -1){
+				clearInterval(timerid)
+	        }
+	     }
+	get_view_no( '220279' );
+}
+function init_h(){
+    parent.hitp = -1;
+    parent.v_shi_hitp = -1;
+    parent.v_tou_hitp = -1;
+    parent.comp_hat = -1;
+    parent.v_hitp     = -1;
+    if(NaviCheck(4)){
+        if(parent.comp_sidebar != -1){
+			if(timerid != -1){
+				clearInterval(timerid)
+	        }
+            timerid = setInterval("get_view_no_of_timer('220279')", 800);
+        }else{
+			get_view_no( '220279' );
+        }
+    }
+}
+</SCRIPT>
+</BODY>
+</HTML>
