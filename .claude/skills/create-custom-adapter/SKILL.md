@@ -75,11 +75,6 @@ export function buildListUrl(...): string { ... }  // 一覧ページ URL 構築
 export function buildDocumentUrl(...): string { ... }  // ドキュメントページ URL 構築
 ```
 
-**User-Agent は必ず以下を使用:**
-```typescript
-const USER_AGENT = "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
-```
-
 ### Step 4: list.ts — 一覧取得
 
 ```typescript
