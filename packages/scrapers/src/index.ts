@@ -1,14 +1,17 @@
 export type { ParsedStatement, MeetingData } from "./utils/types";
 export type { ScraperAdapter, ListRecord } from "./adapters/adapter";
+export { buildChunksFromStatements } from "./utils/statement-chunking";
 
 // adapter registry: getAdapter で system_type 名から adapter を取得できる
 import type { ScraperAdapter } from "./adapters/adapter";
 import { adapter as dbsearch } from "./adapters/dbsearch";
+import { adapter as discussnetSsp } from "./adapters/discussnet-ssp";
 import { adapter as kensakusystem } from "./adapters/kensakusystem";
 import { adapter as gijirokuCom } from "./adapters/gijiroku-com";
 
 const registry = new Map<string, ScraperAdapter>([
   [dbsearch.name, dbsearch],
+  [discussnetSsp.name, discussnetSsp],
   [kensakusystem.name, kensakusystem],
   [gijirokuCom.name, gijirokuCom],
 ]);

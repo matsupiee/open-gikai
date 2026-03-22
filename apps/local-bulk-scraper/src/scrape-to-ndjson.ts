@@ -9,7 +9,6 @@
  *   bun run scrape:ndjson -- --year 2025
  *   bun run scrape:ndjson -- --system-type dbsearch
  *   bun run scrape:ndjson -- --year 2025 --system-type discussnet_ssp
- *   bun run scrape:ndjson -- --system-type discussnet_ssp --council-limit 2
  *   bun run scrape:ndjson -- --system-type kensakusystem --meeting-limit 2
  *   bun run scrape:ndjson -- --target 011002,012025
  */
@@ -24,11 +23,8 @@ import { createId } from "@paralleldrive/cuid2";
 import { eq, and, inArray } from "drizzle-orm";
 import dotenv from "dotenv";
 import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";
-import { getAdapter } from "@open-gikai/scrapers";
+import { getAdapter, buildChunksFromStatements } from "@open-gikai/scrapers";
 import type { SystemType } from "@open-gikai/db/schema";
-
-import { scrapeAll as scrapeDiscussnetSsp } from "./bulk-scrapers/discussnet-ssp";
-import { buildChunksFromStatements } from "@open-gikai/scrapers/statement-chunking";
 
 const EMBEDDING_BATCH_SIZE = 20;
 
@@ -76,17 +72,6 @@ function parseYear(): number | undefined {
   const val = Number(process.argv[idx + 1]);
   if (Number.isNaN(val) || val < 2000 || val > 2100) {
     console.error(`[scrape-to-ndjson] 無効な年: ${process.argv[idx + 1]}`);
-    process.exit(1);
-  }
-  return val;
-}
-
-function parseCouncilLimit(): number | undefined {
-  const idx = process.argv.indexOf("--council-limit");
-  if (idx === -1) return undefined;
-  const val = Number(process.argv[idx + 1]);
-  if (Number.isNaN(val) || val < 1) {
-    console.error(`[scrape-to-ndjson] 無効な council-limit: ${process.argv[idx + 1]}`);
     process.exit(1);
   }
   return val;
@@ -190,7 +175,6 @@ async function main() {
   const targetYear = parseYear();
   const targetSystemType = parseSystemType();
   const targetCodes = parseTarget();
-  const councilLimit = parseCouncilLimit();
   const meetingLimit = parseMeetingLimit();
 
   // 1. 出力ディレクトリの準備（ログ記録のため最初に作成）
@@ -230,9 +214,6 @@ async function main() {
   }
   if (targetSystemType) {
     log("INFO", `[scrape-to-ndjson] システムタイプ: ${targetSystemType} のみ対象`);
-  }
-  if (councilLimit) {
-    log("INFO", `[scrape-to-ndjson] council 数制限: 各自治体 ${councilLimit} 件まで`);
   }
   if (meetingLimit) {
     log("INFO", `[scrape-to-ndjson] meeting 数制限: 各自治体 ${meetingLimit} 件まで`);
@@ -297,7 +278,6 @@ async function main() {
         target.baseUrl!,
         target.systemTypeName!,
         targetYear,
-        councilLimit,
         meetingLimit
       );
     } catch (err) {
@@ -458,15 +438,8 @@ async function scrapeMunicipality(
   baseUrl: string,
   systemTypeName: string,
   targetYear?: number,
-  councilLimit?: number,
   meetingLimit?: number
 ): Promise<MeetingData[]> {
-  // discussnet_ssp は4フェーズの特殊ケースなので個別 bulk scraper を維持
-  if (systemTypeName === "discussnet_ssp") {
-    return scrapeDiscussnetSsp(municipalityId, municipalityName, baseUrl, targetYear, councilLimit, meetingLimit);
-  }
-
-  // 2フェーズ adapter があればそちらを使う
   const adapter = getAdapter(systemTypeName);
   if (adapter) {
     return scrapeWithAdapter(adapter, municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);

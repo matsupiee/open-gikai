@@ -3,7 +3,7 @@ import { asc, eq, inArray, notExists } from "drizzle-orm";
 import { meetings, statements, statement_chunks } from "@open-gikai/db/schema";
 import { createId } from "@paralleldrive/cuid2";
 import type { Db } from "@open-gikai/db";
-import { buildChunksFromStatements } from "@open-gikai/scrapers/statement-chunking";
+import { buildChunksFromStatements } from "@open-gikai/scrapers";
 
 const EMBEDDING_BATCH_SIZE = 20;
 

@@ -1,19 +1,14 @@
 import type { Db } from "@open-gikai/db";
 import type { ScraperQueueMessage } from "./types";
 import { updateScraperJobStatus } from "./job-logger";
-import { handleDiscussnetSspSchedule } from "../system-types/discussnet-ssp/schedule/handler";
-import { handleDiscussnetSspMinute } from "../system-types/discussnet-ssp/minute/handler";
 import { handleGenericList } from "../handlers/generic-list";
 import { handleGenericDetail } from "../handlers/generic-detail";
-
-type DiscussnetSspMessage = Extract<
-  ScraperQueueMessage,
-  { type: `discussnet-ssp:${string}` }
->;
 
 /**
  * キューメッセージを処理する共通ハンドラー。
  * index.ts (Cloudflare Worker) と local-runner.ts の両方から使用される。
+ *
+ * 全ての system_type は adapter registry 経由で汎用ハンドラーに処理される。
  */
 export async function handleQueueMessage(
   db: Db,
@@ -21,38 +16,15 @@ export async function handleQueueMessage(
   msg: ScraperQueueMessage,
   openaiApiKey?: string
 ): Promise<void> {
-  const [system] = msg.type.split(":") as [string, string];
-
-  switch (system) {
-    case "discussnet-ssp":
-      await handleDiscussnetSsp(db, queue, msg as DiscussnetSspMessage, openaiApiKey);
+  switch (msg.type) {
+    case "scraper:list":
+      await handleGenericList(db, queue, msg);
       break;
-    case "scraper":
-      // 汎用 2フェーズハンドラー（adapter registry 経由で処理）
-      if (msg.type === "scraper:list") {
-        await handleGenericList(db, queue, msg);
-      } else if (msg.type === "scraper:detail") {
-        await handleGenericDetail(db, msg, openaiApiKey);
-      }
+    case "scraper:detail":
+      await handleGenericDetail(db, msg, openaiApiKey);
       break;
     default:
-      console.warn(`[scraper-worker] unknown message type:`, msg.type);
-  }
-}
-
-async function handleDiscussnetSsp(
-  db: Db,
-  queue: Queue<ScraperQueueMessage>,
-  msg: DiscussnetSspMessage,
-  openaiApiKey?: string
-): Promise<void> {
-  switch (msg.type) {
-    case "discussnet-ssp:schedule":
-      await handleDiscussnetSspSchedule(db, queue, msg);
-      break;
-    case "discussnet-ssp:minute":
-      await handleDiscussnetSspMinute(db, msg, openaiApiKey);
-      break;
+      console.warn(`[scraper-worker] unknown message type:`, (msg as { type: string }).type);
   }
 }
 

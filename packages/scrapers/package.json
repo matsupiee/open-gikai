@@ -4,21 +4,6 @@
   "exports": {
     ".": {
       "default": "./src/index.ts"
-    },
-    "./dbsearch": {
-      "default": "./src/adapters/dbsearch/index.ts"
-    },
-    "./discussnet-ssp": {
-      "default": "./src/adapters/discussnet-ssp/index.ts"
-    },
-    "./kensakusystem": {
-      "default": "./src/adapters/kensakusystem/index.ts"
-    },
-    "./gijiroku-com": {
-      "default": "./src/adapters/gijiroku-com/index.ts"
-    },
-    "./statement-chunking": {
-      "default": "./src/utils/statement-chunking.ts"
     }
   },
   "scripts": {
