@@ -114,6 +114,16 @@ describe("extractBaseInfo", () => {
     });
   });
 
+  test("自前ホスト サブディレクトリ + /voices/（八戸市）", () => {
+    const info = extractBaseInfo(
+      "http://www2.city.hachinohe.aomori.jp/kaigiroku/voices/g07v_search.asp"
+    );
+    expect(info).toEqual({
+      origin: "http://www2.city.hachinohe.aomori.jp",
+      basePath: "/kaigiroku/voices",
+    });
+  });
+
   test("ルートパスのみは null", () => {
     expect(extractBaseInfo("http://example.com/")).toBeNull();
   });
