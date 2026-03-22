@@ -6,7 +6,7 @@
  * 個別の handler ファイルが不要になる。
  */
 
-import type { MeetingData } from "./types";
+import type { MeetingData } from "../utils/types";
 
 /**
  * list フェーズの1レコード。

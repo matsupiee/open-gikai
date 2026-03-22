@@ -24,22 +24,11 @@ import { createId } from "@paralleldrive/cuid2";
 import { eq, and, inArray } from "drizzle-orm";
 import dotenv from "dotenv";
 import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";
+import { getAdapter } from "@open-gikai/scrapers";
 import type { SystemType } from "@open-gikai/db/schema";
 
 import { scrapeAll as scrapeDiscussnetSsp } from "./bulk-scrapers/discussnet-ssp";
 import { buildChunksFromStatements } from "@open-gikai/scrapers/statement-chunking";
-
-// 2フェーズ adapter をインポート
-import { adapter as dbsearchAdapter } from "@open-gikai/scrapers/dbsearch";
-import { adapter as kensakusystemAdapter } from "@open-gikai/scrapers/kensakusystem";
-import { adapter as gijirokuComAdapter } from "@open-gikai/scrapers/gijiroku-com";
-
-/** system_type 名 → adapter のマッピング */
-const adapterMap = new Map<string, ScraperAdapter>([
-  [dbsearchAdapter.name, dbsearchAdapter],
-  [kensakusystemAdapter.name, kensakusystemAdapter],
-  [gijirokuComAdapter.name, gijirokuComAdapter],
-]);
 
 const EMBEDDING_BATCH_SIZE = 20;
 
@@ -478,7 +467,7 @@ async function scrapeMunicipality(
   }
 
   // 2フェーズ adapter があればそちらを使う
-  const adapter = adapterMap.get(systemTypeName);
+  const adapter = getAdapter(systemTypeName);
   if (adapter) {
     return scrapeWithAdapter(adapter, municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
   }

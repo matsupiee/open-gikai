@@ -6,19 +6,19 @@
       "default": "./src/index.ts"
     },
     "./dbsearch": {
-      "default": "./src/dbsearch/index.ts"
+      "default": "./src/adapters/dbsearch/index.ts"
     },
     "./discussnet-ssp": {
-      "default": "./src/discussnet-ssp/index.ts"
+      "default": "./src/adapters/discussnet-ssp/index.ts"
     },
     "./kensakusystem": {
-      "default": "./src/kensakusystem/index.ts"
+      "default": "./src/adapters/kensakusystem/index.ts"
     },
     "./gijiroku-com": {
-      "default": "./src/gijiroku-com/index.ts"
+      "default": "./src/adapters/gijiroku-com/index.ts"
     },
     "./statement-chunking": {
-      "default": "./src/statement-chunking.ts"
+      "default": "./src/utils/statement-chunking.ts"
     }
   },
   "scripts": {

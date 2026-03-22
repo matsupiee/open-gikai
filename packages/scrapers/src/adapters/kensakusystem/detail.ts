@@ -11,7 +11,7 @@
  */
 
 import { createHash } from "node:crypto";
-import type { MeetingData, ParsedStatement } from "../types";
+import type { MeetingData, ParsedStatement } from "../../utils/types";
 import {
   fetchWithEncoding,
   fetchRawBytesPost,
