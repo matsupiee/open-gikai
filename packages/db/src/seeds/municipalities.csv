@@ -334,7 +334,7 @@
 062090,山形県,長井市,ﾔﾏｶﾞﾀｹﾝ,ﾅｶﾞｲｼ,https://www.city.nagai.yamagata.jp/shigikai/kaigiroku/index.html,23966,2025
 062103,山形県,天童市,ﾔﾏｶﾞﾀｹﾝ,ﾃﾝﾄﾞｳｼ,https://ssp.kaigiroku.net/tenant/tendo/SpMinuteSearch.html,59480,2025
 062111,山形県,東根市,ﾔﾏｶﾞﾀｹﾝ,ﾋｶﾞｼﾈｼ,http://city.higashine.netj.jp/cgi-bin/kaigiroku/msearch.cgi,47182,2025
-062120,山形県,尾花沢市,ﾔﾏｶﾞﾀｹﾝ,ｵﾊﾞﾅｻﾞﾜｼ,http://www.kensakusystem.jp/obanazawa-vod/,13419,2025
+062120,山形県,尾花沢市,ﾔﾏｶﾞﾀｹﾝ,ｵﾊﾞﾅｻﾞﾜｼ,https://www.city.obanazawa.yamagata.jp/shisei/shigikai/gikai-kaigiroku/,13419,2025
 062138,山形県,南陽市,ﾔﾏｶﾞﾀｹﾝ,ﾅﾝﾖｳｼ,http://www.city.nanyo.yamagata.jp/gikaikaigiroku/,28746,2025
 063011,山形県,山辺町,ﾔﾏｶﾞﾀｹﾝ,ﾔﾏﾉﾍﾞﾏﾁ,https://www.town.yamanobe.yamagata.jp/site/gikai/,13272,2025
 063029,山形県,中山町,ﾔﾏｶﾞﾀｹﾝ,ﾅｶﾔﾏﾏﾁ,https://www.town.nakayama.yamagata.jp/,10353,2025
@@ -1020,7 +1020,7 @@
 232050,愛知県,半田市,ｱｲﾁｹﾝ,ﾊﾝﾀﾞｼ,https://ssp.kaigiroku.net/tenant/handa/SpMinuteSearch.html,111285,2025
 232068,愛知県,春日井市,ｱｲﾁｹﾝ,ｶｽｶﾞｲｼ,https://ssp.kaigiroku.net/tenant/kasugai/SpMinuteSearch.html,296472,2025
 232076,愛知県,豊川市,ｱｲﾁｹﾝ,ﾄﾖｶﾜｼ,https://ssp.kaigiroku.net/tenant/toyokawa/SpMinuteSearch.html,177329,2025
-232084,愛知県,津島市,ｱｲﾁｹﾝ,ﾂｼﾏｼ,https://www.kensakusystem.jp/tsushima/,56975,2025
+232084,愛知県,津島市,ｱｲﾁｹﾝ,ﾂｼﾏｼ,https://www.city.tsushima.aichi.dbsr.jp/index.php/,56975,2025
 232092,愛知県,碧南市,ｱｲﾁｹﾝ,ﾍｷﾅﾝｼ,http://www.city.hekinan.aichi.dbsr.jp/index.php/4506854?Template=search-phrase,65731,2025
 232106,愛知県,刈谷市,ｱｲﾁｹﾝ,ｶﾘﾔｼ,https://ssp.kaigiroku.net/tenant/kariya/SpMinuteSearch.html,147083,2025
 232114,愛知県,豊田市,ｱｲﾁｹﾝ,ﾄﾖﾀｼ,http://www.kensakusystem.jp/toyota-c/sapphire.html,392933,2025
@@ -1043,7 +1043,7 @@
 232297,愛知県,豊明市,ｱｲﾁｹﾝ,ﾄﾖｱｹｼ,https://ssp.kaigiroku.net/tenant/toyoake/SpMinuteView.html,63581,2025
 232301,愛知県,日進市,ｱｲﾁｹﾝ,ﾆｯｼﾝｼ,https://ssp.kaigiroku.net/tenant/nisshin/MinuteSearch.html,91991,2025
 232319,愛知県,田原市,ｱｲﾁｹﾝ,ﾀﾊﾗｼ,https://ssp.kaigiroku.net/tenant/tahara/SpMinuteSearch.html,56223,2025
-232327,愛知県,愛西市,ｱｲﾁｹﾝ,ｱｲｻｲｼ,https://www.kensakusystem.jp/aisai/,58895,2025
+232327,愛知県,愛西市,ｱｲﾁｹﾝ,ｱｲｻｲｼ,https://www.city.aisai.lg.jp/category/6-2-3-0-0-0-0-0-0-0.html,58895,2025
 232335,愛知県,清須市,ｱｲﾁｹﾝ,ｷﾖｽｼ,https://ssp.kaigiroku.net/tenant/kiyosu/SpTop.html,66498,2025
 232343,愛知県,北名古屋市,ｱｲﾁｹﾝ,ｷﾀﾅｺﾞﾔｼ,https://ssp.kaigiroku.net/tenant/kitanagoya/SpMinuteSearch.html,83297,2025
 232351,愛知県,弥富市,ｱｲﾁｹﾝ,ﾔﾄﾐｼ,https://ssp.kaigiroku.net/tenant/yatomi/SpTop.html,40747,2025
@@ -1059,7 +1059,7 @@
 234273,愛知県,飛島村,ｱｲﾁｹﾝ,ﾄﾋﾞｼﾏﾑﾗ,https://ssp.kaigiroku.net/tenant/tobishima2/SpMinuteSearch.html,4212,2025
 234419,愛知県,阿久比町,ｱｲﾁｹﾝ,ｱｸﾞｲﾁｮｳ,https://ssp.kaigiroku.net/tenant/agui/MinuteSearch.html,27622,2025
 234427,愛知県,東浦町,ｱｲﾁｹﾝ,ﾋｶﾞｼｳﾗﾁｮｳ,https://ssp.kaigiroku.net/tenant/higashiura/SpMinuteSearch.html,48237,2025
-234451,愛知県,南知多町,ｱｲﾁｹﾝ,ﾐﾅﾐﾁﾀﾁｮｳ,https://www.kensakusystem.jp/minamichitatown/,14892,2025
+234451,愛知県,南知多町,ｱｲﾁｹﾝ,ﾐﾅﾐﾁﾀﾁｮｳ,https://www.town.minamichita.lg.jp/gyosei/gikai/1001930/index.html,14892,2025
 234460,愛知県,美浜町,ｱｲﾁｹﾝ,ﾐﾊﾏﾁｮｳ,https://ssp.kaigiroku.net/tenant/mihama/,20046,2025
 234478,愛知県,武豊町,ｱｲﾁｹﾝ,ﾀｹﾄﾖﾁｮｳ,https://ssp.kaigiroku.net/tenant/taketoyo/SpMinuteSearch.html,41862,2025
 235016,愛知県,幸田町,ｱｲﾁｹﾝ,ｺｳﾀﾁｮｳ,https://ssp.kaigiroku.net/tenant/kota/SpTop.html,40849,2025
@@ -1075,7 +1075,7 @@
 242071,三重県,鈴鹿市,ﾐｴｹﾝ,ｽｽﾞｶｼ,http://www.kensakusystem.jp/suzuka/sapphire.html,184204,2025
 242080,三重県,名張市,ﾐｴｹﾝ,ﾅﾊﾞﾘｼ,https://ssp.kaigiroku.net/tenant/nabari/MinuteSearch.html,72912,2025
 242098,三重県,尾鷲市,ﾐｴｹﾝ,ｵﾜｾｼ,https://www.city.owase.lg.jp/category/7-10-0-0-0-0-0-0-0-0.html,15225,2025
-242101,三重県,亀山市,ﾐｴｹﾝ,ｶﾒﾔﾏｼ,http://www.kensakusystem.jp/kameyama-c/sapphire.html,46573,2025
+242101,三重県,亀山市,ﾐｴｹﾝ,ｶﾒﾔﾏｼ,https://www.kensakusystem.jp/kameyama-s/cgi-bin3/Search2.exe?Code=tz6dbsownceptcjp32&sTarget=2,46573,2025
 242110,三重県,鳥羽市,ﾐｴｹﾝ,ﾄﾊﾞｼ,https://ssp.kaigiroku.net/tenant/toba/SpMinuteSearch.html,15912,2025
 242128,三重県,熊野市,ﾐｴｹﾝ,ｸﾏﾉｼ,https://www.city.kumano.lg.jp/administration/?content=1674,14801,2025
 242144,三重県,いなべ市,ﾐｴｹﾝ,ｲﾅﾍﾞｼ,http://www.kensakusystem.jp/inabe-s/cgi-bin3/Search2.exe?Code=n7lcwlznz0oifwl9qf&sTarget=2,41919,2025
@@ -1222,7 +1222,7 @@
 283819,兵庫県,稲美町,ﾋｮｳｺﾞｹﾝ,ｲﾅﾐﾁｮｳ,http://www.kensakusystem.jp/inami/cgi-bin3/Search2.exe?Code=5mm8swkjpc0179mqow&sTarget=2,29781,2025
 283827,兵庫県,播磨町,ﾋｮｳｺﾞｹﾝ,ﾊﾘﾏﾁｮｳ,http://www.kensakusystem.jp/harima/cgi-bin3/Search2.exe?Code=1lw15plizspqodwjvx&sTarget=2,34085,2025
 284424,兵庫県,市川町,ﾋｮｳｺﾞｹﾝ,ｲﾁｶﾜﾁｮｳ,http://www.kensakusystem.jp/ichikawa/cgi-bin3/Search2.exe?Code=nqpmtrhi2lvnmbvacv&sTarget=2,10492,2025
-284432,兵庫県,福崎町,ﾋｮｳｺﾞｹﾝ,ﾌｸｻｷﾁｮｳ,https://www.kensakusystem.jp/fukusaki/,18014,2025
+284432,兵庫県,福崎町,ﾋｮｳｺﾞｹﾝ,ﾌｸｻｷﾁｮｳ,https://www.town.fukusaki.hyogo.jp/0000000984.html,18014,2025
 284467,兵庫県,神河町,ﾋｮｳｺﾞｹﾝ,ｶﾐｶﾜﾁｮｳ,https://www.town.kamikawa.hyogo.jp/soshikikarasagasu/3-1-0-0-0_2.html,10032,2025
 284645,兵庫県,太子町,ﾋｮｳｺﾞｹﾝ,ﾀｲｼﾁｮｳ,https://www.town.hyogo-taishi.lg.jp/soshikikarasagasu/taishityougikai/honkaiginnokaigiroku/index.html,33021,2025
 284815,兵庫県,上郡町,ﾋｮｳｺﾞｹﾝ,ｶﾐｺﾞｵﾘﾁｮｳ,http://www.kensakusystem.jp/kamigori/cgi-bin3/Search2.exe?Code=w7o8zwvr1rphhr5qpl&sTarget=2,13297,2025
@@ -1264,7 +1264,7 @@
 294446,奈良県,黒滝村,ﾅﾗｹﾝ,ｸﾛﾀｷﾑﾗ,https://www.vill.kurotaki.nara.jp/,581,2025
 294462,奈良県,天川村,ﾅﾗｹﾝ,ﾃﾝｶﾜﾑﾗ,https://smart.discussvision.net/smart/tenant/nara/WebView/rd/council_1.html,1184,2025
 294471,奈良県,野迫川村,ﾅﾗｹﾝ,ﾉｾｶﾞﾜﾑﾗ,https://www.vill.nosegawa.nara.jp/,311,2025
-294497,奈良県,十津川村,ﾅﾗｹﾝ,ﾄﾂｶﾜﾑﾗ,https://www.kensakusystem.jp/totsukawa/index.html,2733,2025
+294497,奈良県,十津川村,ﾅﾗｹﾝ,ﾄﾂｶﾜﾑﾗ,,2733,2025
 294501,奈良県,下北山村,ﾅﾗｹﾝ,ｼﾓｷﾀﾔﾏﾑﾗ,https://www.vill.shimokitayama.nara.jp/,784,2025
 294519,奈良県,上北山村,ﾅﾗｹﾝ,ｶﾐｷﾀﾔﾏﾑﾗ,https://www.vill.kamikitayama.nara.jp,419,2025
 294527,奈良県,川上村,ﾅﾗｹﾝ,ｶﾜｶﾐﾑﾗ,https://www.vill.kawakami.nara.jp/,1172,2025
@@ -1308,7 +1308,7 @@
 313025,鳥取県,岩美町,ﾄｯﾄﾘｹﾝ,ｲﾜﾐﾁｮｳ,https://ssp.kaigiroku.net/tenant/iwami/MinuteSearch.html,10611,2025
 313254,鳥取県,若桜町,ﾄｯﾄﾘｹﾝ,ﾜｶｻﾁｮｳ,https://www.town.wakasa.tottori.jp/soshikikarasagasu/gikaijimukyoku/1/1/524.html,2639,2025
 313289,鳥取県,智頭町,ﾄｯﾄﾘｹﾝ,ﾁﾂﾞﾁｮｳ,https://www1.town.chizu.tottori.jp/chizu/gikaijimukyoku/gijiroku/,6020,2025
-313297,鳥取県,八頭町,ﾄｯﾄﾘｹﾝ,ﾔｽﾞﾁｮｳ,http://www.kensakusystem.jp/yazu/cgi-bin3/Search2.exe?Code=zzk1bhhl07qse2hiul&sTarget=2,15430,2025
+313297,鳥取県,八頭町,ﾄｯﾄﾘｹﾝ,ﾔｽﾞﾁｮｳ,https://www.kensakusystem.jp/yazu-s/cgi-bin3/Search2.exe?Code=z1n1x9xz322oo6arjc&sTarget=2,15430,2025
 313645,鳥取県,三朝町,ﾄｯﾄﾘｹﾝ,ﾐｻｻﾁｮｳ,https://www.town.misasa.tottori.jp/315/319/333/442/,5713,2025
 313700,鳥取県,湯梨浜町,ﾄｯﾄﾘｹﾝ,ﾕﾘﾊﾏﾁｮｳ,http://www.kensakusystem.jp/yurihama/cgi-bin3/Search2.exe?Code=ka6todzo8wzgk2murw&sTarget=2,16132,2025
 313718,鳥取県,琴浦町,ﾄｯﾄﾘｹﾝ,ｺﾄｳﾗﾁｮｳ,http://www.kensakusystem.jp/kotoura/cgi-bin3/Search2.exe?Code=8nda3qcwlznzf57qm6&sTarget=2,15501,2025
