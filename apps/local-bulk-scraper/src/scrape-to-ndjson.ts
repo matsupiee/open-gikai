@@ -23,14 +23,23 @@ import { municipalities, system_types } from "@open-gikai/db/schema";
 import { createId } from "@paralleldrive/cuid2";
 import { eq, and, inArray } from "drizzle-orm";
 import dotenv from "dotenv";
-import type { MeetingData } from "@open-gikai/scrapers";
+import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";
 import type { SystemType } from "@open-gikai/db/schema";
 
-import { scrapeAll as scrapeDbsearch } from "./bulk-scrapers/dbsearch";
 import { scrapeAll as scrapeDiscussnetSsp } from "./bulk-scrapers/discussnet-ssp";
-import { scrapeAll as scrapeKensakusystem } from "./bulk-scrapers/kensakusystem";
-import { scrapeAll as scrapeGijirokuCom } from "./bulk-scrapers/gijiroku-com";
 import { buildChunksFromStatements } from "@open-gikai/scrapers/statement-chunking";
+
+// 2フェーズ adapter をインポート
+import { adapter as dbsearchAdapter } from "@open-gikai/scrapers/dbsearch";
+import { adapter as kensakusystemAdapter } from "@open-gikai/scrapers/kensakusystem";
+import { adapter as gijirokuComAdapter } from "@open-gikai/scrapers/gijiroku-com";
+
+/** system_type 名 → adapter のマッピング */
+const adapterMap = new Map<string, ScraperAdapter>([
+  [dbsearchAdapter.name, dbsearchAdapter],
+  [kensakusystemAdapter.name, kensakusystemAdapter],
+  [gijirokuComAdapter.name, gijirokuComAdapter],
+]);
 
 const EMBEDDING_BATCH_SIZE = 20;
 
@@ -463,19 +472,73 @@ async function scrapeMunicipality(
   councilLimit?: number,
   meetingLimit?: number
 ): Promise<MeetingData[]> {
-  switch (systemTypeName) {
-    case "dbsearch":
-      return scrapeDbsearch(municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
-    case "discussnet_ssp":
-      return scrapeDiscussnetSsp(municipalityId, municipalityName, baseUrl, targetYear, councilLimit, meetingLimit);
-    case "kensakusystem":
-      return scrapeKensakusystem(municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
-    case "gijiroku_com":
-      return scrapeGijirokuCom(municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
-    default:
-      console.warn(`  未対応の systemType: ${systemTypeName}`);
-      return [];
+  // discussnet_ssp は4フェーズの特殊ケースなので個別 bulk scraper を維持
+  if (systemTypeName === "discussnet_ssp") {
+    return scrapeDiscussnetSsp(municipalityId, municipalityName, baseUrl, targetYear, councilLimit, meetingLimit);
   }
+
+  // 2フェーズ adapter があればそちらを使う
+  const adapter = adapterMap.get(systemTypeName);
+  if (adapter) {
+    return scrapeWithAdapter(adapter, municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
+  }
+
+  console.warn(`  未対応の systemType: ${systemTypeName}`);
+  return [];
+}
+
+/**
+ * ScraperAdapter を使った汎用バルクスクレイピング。
+ * 指定年度（未指定時は直近5年）の議事録を取得する。
+ */
+async function scrapeWithAdapter(
+  adapter: ScraperAdapter,
+  municipalityId: string,
+  municipalityName: string,
+  baseUrl: string,
+  targetYear?: number,
+  meetingLimit?: number
+): Promise<MeetingData[]> {
+  const results: MeetingData[] = [];
+
+  const currentYear = new Date().getFullYear();
+  const years = targetYear
+    ? [targetYear]
+    : Array.from({ length: 5 }, (_, i) => currentYear - i);
+
+  for (const year of years) {
+    if (meetingLimit && results.length >= meetingLimit) break;
+
+    console.log(
+      `  [${adapter.name}] ${municipalityName}: ${year}年の一覧を取得中...`
+    );
+
+    const records = await adapter.fetchList({ baseUrl, year });
+    if (records.length === 0) {
+      console.log(`  [${adapter.name}] ${municipalityName}: ${year}年 → データなし`);
+      continue;
+    }
+
+    const remaining = meetingLimit ? meetingLimit - results.length : records.length;
+    const limited = records.slice(0, remaining);
+    const limitNote = meetingLimit ? ` (${limited.length}/${records.length} 件処理)` : "";
+
+    console.log(
+      `  [${adapter.name}] ${municipalityName}: ${year}年 → ${records.length} 件${limitNote}`
+    );
+
+    for (const record of limited) {
+      const meeting = await adapter.fetchDetail({
+        detailParams: record.detailParams,
+        municipalityId,
+      });
+      if (meeting) {
+        results.push(meeting);
+      }
+    }
+  }
+
+  return results;
 }
 
 main().catch((err) => {

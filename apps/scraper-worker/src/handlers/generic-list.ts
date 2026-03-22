@@ -40,10 +40,20 @@ export async function handleGenericList(
     `${msg.systemType} [${msg.municipalityName}] 議事録一覧取得中: ${msg.baseUrl} (${msg.year}年)`
   );
 
-  const records = await adapter.fetchList({
-    baseUrl: msg.baseUrl,
-    year: msg.year,
-  });
+  let records;
+  try {
+    records = await adapter.fetchList({
+      baseUrl: msg.baseUrl,
+      year: msg.year,
+    });
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    await logger.error(
+      `${msg.systemType} [${msg.municipalityName}] 一覧取得エラー: ${errorMessage}`
+    );
+    await updateJobStatus(db, msg.jobId, "failed", { errorMessage });
+    return;
+  }
 
   if (records.length === 0) {
     await logger.warn(

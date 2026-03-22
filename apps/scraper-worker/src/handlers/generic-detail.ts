@@ -10,6 +10,7 @@ import {
   createJobLogger,
   addJobStats,
   completeJobIfDone,
+  updateJobStatus,
 } from "../utils/job-logger";
 import { saveMeetings } from "../utils/save-meetings";
 import { applyStatementsToMeeting } from "../utils/apply-statements";
@@ -28,8 +29,9 @@ export async function handleGenericDetail(
   if (!adapter) {
     const logger = createJobLogger(db, msg.jobId);
     await logger.error(`未登録の adapter: ${msg.systemType}`);
-    await addJobStats(db, msg.jobId, 0, 0);
-    await completeJobIfDone(db, msg.jobId);
+    await updateJobStatus(db, msg.jobId, "failed", {
+      errorMessage: `未登録の adapter: ${msg.systemType}`,
+    });
     return;
   }
 
