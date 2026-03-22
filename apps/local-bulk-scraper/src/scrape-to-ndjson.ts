@@ -9,7 +9,6 @@
  *   bun run scrape:ndjson -- --year 2025
  *   bun run scrape:ndjson -- --system-type dbsearch
  *   bun run scrape:ndjson -- --year 2025 --system-type discussnet_ssp
- *   bun run scrape:ndjson -- --system-type discussnet_ssp --council-limit 2
  *   bun run scrape:ndjson -- --system-type kensakusystem --meeting-limit 2
  *   bun run scrape:ndjson -- --target 011002,012025
  */
@@ -23,14 +22,9 @@ import { municipalities, system_types } from "@open-gikai/db/schema";
 import { createId } from "@paralleldrive/cuid2";
 import { eq, and, inArray } from "drizzle-orm";
 import dotenv from "dotenv";
-import type { MeetingData } from "@open-gikai/scrapers";
+import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";
+import { getAdapter, buildChunksFromStatements } from "@open-gikai/scrapers";
 import type { SystemType } from "@open-gikai/db/schema";
-
-import { scrapeAll as scrapeDbsearch } from "./bulk-scrapers/dbsearch";
-import { scrapeAll as scrapeDiscussnetSsp } from "./bulk-scrapers/discussnet-ssp";
-import { scrapeAll as scrapeKensakusystem } from "./bulk-scrapers/kensakusystem";
-import { scrapeAll as scrapeGijirokuCom } from "./bulk-scrapers/gijiroku-com";
-import { buildChunksFromStatements } from "@open-gikai/scrapers/statement-chunking";
 
 const EMBEDDING_BATCH_SIZE = 20;
 
@@ -78,17 +72,6 @@ function parseYear(): number | undefined {
   const val = Number(process.argv[idx + 1]);
   if (Number.isNaN(val) || val < 2000 || val > 2100) {
     console.error(`[scrape-to-ndjson] 無効な年: ${process.argv[idx + 1]}`);
-    process.exit(1);
-  }
-  return val;
-}
-
-function parseCouncilLimit(): number | undefined {
-  const idx = process.argv.indexOf("--council-limit");
-  if (idx === -1) return undefined;
-  const val = Number(process.argv[idx + 1]);
-  if (Number.isNaN(val) || val < 1) {
-    console.error(`[scrape-to-ndjson] 無効な council-limit: ${process.argv[idx + 1]}`);
     process.exit(1);
   }
   return val;
@@ -192,7 +175,6 @@ async function main() {
   const targetYear = parseYear();
   const targetSystemType = parseSystemType();
   const targetCodes = parseTarget();
-  const councilLimit = parseCouncilLimit();
   const meetingLimit = parseMeetingLimit();
 
   // 1. 出力ディレクトリの準備（ログ記録のため最初に作成）
@@ -233,9 +215,6 @@ async function main() {
   if (targetSystemType) {
     log("INFO", `[scrape-to-ndjson] システムタイプ: ${targetSystemType} のみ対象`);
   }
-  if (councilLimit) {
-    log("INFO", `[scrape-to-ndjson] council 数制限: 各自治体 ${councilLimit} 件まで`);
-  }
   if (meetingLimit) {
     log("INFO", `[scrape-to-ndjson] meeting 数制限: 各自治体 ${meetingLimit} 件まで`);
   }
@@ -263,7 +242,9 @@ async function main() {
     .where(and(...conditions));
 
   const enabledTargets = targets.filter((t) => {
-    if (!t.baseUrl || !t.systemTypeName) return false;
+    if (!t.baseUrl) return false;
+    // systemTypeName またはカスタムアダプター（自治体コード）のいずれかで adapter が見つかる必要がある
+    if (!t.systemTypeName && !getAdapter(t.code)) return false;
     if (targetSystemType && t.systemTypeName !== targetSystemType) return false;
     return true;
   });
@@ -289,29 +270,30 @@ async function main() {
 
   // 4. 自治体を並列スクレイピング
   const tasks = enabledTargets.map((target) => async () => {
-    log("INFO", `[scrape-to-ndjson] ${target.prefecture} ${target.name} (${target.systemTypeName})`);
+    const adapterKey = target.systemTypeName ?? target.code;
+    log("INFO", `[scrape-to-ndjson] ${target.prefecture} ${target.name} (${adapterKey})`);
 
     let meetingDataList: MeetingData[];
     try {
       meetingDataList = await scrapeMunicipality(
         target.id,
         target.name,
+        target.code,
         target.baseUrl!,
-        target.systemTypeName!,
+        target.systemTypeName,
         targetYear,
-        councilLimit,
         meetingLimit
       );
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       log("ERROR", `${target.name}: スクレイピング失敗: ${reason}`);
-      failedMunicipalities.push({ name: target.name, prefecture: target.prefecture, systemType: target.systemTypeName!, reason });
+      failedMunicipalities.push({ name: target.name, prefecture: target.prefecture, systemType: adapterKey, reason });
       return;
     }
 
     if (meetingDataList.length === 0) {
       log("INFO", `${target.name}: 0 件`);
-      failedMunicipalities.push({ name: target.name, prefecture: target.prefecture, systemType: target.systemTypeName!, reason: "0 件（データなし）" });
+      failedMunicipalities.push({ name: target.name, prefecture: target.prefecture, systemType: adapterKey, reason: "0 件（データなし）" });
       return;
     }
 
@@ -457,25 +439,73 @@ async function main() {
 async function scrapeMunicipality(
   municipalityId: string,
   municipalityName: string,
+  municipalityCode: string,
   baseUrl: string,
-  systemTypeName: string,
+  systemTypeName: string | null,
   targetYear?: number,
-  councilLimit?: number,
   meetingLimit?: number
 ): Promise<MeetingData[]> {
-  switch (systemTypeName) {
-    case "dbsearch":
-      return scrapeDbsearch(municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
-    case "discussnet_ssp":
-      return scrapeDiscussnetSsp(municipalityId, municipalityName, baseUrl, targetYear, councilLimit, meetingLimit);
-    case "kensakusystem":
-      return scrapeKensakusystem(municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
-    case "gijiroku_com":
-      return scrapeGijirokuCom(municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
-    default:
-      console.warn(`  未対応の systemType: ${systemTypeName}`);
-      return [];
+  const adapter = (systemTypeName && getAdapter(systemTypeName)) || getAdapter(municipalityCode);
+  if (adapter) {
+    return scrapeWithAdapter(adapter, municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
   }
+
+  console.warn(`  未対応の systemType: ${systemTypeName ?? "null"} (code=${municipalityCode})`);
+  return [];
+}
+
+/**
+ * ScraperAdapter を使った汎用バルクスクレイピング。
+ * 指定年度（未指定時は直近5年）の議事録を取得する。
+ */
+async function scrapeWithAdapter(
+  adapter: ScraperAdapter,
+  municipalityId: string,
+  municipalityName: string,
+  baseUrl: string,
+  targetYear?: number,
+  meetingLimit?: number
+): Promise<MeetingData[]> {
+  const results: MeetingData[] = [];
+
+  const currentYear = new Date().getFullYear();
+  const years = targetYear
+    ? [targetYear]
+    : Array.from({ length: 5 }, (_, i) => currentYear - i);
+
+  for (const year of years) {
+    if (meetingLimit && results.length >= meetingLimit) break;
+
+    console.log(
+      `  [${adapter.name}] ${municipalityName}: ${year}年の一覧を取得中...`
+    );
+
+    const records = await adapter.fetchList({ baseUrl, year });
+    if (records.length === 0) {
+      console.log(`  [${adapter.name}] ${municipalityName}: ${year}年 → データなし`);
+      continue;
+    }
+
+    const remaining = meetingLimit ? meetingLimit - results.length : records.length;
+    const limited = records.slice(0, remaining);
+    const limitNote = meetingLimit ? ` (${limited.length}/${records.length} 件処理)` : "";
+
+    console.log(
+      `  [${adapter.name}] ${municipalityName}: ${year}年 → ${records.length} 件${limitNote}`
+    );
+
+    for (const record of limited) {
+      const meeting = await adapter.fetchDetail({
+        detailParams: record.detailParams,
+        municipalityId,
+      });
+      if (meeting) {
+        results.push(meeting);
+      }
+    }
+  }
+
+  return results;
 }
 
 main().catch((err) => {
