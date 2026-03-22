@@ -6,6 +6,7 @@ import { dispatchJob } from "./handlers/dispatch-job";
 import { notifyFailedJobs } from "./handlers/notify-failed-jobs";
 import { handleQueueMessage, handleMessageError } from "./utils/handle-message";
 import { fetchPendingJobs } from "./utils/jobs";
+import { initAdapterRegistry } from "./adapters/registry";
 
 export default {
   /**
@@ -18,6 +19,7 @@ export default {
     env: Env,
     _ctx: ExecutionContext
   ): Promise<void> {
+    await initAdapterRegistry();
     const db = createDb(env.DATABASE_URL);
 
     if (event.cron === "*/5 * * * *") {
@@ -48,6 +50,7 @@ export default {
     env: Env,
     _ctx: ExecutionContext
   ): Promise<void> {
+    await initAdapterRegistry();
     const db = createDb(env.DATABASE_URL);
 
     for (const message of batch.messages) {

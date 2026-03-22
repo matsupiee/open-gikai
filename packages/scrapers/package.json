@@ -15,5 +15,8 @@
     "@open-gikai/config": "workspace:*",
     "typescript": "catalog:",
     "vitest": "^4.1.0"
+  },
+  "dependencies": {
+    "unpdf": "^1.4.0"
   }
 }
