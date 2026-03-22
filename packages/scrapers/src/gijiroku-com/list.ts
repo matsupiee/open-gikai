@@ -7,8 +7,10 @@
  *   {origin}/voices/cgi/voiweb.exe?ACT=100&KTYP=0,1,2,3&SORT=0&FYY={year}&TYY={year}&KGTP=1,3
  *
  * HTML 構造:
- *   各会議行は <A HREF="javascript:;" onClick="winopen('voiweb.exe?ACT=200&...&FINO={fino}&UNID={unid}');">
- *   で表される。タイトルはリンクテキスト（例: "12月05日-01号"）で、
+ *   パターンA: onClick="winopen('voiweb.exe?ACT=200&...&FINO={fino}&UNID={unid}');">
+ *   パターンB: HREF="voiweb.exe?ACT=200&...&FINO={fino}&UNID={unid}" onClick="window.open(...);">
+ *   ※ UNID はオプション（調布市など UNID なしのサイトがある）
+ *   タイトルはリンクテキスト（例: "12月05日-01号"）で、
  *   親行のテキストに会議名（例: "令和　６年第２回定例会"）が含まれる。
  *
  * エンコーディング: Shift_JIS
@@ -91,24 +93,32 @@ export function parseListHtml(html: string): GijirokuMeetingRecord[] {
   const records: GijirokuMeetingRecord[] = [];
   const seen = new Set<string>();
 
-  // winopen('voiweb.exe?ACT=200&...&KGNO={kgno}&FINO={fino}&UNID={unid}')
-  // の後ろに ">日付ラベル</A> が続く
-  const pattern =
-    /winopen\('voiweb\.exe\?ACT=200[^']*&KGNO=(\d+)&FINO=(\d+)&UNID=([^']+)'\);"[^>]*>([^<]+)<\/A>/gi;
+  // パターン A: winopen('voiweb.exe?ACT=200&...&KGNO={kgno}&FINO={fino}&UNID={unid}')
+  // UNID はオプション（調布市など UNID なしのサイトがある）
+  const patternA =
+    /winopen\('voiweb\.exe\?ACT=200[^']*&KGNO=(\d+)&FINO=(\d+)(?:&UNID=([^']+))?'\);"[^>]*>([^<]+)<\/A>/gi;
 
-  // 各行の前にタイトルテキストが存在する
-  // <TD ...> の中で "タイトル,<A HREF..." の形式
-  let match: RegExpExecArray | null;
-  while ((match = pattern.exec(html)) !== null) {
-    const kgno = match[1]!;
-    const fino = match[2]!;
-    const unid = match[3]!;
-    const dateLabel = match[4]!.trim();
+  // パターン B: HREF="voiweb.exe?ACT=200&...&KGNO={kgno}&FINO={fino}&UNID={unid}" ... onClick="window.open(..."
+  // 太田市・狭山市・蕨市・海老名市・富士市など winopen を使わないサイト
+  const patternB =
+    /HREF="voiweb\.exe\?ACT=200[^"]*&KGNO=(\d+)&FINO=(\d+)&UNID=([^"&]+)"[^>]*>([^<]+)<\/A>/gi;
 
-    // 目次はスキップ（発言データがないため）
-    if (dateLabel.includes("目次")) continue;
+  const addRecord = (
+    match: RegExpExecArray,
+    kgnoIdx: number,
+    finoIdx: number,
+    unidIdx: number,
+    labelIdx: number
+  ) => {
+    const kgno = match[kgnoIdx]!;
+    const fino = match[finoIdx]!;
+    const unid = match[unidIdx] ?? `${kgno}_${fino}`;
+    const dateLabel = match[labelIdx]!.trim();
 
-    if (seen.has(unid)) continue;
+    // 目次・付録はスキップ（発言データがないため）
+    if (dateLabel.includes("目次")) return;
+
+    if (seen.has(unid)) return;
     seen.add(unid);
 
     // タイトルを match 位置の前方から取得
@@ -127,6 +137,20 @@ export function parseListHtml(html: string): GijirokuMeetingRecord[] {
         : dateLabel,
       dateLabel,
     });
+  };
+
+  let match: RegExpExecArray | null;
+
+  // パターン A: winopen 形式
+  while ((match = patternA.exec(html)) !== null) {
+    addRecord(match, 1, 2, 3, 4);
+  }
+
+  // パターン B: HREF 形式（パターン A でマッチしなかった場合のみ有効）
+  if (records.length === 0) {
+    while ((match = patternB.exec(html)) !== null) {
+      addRecord(match, 1, 2, 3, 4);
+    }
   }
 
   return records;
