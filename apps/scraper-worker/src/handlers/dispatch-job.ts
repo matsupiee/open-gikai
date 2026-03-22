@@ -62,11 +62,26 @@ export async function dispatchJob(
       const tenantSlug = slugMatch[1];
 
       // 自ホスト版の場合はホストを baseUrl から抽出する
-      const isSelfHosted = !municipalities.baseUrl.includes("ssp.kaigiroku.net");
+      // smart.discussvision.net は API が ssp.kaigiroku.net と共通のため自ホスト扱いしない
+      const isDiscussvision = municipalities.baseUrl.includes("discussvision.net");
+      const isSelfHosted =
+        !municipalities.baseUrl.includes("ssp.kaigiroku.net") && !isDiscussvision;
       const host = isSelfHosted ? extractHost(municipalities.baseUrl) : undefined;
       const apiBase = isSelfHosted ? buildApiBase(municipalities.baseUrl) : undefined;
 
-      const tenantId = await fetchTenantId(tenantSlug, host);
+      // smart.discussvision.net の自治体は tenant_id の取得に注意が必要:
+      // - 一部は ssp.kaigiroku.net にも存在し、そちらの tenant_id が API で有効
+      // - 一部は ssp.kaigiroku.net に存在せず、smart.discussvision.net の tenant_id が必要
+      let tenantId: number | null;
+      if (isDiscussvision) {
+        tenantId = await fetchTenantId(tenantSlug);
+        if (!tenantId) {
+          const tenantJsUrl = municipalities.baseUrl.replace(/\/rd\/[^/]+$/, "/js/tenant.js");
+          tenantId = await fetchTenantId(tenantSlug, undefined, tenantJsUrl);
+        }
+      } else {
+        tenantId = await fetchTenantId(tenantSlug, host);
+      }
       if (!tenantId) {
         await logger.error(
           `DiscussNet SSP: ${municipalities.name} の tenantId を取得できません (slug=${tenantSlug})`

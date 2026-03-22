@@ -48,17 +48,23 @@ interface ScheduleApiResponse {
  */
 export async function fetchTenantId(
   tenantSlug: string,
-  host?: string
+  host?: string,
+  tenantJsUrl?: string
 ): Promise<number | null> {
   try {
-    const baseHost = host ?? SSP_HOST;
-    const url = `${baseHost}/tenant/${tenantSlug}/js/tenant.js`;
+    const url = tenantJsUrl ?? `${host ?? SSP_HOST}/tenant/${tenantSlug}/js/tenant.js`;
     const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
     if (!res.ok) return null;
     const text = await res.text();
+    // 形式1: dnp.params.tenant_id = 89 (ssp.kaigiroku.net)
+    // 形式2: document.write('<input ... name="tenant_id" value="396">'); (smart.discussvision.net)
+    //   ※ 形式2はコメント内の記入例にもマッチするため、最後の出現を使用する
     const match = text.match(/tenant_id\s*=\s*(\d+)/);
-    if (!match?.[1]) return null;
-    return parseInt(match[1], 10);
+    if (match?.[1]) return parseInt(match[1], 10);
+    const allMatches = [...text.matchAll(/tenant_id["']\s+value=["'](\d+)["']/g)];
+    const lastMatch = allMatches.at(-1);
+    if (!lastMatch?.[1]) return null;
+    return parseInt(lastMatch[1], 10);
   } catch (err) {
     console.warn(`[discussnet-ssp] fetchTenantId failed for ${tenantSlug}:`, err instanceof Error ? err.message : err);
     return null;

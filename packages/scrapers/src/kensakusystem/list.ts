@@ -262,6 +262,31 @@ async function navigateTreedepths(
           schedules.push(link);
         }
       }
+
+      // 3レベル構造対応: ResultFrame リンクがなく新たな treedepth がある場合、
+      // もう1段深く探索する（豊田市・西脇市など年グループ→個別年→セッションの構造）
+      if (resultFrameLinks.length === 0) {
+        const subTreedepths = extractTreedepthRawBytes(meetingRawBytes);
+        const newSubTreedepths = subTreedepths.filter(
+          (td) =>
+            !yearTreedepths.some((y) => bytesEqual(y, td)) &&
+            !committeeTreedepths.some((c) => bytesEqual(c, td))
+        );
+        for (const subBytes of newSubTreedepths) {
+          const subName = decodeShiftJis(subBytes);
+          const subBody = `${baseParams}&treedepth=${percentEncodeBytes(subBytes)}`;
+          const subRawBytes = await fetchRawBytesPost(absoluteFormAction, subBody);
+          if (!subRawBytes) continue;
+          const subHtml = decodeShiftJis(subRawBytes);
+          const subLinks = extractResultFrameLinks(subHtml, absoluteFormAction, subName);
+          for (const link of subLinks) {
+            if (!seenUrls.has(link.url)) {
+              seenUrls.add(link.url);
+              schedules.push(link);
+            }
+          }
+        }
+      }
     }
   }
 
