@@ -2,29 +2,40 @@ export type { ParsedStatement, MeetingData } from "./utils/types";
 export type { ScraperAdapter, ListRecord } from "./adapters/adapter";
 export { buildChunksFromStatements } from "./utils/statement-chunking";
 
-// adapter registry: getAdapter で system_type 名から adapter を取得できる
+// adapter registry: ディレクトリを走査して自動登録する。
+// 新しい adapter を追加する場合はこのファイルを編集する必要はなく、
+// adapters/ 配下にディレクトリを作成して adapter を export するだけでよい。
+import { readdirSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { ScraperAdapter } from "./adapters/adapter";
-import { adapter as dbsearch } from "./adapters/dbsearch";
-import { adapter as discussnetSsp } from "./adapters/discussnet-ssp";
-import { adapter as kensakusystem } from "./adapters/kensakusystem";
-import { adapter as gijirokuCom } from "./adapters/gijiroku-com";
-import { adapter as shinagawaKaigiroku } from "./adapters/custom/131091-shinagawa";
-import { adapter as ebetsu } from "./adapters/custom/012173-ebetsu";
-import { adapter as higashimurayama } from "./adapters/custom/132136-higashimurayama";
 
-const registry = new Map<string, ScraperAdapter>([
-  [dbsearch.name, dbsearch],
-  [discussnetSsp.name, discussnetSsp],
-  [kensakusystem.name, kensakusystem],
-  [gijirokuCom.name, gijirokuCom],
-  [shinagawaKaigiroku.name, shinagawaKaigiroku],
-  [ebetsu.name, ebetsu],
-  [higashimurayama.name, higashimurayama],
-]);
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const adaptersDir = join(__dirname, "adapters");
+
+const registry = new Map<string, ScraperAdapter>();
+
+// adapters/ 直下のサブディレクトリ（汎用アダプター）を走査
+for (const entry of readdirSync(adaptersDir, { withFileTypes: true })) {
+  if (!entry.isDirectory() || entry.name === "custom") continue;
+  const mod = await import(join(adaptersDir, entry.name, "index.ts"));
+  const adapter: ScraperAdapter = mod.adapter;
+  registry.set(adapter.name, adapter);
+}
+
+// adapters/custom/ 配下のサブディレクトリ（カスタムアダプター）を走査
+const customDir = join(adaptersDir, "custom");
+for (const entry of readdirSync(customDir, { withFileTypes: true })) {
+  if (!entry.isDirectory()) continue;
+  const mod = await import(join(customDir, entry.name, "index.ts"));
+  const adapter: ScraperAdapter = mod.adapter;
+  registry.set(adapter.name, adapter);
+}
 
 /**
- * system_type 名から ScraperAdapter を取得する。
- * 新しい adapter を追加する場合はこの registry に登録する。
+ * system_type 名または自治体コードから ScraperAdapter を取得する。
+ * 新しい adapter を追加する場合は adapters/ 配下にディレクトリを作成し
+ * `export const adapter: ScraperAdapter = { ... }` を定義するだけでよい。
  */
 export function getAdapter(name: string): ScraperAdapter | undefined {
   return registry.get(name);
