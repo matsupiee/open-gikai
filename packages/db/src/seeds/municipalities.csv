@@ -1500,7 +1500,7 @@
 393631,高知県,土佐町,ｺｳﾁｹﾝ,ﾄｻﾁｮｳ,https://ssp.kaigiroku.net/tenant/tosa/pg/index.html,3442,2025
 393649,高知県,大川村,ｺｳﾁｹﾝ,ｵｵｶﾜﾑﾗ,,347,2025
 393860,高知県,いの町,ｺｳﾁｹﾝ,ｲﾉﾁｮｳ,https://ssp.kaigiroku.net/tenant/ino/SpMinuteSearch.html,20784,2025
-393878,高知県,仁淀川町,ｺｳﾁｹﾝ,ﾆﾖﾄﾞｶﾞﾜﾁｮｳ,,4410,2025
+393878,高知県,仁淀川町,ｺｳﾁｹﾝ,ﾆﾖﾄﾞｶﾞﾜﾁｮｳ,https://ssp.kaigiroku.net/tenant/jodo/pg/index.html,4410,2025
 394017,高知県,中土佐町,ｺｳﾁｹﾝ,ﾅｶﾄｻﾁｮｳ,,5724,2025
 394025,高知県,佐川町,ｺｳﾁｹﾝ,ｻｶﾜﾁｮｳ,,11704,2025
 394033,高知県,越知町,ｺｳﾁｹﾝ,ｵﾁﾁｮｳ,,4789,2025
@@ -1601,14 +1601,14 @@
 422053,長崎県,大村市,ﾅｶﾞｻｷｹﾝ,ｵｵﾑﾗｼ,https://ssp.kaigiroku.net/tenant/omura/MinuteSearch.html,98922,2025
 422070,長崎県,平戸市,ﾅｶﾞｻｷｹﾝ,ﾋﾗﾄﾞｼ,https://ssp.kaigiroku.net/tenant/hirado/SpMinuteSearch.html,27640,2025
 422088,長崎県,松浦市,ﾅｶﾞｻｷｹﾝ,ﾏﾂｳﾗｼ,http://www.city.matsuura.nagasaki.dbsr.jp/index.php/3208049?Template=search-detail,20104,2025
-422096,長崎県,対馬市,ﾅｶﾞｻｷｹﾝ,ﾂｼﾏｼ,,26739,2025
+422096,長崎県,対馬市,ﾅｶﾞｻｷｹﾝ,ﾂｼﾏｼ,http://ssp.kaigiroku.net/tenant/tsushima/pg/index.html,26739,2025
 422100,長崎県,壱岐市,ﾅｶﾞｻｷｹﾝ,ｲｷｼ,,23627,2025
 422118,長崎県,五島市,ﾅｶﾞｻｷｹﾝ,ｺﾞﾄｳｼ,https://ssp.kaigiroku.net/tenant/goto/SpMinuteSearch.html,33338,2025
 422126,長崎県,西海市,ﾅｶﾞｻｷｹﾝ,ｻｲｶｲｼ,https://ssp.kaigiroku.net/tenant/saikai/SpMinuteSearch.html,24108,2025
 422134,長崎県,雲仙市,ﾅｶﾞｻｷｹﾝ,ｳﾝｾﾞﾝｼ,https://ssp.kaigiroku.net/tenant/unzen/MinuteSearch.html,39779,2025
 422142,長崎県,南島原市,ﾅｶﾞｻｷｹﾝ,ﾐﾅﾐｼﾏﾊﾞﾗｼ,https://ssp.kaigiroku.net/tenant/minamishimabara/SpMinuteSearch.html,40141,2025
 423076,長崎県,長与町,ﾅｶﾞｻｷｹﾝ,ﾅｶﾞﾖﾁｮｳ,,39278,2025
-423084,長崎県,時津町,ﾅｶﾞｻｷｹﾝ,ﾄｷﾞﾂﾁｮｳ,,28832,2025
+423084,長崎県,時津町,ﾅｶﾞｻｷｹﾝ,ﾄｷﾞﾂﾁｮｳ,http://www.kensakusystem.jp/togitsu-s/index.html,28832,2025
 423211,長崎県,東彼杵町,ﾅｶﾞｻｷｹﾝ,ﾋｶﾞｼｿﾉｷﾞﾁｮｳ,,7260,2025
 423220,長崎県,川棚町,ﾅｶﾞｻｷｹﾝ,ｶﾜﾀﾅﾁｮｳ,,12833,2025
 423238,長崎県,波佐見町,ﾅｶﾞｻｷｹﾝ,ﾊｻﾐﾁｮｳ,,14030,2025
@@ -1684,7 +1684,7 @@
 452017,宮崎県,宮崎市,ﾐﾔｻﾞｷｹﾝ,ﾐﾔｻﾞｷｼ,http://www.city.miyazaki.miyazaki.dbsr.jp/index.php/8457908?Template=search-phrase,391028,2025
 452025,宮崎県,都城市,ﾐﾔｻﾞｷｹﾝ,ﾐﾔｺﾉｼﾞｮｳｼ,http://www.kensakusystem.jp/miyakonojo/cgi-bin3/Search2.exe?Code=u49rhso923eppz734i&sTarget=2,159904,2025
 452033,宮崎県,延岡市,ﾐﾔｻﾞｷｹﾝ,ﾉﾍﾞｵｶｼ,http://www.kensakusystem.jp/nobeoka/cgi-bin3/Search2.exe?Code=48o046ot0cia1xvtw7&sTarget=2,113244,2025
-452041,宮崎県,日南市,ﾐﾔｻﾞｷｹﾝ,ﾆﾁﾅﾝｼ,,47585,2025
+452041,宮崎県,日南市,ﾐﾔｻﾞｷｹﾝ,ﾆﾁﾅﾝｼ,https://www.city.nichinan.miyazaki.dbsr.jp/,47585,2025
 452050,宮崎県,小林市,ﾐﾔｻﾞｷｹﾝ,ｺﾊﾞﾔｼｼ,https://ssp.kaigiroku.net/tenant/kobayashi/SpMinuteSearch.html,41270,2025
 452068,宮崎県,日向市,ﾐﾔｻﾞｷｹﾝ,ﾋｭｳｶﾞｼ,https://ssp.kaigiroku.net/tenant/hyuga/SpMinuteSearch.html,57294,2025
 452076,宮崎県,串間市,ﾐﾔｻﾞｷｹﾝ,ｸｼﾏｼ,http://www.kensakusystem.jp/kushima/,15898,2025
