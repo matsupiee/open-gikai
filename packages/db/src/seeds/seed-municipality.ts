@@ -60,7 +60,7 @@ function detectSystemType(baseUrl: string): SystemType | null {
   // 自ホスト版 DiscussNet（/tenant/{slug}/ パスパターン）
   if (/\/tenant\/[^/]+\//.test(baseUrl)) return "discussnet_ssp";
   if (baseUrl.includes("dbsr.jp")) return "dbsearch";
-  if (baseUrl.includes("kensakusystem.jp")) return "kensakusystem";
+  if (baseUrl.includes("kensakusystem.jp") && !baseUrl.includes("-vod/")) return "kensakusystem";
   if (baseUrl.includes("gijiroku.com")) return "gijiroku_com";
   // 自前ホスティングの VOICES インスタンス（茅ヶ崎・春日部等）も同じ voiweb.exe CGI
   if (/\/VOICES\//i.test(baseUrl)) return "gijiroku_com";
