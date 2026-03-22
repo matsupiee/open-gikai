@@ -22,31 +22,41 @@ version: 1.0.0
 
 ## 対象アダプターとパターン一覧
 
-| アダプター | ディレクトリ | パターン |
-|---|---|---|
-| dbsearch | `adapters/dbsearch/` | template-view, document-id, doc-one-frame |
-| kensakusystem | `adapters/kensakusystem/` | sapphire, cgi, index-html |
-| discussnet-ssp | `adapters/discussnet-ssp/` | saas, self-hosted, smart |
-| gijiroku-com | `adapters/gijiroku-com/` | standard, self-hosted-voices, asp |
+| アダプター | ディレクトリ | パターン | 導出元 |
+|---|---|---|---|
+| dbsearch | `adapters/dbsearch/` | template-view, document-id, doc-one-frame | `list.ts` の `anchorPattern` 正規表現で分岐する Template 値、`detail.ts` の frameset 判定 |
+| kensakusystem | `adapters/kensakusystem/` | sapphire, cgi, index-html | `list.ts` の `isSapphireType` / `isCgiType` / `isIndexHtmlType` 判定関数 |
+| discussnet-ssp | `adapters/discussnet-ssp/` | saas, self-hosted, smart | `index.ts` の `isSelfHosted` / `isDiscussvision` 分岐、`shared.ts` の `buildApiBase` |
+| gijiroku-com | `adapters/gijiroku-com/` | standard, self-hosted-voices, asp | `seeds/seed-municipality.ts` の `detectSystemType` の URL パターン分岐（`gijiroku.com` / `/VOICES/` / `g0[78]v_search.asp`） |
+
+パターン名はフィクスチャのディレクトリ名として使う。新たなパターンが見つかった場合は、コード内の分岐条件から命名してディレクトリを追加する。
 
 ## 実行手順
 
 ### Step 1: アダプターのコード調査
 
-対象アダプターの以下のファイルを読み、パターンの分岐ポイントを特定する:
+対象アダプターの `index.ts` を起点に全ファイルを読み、パターンの分岐ポイントを特定する。
 
+**アダプターごとのファイル構成が異なる**ため、まず実際のファイル一覧を確認すること:
+
+```bash
+ls packages/scrapers/src/adapters/{adapter-name}/
 ```
-packages/scrapers/src/adapters/{adapter-name}/
-├── index.ts    # ScraperAdapter 実装（fetchList / fetchDetail）
-├── list.ts     # 一覧取得ロジック（パターンごとの URL 構造・HTML パース分岐）
-├── detail.ts   # 詳細取得ロジック（パターンごとの HTML 構造分岐）
-└── shared.ts   # 共通ユーティリティ（存在する場合）
-```
+
+参考: 各アダプターの主要ファイル構成
+
+| アダプター | list フェーズ | detail フェーズ | その他 |
+|---|---|---|---|
+| dbsearch | `list.ts` | `detail.ts` | — |
+| kensakusystem | `list.ts`, `list-fetch.test.ts` | `detail.ts` | `shared.ts`（Shift_JIS エンコーディング） |
+| discussnet-ssp | `schedule.ts`（API 呼び出し） | `minute.ts`（API 呼び出し） | `shared.ts`（API base URL 構築） |
+| gijiroku-com | `list.ts` | `detail.ts` | `fetch-page.ts`, `url.ts`, `decode-shift-jis.ts` |
 
 確認すべきポイント:
-- **list.ts**: URL パターンの分岐（if/switch）、parseListHtml の正規表現パターン
-- **detail.ts**: HTML 構造の分岐（frameset 判定、class 名による抽出バリアント）
-- **list.ts / detail.ts のファイルコメント**: 「バリアント」や「形式」の記載
+- **index.ts**: `fetchList` / `fetchDetail` の呼び出し先と引数の構造
+- **list / schedule 系ファイル**: URL パターンの分岐（if/switch）、パース関数の分岐
+- **detail / minute 系ファイル**: レスポンス構造の分岐（HTML パース or JSON パース）
+- **ファイル先頭のコメント**: 「バリアント」や「形式」の記載があることが多い
 
 ### Step 2: パターンごとの代表自治体を特定
 
@@ -110,9 +120,14 @@ mkdir -p packages/scrapers/src/adapters/{adapter-name}/__fixtures__/patterns/{pa
 | `schedules.json` | スケジュール一覧 API レスポンス |
 | `minute.json` | 議事録詳細 API レスポンス |
 
-### Step 4: フィクスチャ HTML の取得
+### Step 4: フィクスチャの取得
 
-セッション管理が必要なサイトが多いため、**bun スクリプトで一括取得**する。
+アダプターの種類（HTML ベース / JSON API ベース）に応じて取得方法が異なる。
+いずれも **bun スクリプトで一括取得** する。
+
+#### 4a. HTML ベースのアダプター（dbsearch, kensakusystem, gijiroku-com）
+
+セッション管理が必要なサイトが多いため、Cookie を引き回しながら取得する。
 
 ```typescript
 // /tmp/fetch-{adapter}-fixtures.ts
@@ -161,6 +176,53 @@ async function fetchPattern(config: SiteConfig) {
 - CSRF トークンがある場合は POST に含める
 - フレームセットのセッション ID は top page → search → detail の一連のフローで取得する必要がある
 
+#### 4b. JSON API ベースのアダプター（discussnet-ssp）
+
+discussnet-ssp は HTML パースではなく JSON API を呼び出す。取得スクリプトも API 呼び出しベースになる。
+
+```typescript
+// /tmp/fetch-discussnet-fixtures.ts
+
+import { writeFileSync, mkdirSync } from "node:fs";
+
+const UA = "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
+
+interface SspSiteConfig {
+  pattern: string;
+  tenantSlug: string;
+  host?: string;          // self-hosted の場合
+  tenantJsUrl?: string;   // smart の場合
+  year: number;
+}
+
+const sites: SspSiteConfig[] = [
+  // SaaS 例: { pattern: "saas", tenantSlug: "xxx", year: 2024 }
+  // self-hosted 例: { pattern: "self-hosted", tenantSlug: "xxx", host: "https://...", year: 2024 }
+];
+
+async function fetchSspPattern(config: SspSiteConfig) {
+  const dir = `packages/scrapers/src/adapters/discussnet-ssp/__fixtures__/patterns/${config.pattern}`;
+  mkdirSync(dir, { recursive: true });
+
+  // 1. tenant.js を取得して保存
+  const tenantJsUrl = config.tenantJsUrl
+    ?? (config.host
+      ? `${config.host}/tenant/${config.tenantSlug}/js/tenant.js`
+      : `https://ssp.kaigiroku.net/tenant/${config.tenantSlug}/js/tenant.js`);
+  const tenantRes = await fetch(tenantJsUrl, { headers: { "User-Agent": UA } });
+  writeFileSync(`${dir}/tenant.js`, await tenantRes.text());
+
+  // 2. tenant_id を抽出して council API を呼び出し
+  // const apiBase = config.host ? buildApiBase(config.host) : "https://ssp.kaigiroku.net";
+  // const councilsUrl = `${apiBase}/api/v1/councils?tenant_id=${tenantId}&year=${config.year}`;
+  // → councils.json として保存
+
+  // 3. schedule API を呼び出し → schedules.json として保存
+
+  // 4. minute API を呼び出し → minute.json として保存
+}
+```
+
 ### Step 5: フィクスチャの検証
 
 取得した HTML が期待通りのパターンを含んでいることを確認する:
@@ -186,8 +248,11 @@ grep 'command__docname\|command__title\|view__title' __fixtures__/patterns/{patt
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
-// アダプター固有の関数を import
-import { fetchMeetingList, parseListHtml, hasNextPage } from "./list";
+// アダプター固有の関数を import（関数名はアダプターごとに異なる）
+// dbsearch:       import { fetchMeetingList, parseListHtml, hasNextPage } from "./list";
+// kensakusystem:  import { fetchMeetingList, ... } from "./list";
+// discussnet-ssp: import { fetchTenantId, fetchCouncils, fetchSchedules } from "./schedule";
+// gijiroku-com:   import { fetchMeetingList, ... } from "./list";
 
 const fixture = (pattern: string, file: string) =>
   readFileSync(
@@ -196,13 +261,16 @@ const fixture = (pattern: string, file: string) =>
   );
 ```
 
-テストは2層で書く:
+テストは2層で書く。以下のサンプルコードは **HTML ベースのアダプター（dbsearch 等）の場合**。
+discussnet-ssp の場合は JSON レスポンスのモックに置き換えること（後述の「discussnet-ssp 固有のテストパターン」参照）。
 
 #### 6a. パース関数の実データテスト
 
-`parseListHtml` 等のパース関数に実データフィクスチャを渡し、出力を検証する。
+list フェーズのパース関数に実データフィクスチャを渡し、出力を検証する。
+関数名はアダプターごとに異なるため、Step 1 で調査した export 関数を使う。
 
 ```typescript
+// dbsearch の例
 describe("parseListHtml with real fixtures", () => {
   test("{pattern-name}: {特徴} リンクからレコードを抽出", () => {
     const html = fixture("{pattern-name}", "search-result.html");
@@ -217,11 +285,12 @@ describe("parseListHtml with real fixtures", () => {
 });
 ```
 
-#### 6b. fetchMeetingList 統合テスト
+#### 6b. ScraperAdapter.fetchList 統合テスト
 
 `fetch` をモックして完全なフローをテストする。
 
 ```typescript
+// HTML ベースのアダプターの例（dbsearch / kensakusystem / gijiroku-com）
 describe("fetchMeetingList integration", () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -242,7 +311,7 @@ describe("fetchMeetingList integration", () => {
       text: () => Promise.resolve(searchHtml),
       headers: new Headers(),
     });
-    // hasNextPage=true の場合: 3rd call は空レスポンスで打ち切り
+    // hasNextPage がある場合: 次のコールは空レスポンスで打ち切り
     mockFetch.mockResolvedValueOnce({
       ok: true,
       text: () => Promise.resolve("<html></html>"),
@@ -254,9 +323,45 @@ describe("fetchMeetingList integration", () => {
 
     expect(records).not.toBeNull();
     expect(records!.length).toBe(/* 期待レコード数 */);
-    // POST パラメータの検証
-    const postCall = mockFetch.mock.calls[1];
-    expect(postCall![1].method).toBe("POST");
+  });
+});
+```
+
+#### discussnet-ssp 固有のテストパターン
+
+discussnet-ssp は JSON API を使うため、フィクスチャとモックの構成が異なる。
+
+```typescript
+// discussnet-ssp の list テスト例
+import { fetchTenantId, fetchCouncils, fetchSchedules } from "./schedule";
+
+describe("fetchTenantId with real fixtures", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  test("{pattern}: tenant.js から tenantId を取得", async () => {
+    const tenantJs = fixture("{pattern}", "tenant.js");
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(tenantJs),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    const tenantId = await fetchTenantId("{slug}");
+    expect(tenantId).toBe(/* フィクスチャの実際の tenantId */);
+  });
+});
+
+describe("fetchCouncils with real fixtures", () => {
+  test("{pattern}: 会議一覧を取得", async () => {
+    const councilsJson = fixture("{pattern}", "councils.json");
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(JSON.parse(councilsJson)),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    const councils = await fetchCouncils(/* tenantId */, /* year */);
+    expect(councils.length).toBeGreaterThan(0);
   });
 });
 ```
@@ -367,7 +472,7 @@ worktree ルールに従い、PR まで自動で作成する。
 テスト規約（`.claude/rules/test-writing-guidelines.md`）に従う:
 
 - **期待値はベタ書き**: フィクスチャの内容を確認して、ID・タイトル・日付・レコード数をリテラルで記述
-- **ヘルパー関数を使わない**: fixture 読み込み関数のみ例外
+- **ヘルパー関数を使わない**: `readFileSync` ベースのフィクスチャ読み込み関数のみ例外（`test-writing-guidelines.md` に明記済み）
 - **id は変数参照**: テスト間で共有する ID はフィクスチャから取得した値を使う
 
 パターン固有のアサーション:
