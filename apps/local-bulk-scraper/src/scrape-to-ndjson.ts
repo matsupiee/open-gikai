@@ -11,6 +11,7 @@
  *   bun run scrape:ndjson -- --year 2025 --system-type discussnet_ssp
  *   bun run scrape:ndjson -- --system-type discussnet_ssp --council-limit 2
  *   bun run scrape:ndjson -- --system-type kensakusystem --meeting-limit 2
+ *   bun run scrape:ndjson -- --target 011002,012025
  */
 
 import { createHash } from "node:crypto";
@@ -20,7 +21,7 @@ import { fileURLToPath } from "node:url";
 import { createDb } from "@open-gikai/db";
 import { municipalities, system_types } from "@open-gikai/db/schema";
 import { createId } from "@paralleldrive/cuid2";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import dotenv from "dotenv";
 import type { MeetingData } from "@open-gikai/scrapers";
 import type { SystemType } from "@open-gikai/db/schema";
@@ -106,6 +107,17 @@ function parseMeetingLimit(): number | undefined {
 
 const VALID_SYSTEM_TYPES: SystemType[] = ["discussnet_ssp", "dbsearch", "kensakusystem", "gijiroku_com"];
 
+function parseTarget(): string[] | undefined {
+  const idx = process.argv.indexOf("--target");
+  if (idx === -1) return undefined;
+  const val = process.argv[idx + 1];
+  if (!val) {
+    console.error(`[scrape-to-ndjson] --target に自治体コードを指定してください（カンマ区切りで複数指定可）`);
+    process.exit(1);
+  }
+  return val.split(",").map((s) => s.trim());
+}
+
 function parseSystemType(): SystemType | undefined {
   const idx = process.argv.indexOf("--system-type");
   if (idx === -1) return undefined;
@@ -179,6 +191,7 @@ function runGroupedByHost(
 async function main() {
   const targetYear = parseYear();
   const targetSystemType = parseSystemType();
+  const targetCodes = parseTarget();
   const councilLimit = parseCouncilLimit();
   const meetingLimit = parseMeetingLimit();
 
@@ -226,12 +239,20 @@ async function main() {
   if (meetingLimit) {
     log("INFO", `[scrape-to-ndjson] meeting 数制限: 各自治体 ${meetingLimit} 件まで`);
   }
+  if (targetCodes) {
+    log("INFO", `[scrape-to-ndjson] 対象自治体コード: ${targetCodes.join(", ")}`);
+  }
   log("INFO", "[scrape-to-ndjson] Starting...");
 
   // 2. DB から enabled な municipalities + system_types を取得
+  const conditions = [eq(municipalities.enabled, true)];
+  if (targetCodes) {
+    conditions.push(inArray(municipalities.code, targetCodes));
+  }
   const targets = await db
     .select({
       id: municipalities.id,
+      code: municipalities.code,
       name: municipalities.name,
       prefecture: municipalities.prefecture,
       baseUrl: municipalities.baseUrl,
@@ -239,7 +260,7 @@ async function main() {
     })
     .from(municipalities)
     .leftJoin(system_types, eq(municipalities.systemTypeId, system_types.id))
-    .where(and(eq(municipalities.enabled, true)));
+    .where(and(...conditions));
 
   const enabledTargets = targets.filter((t) => {
     if (!t.baseUrl || !t.systemTypeName) return false;
