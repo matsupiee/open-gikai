@@ -12,6 +12,7 @@ import {
   percentEncodeBytes,
   extractTreedepthRawBytes,
   extractDate,
+  normalizeFullWidth,
   stripHtmlTags,
 } from "./shared";
 
@@ -158,6 +159,22 @@ function buildBaseParams(hiddenInputs: Record<string, string>): string {
     .join("&");
 }
 
+/** treedepth ラベル（例: "令和7年" "平成30年"）から西暦年を抽出する */
+function extractYearFromLabel(label: string): number | null {
+  const wareki: Record<string, number> = {
+    令和: 2018,
+    平成: 1988,
+    昭和: 1925,
+  };
+  for (const [era, base] of Object.entries(wareki)) {
+    const m = label.match(new RegExp(`${era}\\s*(\\d+)\\s*年`));
+    if (m?.[1]) return base + Number(m[1]);
+  }
+  const western = label.match(/(\d{4})\s*年/);
+  if (western?.[1]) return Number(western[1]);
+  return null;
+}
+
 /**
  * sapphire.html から議事録一覧を取得。
  *
@@ -172,7 +189,8 @@ function buildBaseParams(hiddenInputs: Record<string, string>): string {
  * URLSearchParams は UTF-8 エンコードするため使用不可。
  */
 export async function fetchFromSapphire(
-  baseUrl: string
+  baseUrl: string,
+  targetYear?: number
 ): Promise<KensakusystemSchedule[] | null> {
   const html = await fetchWithEncoding(baseUrl);
   if (!html) return null;
@@ -215,6 +233,16 @@ export async function fetchFromSapphire(
   const seenUrls = new Set<string>();
 
   for (const yearBytes of yearTreedepths) {
+    // targetYear が指定されている場合、treedepth ラベルから年を判定してスキップ
+    // 年度（4月〜翌3月）を考慮し、targetYear と targetYear-1 の年を探索する
+    if (targetYear) {
+      const yearLabel = normalizeFullWidth(decodeShiftJis(yearBytes));
+      const labelYear = extractYearFromLabel(yearLabel);
+      if (labelYear && labelYear !== targetYear && labelYear !== targetYear - 1) {
+        continue;
+      }
+    }
+
     const yearBody = `${baseParams}&treedepth=${percentEncodeBytes(yearBytes)}`;
     const yearRawBytes = await fetchRawBytesPost(absoluteFormAction, yearBody);
     if (!yearRawBytes) continue;
@@ -275,7 +303,8 @@ export async function fetchFromSapphire(
  * 辿って sapphire フロー（treedepth ナビゲーション）にフォールバックする。
  */
 export async function fetchFromCgi(
-  baseUrl: string
+  baseUrl: string,
+  targetYear?: number
 ): Promise<KensakusystemSchedule[] | null> {
   const html = await fetchWithEncoding(baseUrl);
   if (!html) return null;
@@ -286,7 +315,7 @@ export async function fetchFromCgi(
   // 日付つき See.exe リンクが見つからない場合（例: Search2.exe?sTarget=2 の検索フォームページ）:
   // ページ内に See.exe ツリービューへのメニューリンクがある可能性がある。
   // sapphire フロー（treedepth ナビゲーション）で再試行する。
-  return fetchFromSapphire(baseUrl);
+  return fetchFromSapphire(baseUrl, targetYear);
 }
 
 /**
@@ -297,7 +326,8 @@ export async function fetchFromCgi(
  * 日付つきリンクが見つからない場合は sapphire フローにフォールバックする。
  */
 export async function fetchFromIndexHtml(
-  baseUrl: string
+  baseUrl: string,
+  targetYear?: number
 ): Promise<KensakusystemSchedule[] | null> {
   const html = await fetchWithEncoding(baseUrl);
   if (!html) return null;
@@ -307,5 +337,5 @@ export async function fetchFromIndexHtml(
 
   // 日付つき See.exe リンクが見つからない場合:
   // sapphire フロー（treedepth ナビゲーション）で再試行する。
-  return fetchFromSapphire(baseUrl);
+  return fetchFromSapphire(baseUrl, targetYear);
 }

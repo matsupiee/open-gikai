@@ -5,6 +5,8 @@
 export const USER_AGENT =
   "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
 
+const FETCH_TIMEOUT_MS = 15_000;
+
 /** 日本語の全角数字を半角に正規化 */
 export function normalizeFullWidth(str: string): string {
   return str.replace(/[０-９]/g, (c) =>
@@ -68,6 +70,7 @@ export async function fetchWithEncoding(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!res.ok) return null;
 
@@ -92,6 +95,7 @@ export async function fetchWithEncodingPost(
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body,
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!res.ok) return null;
 
@@ -108,6 +112,7 @@ export async function fetchRawBytes(url: string): Promise<Uint8Array | null> {
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!res.ok) return null;
     return new Uint8Array(await res.arrayBuffer());
@@ -129,6 +134,7 @@ export async function fetchRawBytesPost(
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body,
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!res.ok) return null;
     return new Uint8Array(await res.arrayBuffer());
