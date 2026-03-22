@@ -20,7 +20,7 @@ export interface ListRecord {
  * 2フェーズスクレイパーのアダプターインターフェース。
  */
 export interface ScraperAdapter {
-  /** system_type 名（DB の system_types.name と一致させる） */
+  /** adapter 識別子。汎用アダプターは system_types.name、カスタムアダプターは自治体コード */
   readonly name: string;
 
   /**

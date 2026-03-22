@@ -17,7 +17,7 @@ export { parseListPage } from "./list";
 export { parseStatements, parseSpeaker, classifyKind } from "./detail";
 
 export const adapter: ScraperAdapter = {
-  name: "shinagawa_kaigiroku",
+  name: "131091",
 
   async fetchList({ year }): Promise<ListRecord[]> {
     const documents = await fetchDocumentList(year);
