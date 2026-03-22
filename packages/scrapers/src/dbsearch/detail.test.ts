@@ -27,6 +27,26 @@ describe("extractTitle", () => {
     expect(extractTitle(html)).toBe("令和７年第４回定例会（第７日目） 本文");
   });
 
+  test("新形式 command__title から抽出", () => {
+    const html = '<h2 class="command__title">令和７年第４回定例会（第８号）  議事日程・名簿</h2>';
+    expect(extractTitle(html)).toBe("令和７年第４回定例会（第８号） 議事日程・名簿");
+  });
+
+  test("新形式 command__title（日付 span 付き）から抽出", () => {
+    const html = '<h2 class="command__title"><span class="command__date">2025-12-19</span>：令和７年第５回定例会（第５日）    名簿</h2>';
+    expect(extractTitle(html)).toBe("令和７年第５回定例会（第５日） 名簿");
+  });
+
+  test("h1 の command__title から抽出", () => {
+    const html = '<h1 class="command__title">令和７年第４回定例会（第８号） 本文</h1>';
+    expect(extractTitle(html)).toBe("令和７年第４回定例会（第８号） 本文");
+  });
+
+  test("h1 の command__title（date タグ付き）から抽出", () => {
+    const html = '<h1 class="command__title">令和７年第２回臨時市会（第２日） <date class="command__date">2025-12-26</date> </h1>';
+    expect(extractTitle(html)).toBe("令和７年第２回臨時市会（第２日）");
+  });
+
   test("マッチしない場合はnull", () => {
     expect(extractTitle("<div>タイトルなし</div>")).toBeNull();
   });
@@ -41,6 +61,16 @@ describe("extractDate", () => {
   test("新形式 view__date + time タグから抽出", () => {
     const html = '<p class="view__date">開催日: <time>2025-12-17</time></p>';
     expect(extractDate(html)).toBe("2025-12-17");
+  });
+
+  test("date タグの command__date から抽出", () => {
+    const html = '<date class="command__date">2025-12-26</date>';
+    expect(extractDate(html)).toBe("2025-12-26");
+  });
+
+  test("日本語日付形式から抽出", () => {
+    const html = '<span class="date">2025年12月19日</span>';
+    expect(extractDate(html)).toBe("2025-12-19");
   });
 
   test("マッチしない場合はnull", () => {
@@ -297,6 +327,37 @@ describe("extractStatements", () => {
 
     expect(stmts[0]!.speakerRole).toBe("議長");
     expect(stmts[0]!.speakerName).toBe("野田譲");
+    expect(stmts[0]!.kind).toBe("remark");
+    expect(stmts[0]!.content).toBe("これより本日の会議を開きます。");
+
+    expect(stmts[1]!.speakerRole).toBe("議員");
+    expect(stmts[1]!.speakerName).toBe("田中太郎");
+    expect(stmts[1]!.kind).toBe("question");
+    expect(stmts[1]!.content).toBe("質問があります。");
+  });
+
+  test("新形式: page-text__voice から発言を抽出する", () => {
+    const html = `
+      <div class="page-text">
+        <div class="page-text__voice" id="VoiceNo1">
+          <p class="page-text__text textwrap">
+            <span class="page-text__number VoiceAnchor" data-voiceno="1">1</span>
+            ◯議長（奈良岡隆君）　これより本日の会議を開きます。
+          </p>
+        </div>
+        <div class="page-text__voice" id="VoiceNo2">
+          <p class="page-text__text textwrap">
+            <span class="page-text__number VoiceAnchor" data-voiceno="2">2</span>
+            ◯議員（田中太郎）　質問があります。
+          </p>
+        </div>
+      </div>
+    `;
+    const stmts = extractStatements(html);
+    expect(stmts).toHaveLength(2);
+
+    expect(stmts[0]!.speakerRole).toBe("議長");
+    expect(stmts[0]!.speakerName).toBe("奈良岡隆");
     expect(stmts[0]!.kind).toBe("remark");
     expect(stmts[0]!.content).toBe("これより本日の会議を開きます。");
 

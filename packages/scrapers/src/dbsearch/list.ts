@@ -17,6 +17,7 @@ export interface DbsearchMeetingRecord {
   id: string;
   url: string;
   title: string;
+  date: string | null;
 }
 
 /**
@@ -44,9 +45,11 @@ export async function fetchMeetingList(
     const csrfToken = extractCsrfToken(initHtml) ?? "";
 
     const cookie = buildCookieHeader(initRes.headers);
-    // トップページの form action からIDを取得できない場合は baseUrl 自体から抽出する
+    // トップページの form action → baseUrl → ページ内リンクの順にIDを探す
     const searchEndpointId =
-      extractFormActionId(initHtml) ?? extractEndpointIdFromUrl(baseUrl);
+      extractFormActionId(initHtml) ??
+      extractEndpointIdFromUrl(baseUrl) ??
+      extractEndpointIdFromLinks(initHtml);
     if (!searchEndpointId) return null;
 
     const searchUrl = `${origin}${pathPrefix}${searchEndpointId}`;
@@ -170,6 +173,15 @@ export function extractEndpointIdFromUrl(url: string): string | null {
 }
 
 /**
+ * ページ内の <a href> リンクからエンドポイントIDを抽出する。
+ * フォーム action や baseUrl からIDが取れない場合のフォールバック。
+ */
+function extractEndpointIdFromLinks(html: string): string | null {
+  const m = html.match(/href="[^"]*\/index\.php\/(\d+)/);
+  return m?.[1] ?? null;
+}
+
+/**
  * 結果ページの HTML から議事録レコードを抽出する。
  * 旧形式: href="...?Template=view&Id={docId}..."
  * 新形式: href="...?Template=document&Id={docId}..."
@@ -183,8 +195,9 @@ export function parseListHtml(
   const seen = new Set<string>();
 
   // 旧形式: &Id=123 / 新形式: &DocumentID=123
+  // Template の値: view, document（旧）, doc-one-frame, doc-all-frame（新）
   const anchorPattern =
-    /<a\s[^>]*href="([^"]+Template=(?:view|document)[^"]*(?:&amp;|&)(?:Document)?Id=(\d+)[^"]*)"[^>]*>([^<]+)<\/a>/gi;
+    /<a\s[^>]*href="([^"]+Template=(?:view|document|doc-one-frame|doc-all-frame)[^"]*(?:&amp;|&)(?:Document)?[Ii][Dd]=(\d+)[^"]*)"[^>]*>([^<]+)<\/a>/gi;
 
   let match;
   while ((match = anchorPattern.exec(html)) !== null) {
@@ -198,12 +211,38 @@ export function parseListHtml(
     if (!docId || seen.has(docId)) continue;
     seen.add(docId);
 
+    // アンカー直後の日付 span を探す (複数のクラス名・形式に対応)
+    const afterAnchor = html.slice(match.index + match[0].length, match.index + match[0].length + 300);
+    const date = extractListDate(afterAnchor);
+
     // 相対URLの場合はoriginを補完する
     const url = rawUrl.startsWith("http") ? rawUrl : `${origin}${rawUrl}`;
-    records.push({ id: docId, url, title });
+    records.push({ id: docId, url, title, date });
   }
 
   return records;
+}
+
+/**
+ * リストのアンカー直後のHTMLから日付を抽出する。
+ * 対応形式:
+ *   - <span class="result-title__date">2025-12-24</span>
+ *   - <span class="result-document-date">2025-12-19</span>
+ *   - <span class="result-title__date">開催日：2025-12-11</span>
+ *   - <span class="date">2025年12月19日</span>
+ */
+function extractListDate(html: string): string | null {
+  // ISO 形式 (YYYY-MM-DD)
+  const iso = html.match(/<span[^>]*>(?:[^<]*?)(\d{4}-\d{2}-\d{2})<\/span>/);
+  if (iso?.[1]) return iso[1];
+
+  // 日本語形式 (YYYY年MM月DD日)
+  const ja = html.match(/<span[^>]*>(\d{4})年(\d{1,2})月(\d{1,2})日<\/span>/);
+  if (ja?.[1] && ja[2] && ja[3]) {
+    return `${ja[1]}-${ja[2].padStart(2, "0")}-${ja[3].padStart(2, "0")}`;
+  }
+
+  return null;
 }
 
 /**
