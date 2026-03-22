@@ -13,7 +13,7 @@
  *   </table>
  */
 
-import { buildListUrl, fetchPage } from "./shared";
+import { buildListUrls, fetchPage } from "./shared";
 
 export interface NiihamaDocument {
   /** 年 */
@@ -90,11 +90,21 @@ export function parseListPage(html: string, _year: number): NiihamaDocument[] {
 
 /**
  * 指定年の全会議録ドキュメント一覧を取得する。
+ * 候補URLを順に試し、対象年のドキュメントが見つかったら返す。
  */
 export async function fetchDocumentList(year: number): Promise<NiihamaDocument[]> {
-  const url = buildListUrl(year);
-  const html = await fetchPage(url);
-  if (!html) return [];
+  const urls = buildListUrls(year);
 
-  return parseListPage(html, year);
+  for (const url of urls) {
+    const html = await fetchPage(url);
+    if (!html) continue;
+
+    const documents = parseListPage(html, year);
+    // 対象年のドキュメントが含まれている場合のみ返す
+    if (documents.some((d) => d.year === year)) {
+      return documents.filter((d) => d.year === year);
+    }
+  }
+
+  return [];
 }
