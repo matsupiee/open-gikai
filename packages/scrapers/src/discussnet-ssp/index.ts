@@ -13,4 +13,5 @@ export {
 
 export {
   fetchMinuteData,
+  extractDateFromScheduleName,
 } from "./minute";
