@@ -25,20 +25,20 @@ describe("parseDateFromFilename", () => {
 });
 
 const INDEX_HTML = `
-<h2>令和7年</h2>
+<h2><span class="bg"><span class="bg2"><span class="bg3">令和7年</span></span></span></h2>
 <div>
   <h3>3月定例会</h3>
-  <a href="https://www.city.yonezawa.yamagata.jp/soshiki/12/1037/5/1/R6/9035.html">令和7年3月定例会</a>
+  <p class="link-item"><a class="icon" href="https://www.city.yonezawa.yamagata.jp/soshiki/12/1037/5/1/R6/9035.html">令和7年3月定例会</a></p>
   <p>一般質問15人</p>
   <h3>6月定例会</h3>
-  <a href="https://www.city.yonezawa.yamagata.jp/soshiki/12/1037/5/1/R7/10345.html">令和7年6月定例会</a>
+  <p class="link-item"><a class="icon" href="https://www.city.yonezawa.yamagata.jp/soshiki/12/1037/5/1/R7/10345.html">令和7年6月定例会</a></p>
   <p>一般質問17人</p>
-  <a href="//www.city.yonezawa.yamagata.jp/material/files/group/38/r07-02r-01-0203.pdf">2月臨時会 (PDFファイル: 319.5KB)</a>
+  <p class="file-link-item"><a class="pdf" href="//www.city.yonezawa.yamagata.jp/material/files/group/38/r07-02r-01-0203.pdf">2月臨時会 (PDFファイル: 319.5KB)</a></p>
 </div>
-<h2>令和6年</h2>
+<h2><span class="bg"><span class="bg2"><span class="bg3">令和6年</span></span></span></h2>
 <div>
   <h3>3月定例会</h3>
-  <a href="https://www.city.yonezawa.yamagata.jp/soshiki/12/1037/5/1/13/8024.html">令和6年3月定例会</a>
+  <p class="link-item"><a class="icon" href="https://www.city.yonezawa.yamagata.jp/soshiki/12/1037/5/1/13/8024.html">令和6年3月定例会</a></p>
 </div>
 `;
 

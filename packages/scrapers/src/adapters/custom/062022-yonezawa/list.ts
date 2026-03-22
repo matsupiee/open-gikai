@@ -77,8 +77,8 @@ export function parseIndexPage(
 
   const targetHeader = `${targetEra}${targetEraYear}年`;
 
-  // 年ごとのセクションを見つける
-  const h2Pattern = /<h2[^>]*>[^<]*<\/h2>/gi;
+  // 年ごとのセクションを見つける（h2 内に span 等のネストあり）
+  const h2Pattern = /<h2[^>]*>[\s\S]*?<\/h2>/gi;
   const h2Matches = [...html.matchAll(h2Pattern)];
 
   let sectionStart = -1;
