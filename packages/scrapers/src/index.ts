@@ -8,12 +8,14 @@ import { adapter as dbsearch } from "./adapters/dbsearch";
 import { adapter as discussnetSsp } from "./adapters/discussnet-ssp";
 import { adapter as kensakusystem } from "./adapters/kensakusystem";
 import { adapter as gijirokuCom } from "./adapters/gijiroku-com";
+import { adapter as shinagawaKaigiroku } from "./adapters/custom/131091-shinagawa";
 
 const registry = new Map<string, ScraperAdapter>([
   [dbsearch.name, dbsearch],
   [discussnetSsp.name, discussnetSsp],
   [kensakusystem.name, kensakusystem],
   [gijirokuCom.name, gijirokuCom],
+  [shinagawaKaigiroku.name, shinagawaKaigiroku],
 ]);
 
 /**
