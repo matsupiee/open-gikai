@@ -223,6 +223,24 @@ describe("parseListHtml", () => {
     expect(records[0]!.dateLabel).toBe("12月17日-01号");
   });
 
+  test("HREF 形式で UNID なしの場合は KGNO_FINO を unid に使用（八代市）", () => {
+    const html = `
+      <TABLE BORDER=0>
+      <TR><TD NOWRAP BGCOLOR="#DDDDEE" ALIGN=LEFT COLSPAN=3>
+      <A HREF="voiweb.exe?ACT=100&FINO=952"><IMG BORDER=0 SRC="/VOICES/image/folder.gif"></A>
+      令和　６年１２月定例会,<A HREF="voiweb.exe?ACT=200&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&FYY=2024&TYY=2024&TITL_SUBT=test&KGNO=215&FINO=952" TARGET="HLD_WIN" onClick="window.open('','HLD_WIN','resizable=yes,menubar=yes,toolbar=yes');">11月25日-01号</A>
+      </TD></TR>
+      </TABLE>
+    `;
+    const records = parseListHtml(html);
+    expect(records).toHaveLength(1);
+    expect(records[0]!.fino).toBe("952");
+    expect(records[0]!.kgno).toBe("215");
+    expect(records[0]!.unid).toBe("215_952");
+    expect(records[0]!.dateLabel).toBe("11月25日-01号");
+    expect(records[0]!.title).toContain("令和");
+  });
+
   test("winopen 形式が優先され HREF 形式は fallback", () => {
     // winopen 形式がある場合は HREF 形式は使用されない
     const html = `

@@ -98,10 +98,11 @@ export function parseListHtml(html: string): GijirokuMeetingRecord[] {
   const patternA =
     /winopen\('voiweb\.exe\?ACT=200[^']*&KGNO=(\d+)&FINO=(\d+)(?:&UNID=([^']+))?'\);"[^>]*>([^<]+)<\/A>/gi;
 
-  // パターン B: HREF="voiweb.exe?ACT=200&...&KGNO={kgno}&FINO={fino}&UNID={unid}" ... onClick="window.open(..."
+  // パターン B: HREF="voiweb.exe?ACT=200&...&KGNO={kgno}&FINO={fino}[&UNID={unid}]" ... onClick="window.open(..."
   // 太田市・狭山市・蕨市・海老名市・富士市など winopen を使わないサイト
+  // UNID はオプション（八代市など UNID なしのサイトがある）
   const patternB =
-    /HREF="voiweb\.exe\?ACT=200[^"]*&KGNO=(\d+)&FINO=(\d+)&UNID=([^"&]+)"[^>]*>([^<]+)<\/A>/gi;
+    /HREF="voiweb\.exe\?ACT=200[^"]*&KGNO=(\d+)&FINO=(\d+)(?:&UNID=([^"&]+))?"[^>]*>([^<]+)<\/A>/gi;
 
   const addRecord = (
     match: RegExpExecArray,

@@ -124,6 +124,16 @@ describe("extractBaseInfo", () => {
     });
   });
 
+  test("自前ホスト /VOICES/ 末尾スラッシュのみ（八代市）", () => {
+    const info = extractBaseInfo(
+      "https://www.city.yatsushiro.kumamoto.jp/VOICES/"
+    );
+    expect(info).toEqual({
+      origin: "https://www.city.yatsushiro.kumamoto.jp",
+      basePath: "/VOICES",
+    });
+  });
+
   test("ルートパスのみは null", () => {
     expect(extractBaseInfo("http://example.com/")).toBeNull();
   });
