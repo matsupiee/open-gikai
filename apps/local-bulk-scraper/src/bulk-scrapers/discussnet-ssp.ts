@@ -34,11 +34,26 @@ export async function scrapeAll(
   }
   const tenantSlug = slugMatch[1];
 
-  const isSelfHosted = !baseUrl.includes("ssp.kaigiroku.net");
+  const isDiscussvision = baseUrl.includes("discussvision.net");
+  const isSelfHosted =
+    !baseUrl.includes("ssp.kaigiroku.net") && !isDiscussvision;
   const host = isSelfHosted ? extractHost(baseUrl) : undefined;
   const apiBase = isSelfHosted ? buildApiBase(baseUrl) : undefined;
 
-  const tenantId = await fetchTenantId(tenantSlug, host);
+  // smart.discussvision.net の自治体は tenant_id の取得に注意が必要:
+  // - 一部は ssp.kaigiroku.net にも存在し、そちらの tenant_id が API で有効
+  // - 一部は ssp.kaigiroku.net に存在せず、smart.discussvision.net の tenant_id が必要
+  // まず ssp.kaigiroku.net を試し、失敗時に smart.discussvision.net にフォールバック
+  let tenantId: number | null;
+  if (isDiscussvision) {
+    tenantId = await fetchTenantId(tenantSlug);
+    if (!tenantId) {
+      const tenantJsUrl = baseUrl.replace(/\/rd\/[^/]+$/, "/js/tenant.js");
+      tenantId = await fetchTenantId(tenantSlug, undefined, tenantJsUrl);
+    }
+  } else {
+    tenantId = await fetchTenantId(tenantSlug, host);
+  }
   if (!tenantId) {
     console.warn(
       `  [discussnet-ssp] ${municipalityName}: tenantId 取得失敗`
