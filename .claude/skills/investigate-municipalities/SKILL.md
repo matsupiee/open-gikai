@@ -1,7 +1,7 @@
 ---
 name: investigate-municipalities
 description: 議事録検索URLが未設定の自治体を並列調査し、スクレイピング方針を決定する
-version: 3.1.0
+version: 4.0.0
 ---
 
 # 自治体スクレイピング調査スキル
@@ -138,26 +138,54 @@ ls /tmp/investigate-results/
 
 表示後、**ユーザーの承認を待たずに Step 4 に進む。**
 
-### Step 4: 実装フェーズ（worktree 並列実行）
+### Step 4: CSV への URL 書き込み (CRITICAL)
 
-結果の分類が完了したら、**即座にカテゴリごとに Agent を worktree で並列起動**して実装する。ユーザーへの確認は不要。
+カテゴリ A・B の自治体（URL が見つかったもの）について、`packages/db/src/seeds/municipalities.csv` の該当行に URL を直接書き込む。
 
-#### カテゴリ A: CSV 更新 → PR
+**手順:**
 
-カテゴリ A の自治体が存在する場合、**1 つの Agent を `isolation: "worktree"` で起動**し、対象自治体の CSV を一括更新して PR を作成する。
+1. CSV ファイルを行単位で読み込む
+2. 各行の団体コード（1列目）を見て、調査結果の団体コードと一致する行の 6 列目（議事録検索URL）に URL をセットする
+3. **元のフォーマット（クォーティング・改行）を維持する** — CSV ライブラリで全体を書き直すとフォーマットが変わるため、行単位で `split(',')` → URL 列を差し替え → `','.join()` で書き戻す
+4. カテゴリ C（未発見）の行は変更しない
+
+```python
+# 例: Python でのフォーマット保持更新
+for line in lines:
+    parts = line.rstrip('\n').split(',')
+    if parts[0] in url_map and parts[5].strip() == '':
+        parts[5] = url_map[parts[0]]
+        line = ','.join(parts) + '\n'
+```
+
+**書き込み後、変更件数を表示する:**
+```
+✅ municipalities.csv に {N} 件の URL を追加しました
+```
+
+### Step 5: 実装フェーズ（worktree 並列実行）
+
+CSV 更新が完了したら、**即座にカテゴリごとに Agent を worktree で並列起動**して実装する。ユーザーへの確認は不要。
+
+**カテゴリ A・B の CSV 更新は Step 4 で完了済みのため、ここでは CSV 変更のコミット・PR 作成とドキュメント作成を行う。**
+
+#### カテゴリ A・B 共通: CSV 変更の PR 作成
+
+カテゴリ A・B に URL が見つかった自治体が存在する場合、**1 つの Agent を `isolation: "worktree"` で起動**し、Step 4 で更新済みの CSV をコミットして PR を作成する。
 
 ```
 Agent 起動パラメータ:
   subagent_type: general-purpose
   isolation: worktree
   prompt: |
-    以下の自治体の議事録検索 URL を municipalities.csv に追加してください。
+    municipalities.csv に追加済みの URL 変更をコミットして PR を作成してください。
 
-    {カテゴリ A の自治体リスト（コード, 都道府県, 市区町村, URL）}
+    対象自治体:
+    {カテゴリ A・B の自治体リスト（コード, 都道府県, 市区町村, URL）}
 
     ## 手順
     1. `git checkout -b feat/add-municipality-urls` でブランチを作成
-    2. `packages/db/src/seeds/municipalities.csv` の該当行の6列目に URL を追加
+    2. `packages/db/src/seeds/municipalities.csv` の変更を確認（git diff）
     3. 変更をコミット
     4. `git push -u origin feat/add-municipality-urls`
     5. `gh pr create` で PR を作成
@@ -206,7 +234,7 @@ Agent 起動パラメータ（自治体ごとに 1 つ）:
     docs: {市区町村名}議会のカスタムスクレイピング方針
 ```
 
-#### カテゴリ C: 未発見自治体の URL メモ → PR
+#### カテゴリ C: 未発見自治体の URL メモ → PR（CSV は変更しない）
 
 カテゴリ C の自治体が存在する場合、**1 つの Agent を `isolation: "worktree"` で起動**し、議会関連ページの URL をメモした簡易 md ファイルを一括作成して PR を作成する。
 
@@ -254,14 +282,14 @@ Agent 起動パラメータ:
 ```
 
 **並列度のガイドライン（実装フェーズ）:**
-- カテゴリ A: 常に 1 Agent（CSV は 1 ファイルなので分割不要）
-- カテゴリ B: 5 件以下は全件同時、6 件以上は 5 件ずつバッチ
+- カテゴリ A・B の CSV PR: 常に 1 Agent（CSV は 1 ファイルなので分割不要）
+- カテゴリ B のドキュメント: 5 件以下は全件同時、6 件以上は 5 件ずつバッチ
 - カテゴリ C: 常に 1 Agent（簡易ファイルなので一括作成）
-- カテゴリ A, B, C は同時に並列起動してよい（worktree で分離されるため衝突しない）
+- CSV PR Agent, B ドキュメント Agent, C Agent は同時に並列起動してよい（worktree で分離されるため衝突しない）
 
-### Step 5: Worktree のクリーンアップ (CRITICAL)
+### Step 6: Worktree のクリーンアップ (CRITICAL)
 
-Step 4 の全 Agent が完了したら、**返却された worktree パスを `git worktree remove` で削除する**。
+Step 5 の全 Agent が完了したら、**返却された worktree パスを `git worktree remove` で削除する**。
 
 Agent が `isolation: "worktree"` で起動され、変更をコミット・プッシュした場合、worktree ディレクトリがディスク上に残る。PR 作成済みであれば不要なので、必ず削除する。
 
