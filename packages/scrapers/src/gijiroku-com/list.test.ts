@@ -223,6 +223,39 @@ describe("parseListHtml", () => {
     expect(records[0]!.dateLabel).toBe("12月17日-01号");
   });
 
+  test("HREF 形式で UNID なしの場合は KGNO_FINO を unid に使用（八代市パターン）", () => {
+    const html = `
+      <TABLE BORDER=0>
+      <TR><TD NOWRAP BGCOLOR="#DDDDEE" ALIGN=LEFT COLSPAN=3>
+      <A HREF="voiweb.exe?ACT=100&FINO=972"><IMG BORDER=0 SRC="/VOICES/image/folder.gif"></A>
+      令和　７年 ９月定例会,<A HREF="voiweb.exe?ACT=200&KENSAKU=0&SORT=0&KTYP=0,1,2,3&KGTP=1,3&FYY=2025&TYY=2025&TITL_SUBT=test&KGNO=220&FINO=973" TARGET="HLD_WIN" onClick="window.open('','HLD_WIN','resizable=yes,menubar=yes,toolbar=yes');">10月03日-01号</A>
+      </TD></TR>
+      </TABLE>
+    `;
+    const records = parseListHtml(html);
+    expect(records).toHaveLength(1);
+    expect(records[0]!.fino).toBe("973");
+    expect(records[0]!.kgno).toBe("220");
+    expect(records[0]!.unid).toBe("220_973");
+    expect(records[0]!.dateLabel).toBe("10月03日-01号");
+    expect(records[0]!.title).toContain("令和");
+  });
+
+  test("HREF 形式で UNID なしの複数レコードを抽出", () => {
+    const html = `
+      <TD>
+      タイトルA,<A HREF="voiweb.exe?ACT=200&KGNO=220&FINO=973" TARGET="HLD_WIN" onClick="window.open('','HLD_WIN');">10月03日-01号</A>
+      </TD>
+      <TD>
+      タイトルB,<A HREF="voiweb.exe?ACT=200&KGNO=220&FINO=974" TARGET="HLD_WIN" onClick="window.open('','HLD_WIN');">10月04日-02号</A>
+      </TD>
+    `;
+    const records = parseListHtml(html);
+    expect(records).toHaveLength(2);
+    expect(records[0]!.unid).toBe("220_973");
+    expect(records[1]!.unid).toBe("220_974");
+  });
+
   test("winopen 形式が優先され HREF 形式は fallback", () => {
     // winopen 形式がある場合は HREF 形式は使用されない
     const html = `

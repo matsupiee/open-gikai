@@ -295,6 +295,81 @@ describe("fetchFromSapphire", () => {
     expect(result![0]!.heldOn).toBe("2025-03-10");
   });
 
+  test("3レベル tree 構造で ResultFrame リンクが見つかる（豊田市パターン）", async () => {
+    // 構造:
+    //   Level 1（年グループ）: "令和 8年" タブ → POST
+    //   Level 2（個別年）: "令和 7年" タブ（ResultFrame なし、新たな treedepth あり）→ POST
+    //   Level 3（セッション）: "3月定例会" → POST → ResultFrame.exe リンクあり
+    const treeHtml = `<html>
+      <form name="viewtree" action="See.exe" method="POST">
+        <input type="hidden" name="Code" value="abc">
+        <input type="hidden" name="treedepth" value="">
+      </form>
+    </html>`;
+
+    // Level 2 レスポンス（ResultFrame なし）
+    const level2Html = `<html><body>個別年一覧</body></html>`;
+
+    // Level 3 レスポンス（ResultFrame リンクあり）
+    const level3Html = `<html><body>
+      <a href="ResultFrame.exe?Code=abc&amp;fileName=R070221A&amp;startPos=-1">2月21日</a>
+    </body></html>`;
+
+    const yearGroupBytes = new Uint8Array([0x97, 0xdf, 0x38]); // 年グループ
+    const yearBytes = new Uint8Array([0x97, 0xdf, 0x37]);      // 個別年
+    const sessionBytes = new Uint8Array([0x33, 0x8c, 0x8e]);   // セッション
+
+    mockFetchRawBytes.mockResolvedValue(new Uint8Array([0x41]));
+
+    const { fetchRawBytesPost } = await import("./shared");
+    const mockFetchRawBytesPost = fetchRawBytesPost as ReturnType<typeof vi.fn>;
+    const { percentEncodeBytes } = await import("./shared");
+    const mockPercentEncodeBytes = percentEncodeBytes as ReturnType<typeof vi.fn>;
+    mockPercentEncodeBytes.mockReturnValue("%97%df");
+
+    // decodeShiftJis の呼び出し順:
+    // 1. fetchFromSapphire: 初回ページ → treeHtml
+    // 2. navigateTreedepths: 年グループ POST レスポンス → level2Html
+    // 3. navigateTreedepths: committeeBytes の名前取得 → "令和 7"
+    // 4. navigateTreedepths: 個別年 POST レスポンス (meetingHtml) → level2Html（ResultFrame なし）
+    // 5. navigateTreedepths: subBytes の名前取得 → "3月定例会"
+    // 6. navigateTreedepths: セッション POST レスポンス → level3Html（ResultFrame あり）
+    mockDecodeShiftJis
+      .mockReturnValueOnce(treeHtml)
+      .mockReturnValueOnce(level2Html)
+      .mockReturnValueOnce("令和 7")
+      .mockReturnValueOnce(level2Html)
+      .mockReturnValueOnce("3月定例会")
+      .mockReturnValueOnce(level3Html);
+
+    // extractTreedepthRawBytes の呼び出し順:
+    // 1. fetchFromSapphire: ページの treedepth チェック → [yearGroupBytes]
+    // 2. navigateTreedepths: 年タブ抽出 → [yearGroupBytes]
+    // 3. 年グループ POST 後: 委員会タブ抽出 → [yearGroupBytes, yearBytes]
+    // 4. 個別年 POST 後: サブ treedepth 抽出 → [yearGroupBytes, yearBytes, sessionBytes]
+    mockExtractTreedepthRawBytes
+      .mockReturnValueOnce([yearGroupBytes])
+      .mockReturnValueOnce([yearGroupBytes])
+      .mockReturnValueOnce([yearGroupBytes, yearBytes])
+      .mockReturnValueOnce([yearGroupBytes, yearBytes, sessionBytes]);
+
+    mockFetchRawBytesPost
+      .mockResolvedValueOnce(new Uint8Array([0x42]))  // 年グループ POST
+      .mockResolvedValueOnce(new Uint8Array([0x43]))  // 個別年 POST
+      .mockResolvedValueOnce(new Uint8Array([0x44])); // セッション POST
+
+    const result = await fetchFromSapphire(
+      "http://www.kensakusystem.jp/testcity/cgi-bin3/See.exe?Code=abc"
+    );
+
+    // 3回の POST が行われることを確認（年グループ + 個別年 + セッション）
+    expect(mockFetchRawBytesPost).toHaveBeenCalledTimes(3);
+    // ResultFrame リンクが取得できること
+    expect(result).not.toBeNull();
+    expect(result!.length).toBeGreaterThanOrEqual(1);
+    expect(result![0]!.heldOn).toBe("2025-02-21");
+  });
+
   test("トップページフォールバックで元URLと同じページはスキップする", async () => {
     const indexHtml = `<html><body>リンクなし</body></html>`;
 
