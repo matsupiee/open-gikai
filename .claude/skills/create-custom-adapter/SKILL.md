@@ -157,18 +157,11 @@ export const adapter: ScraperAdapter = {
 cd packages/scrapers && bun test src/adapters/custom/{dir}/
 ```
 
-### Step 8: レジストリに登録
+### Step 8: レジストリへの登録（自動）
 
-**`packages/scrapers/src/index.ts`** にアダプターを追加:
+`packages/scrapers/src/index.ts` が `adapters/custom/` 配下のディレクトリを自動走査して登録するため、**手動でのレジストリ登録は不要**。
 
-```typescript
-import { adapter as myAdapter } from "./adapters/custom/{dir}";
-
-const registry = new Map<string, ScraperAdapter>([
-  // 既存の adapter...
-  [myAdapter.name, myAdapter],
-]);
-```
+アダプターのディレクトリに `export const adapter: ScraperAdapter = { ... }` を定義するだけで自動検出される。
 
 ### Step 9: 型チェック・テスト実行
 
@@ -191,9 +184,9 @@ worktree ルールに従い、PR まで自動で作成する。
 | ファイル | 変更内容 |
 |---------|---------|
 | `packages/scrapers/src/adapters/custom/{code}-{name}/` | スクレイパー実装（新規） |
-| `packages/scrapers/src/index.ts` | adapter registry に登録 |
 
-**変更不要なファイル（汎用ハンドラーが処理するため）:**
+**変更不要なファイル:**
+- `packages/scrapers/src/index.ts` — アダプターは自動検出されるため登録不要
 - `apps/scraper-worker/src/handlers/` — 個別ハンドラー不要
 - `apps/scraper-worker/src/utils/types.ts` — 個別メッセージ型不要
 - `apps/scraper-worker/src/utils/handle-message.ts` — 個別ルーティング不要
