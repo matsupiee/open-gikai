@@ -158,15 +158,17 @@ export function percentEncodeBytes(bytes: Uint8Array): string {
 }
 
 /**
- * Shift-JIS raw bytes から `document.viewtree.treedepth.value='...'` の
- * 値部分の raw バイト列を全て抽出する。
+ * Shift-JIS raw bytes からマーカー文字列の後に続く値を抽出する汎用関数。
  *
  * Shift-JIS 2バイト文字を正しくスキップすることで、
- * 日本語文字の第2バイトが `'` (0x27) に誤マッチするのを防ぐ。
+ * 日本語文字の第2バイトが closing delimiter に誤マッチするのを防ぐ。
  */
-export function extractTreedepthRawBytes(rawBytes: Uint8Array): Uint8Array[] {
+function extractRawBytesBetween(
+  rawBytes: Uint8Array,
+  markerStr: string,
+  closingByte: number
+): Uint8Array[] {
   const results: Uint8Array[] = [];
-  const markerStr = "document.viewtree.treedepth.value='";
   const markerBytes = Array.from(markerStr, (c) => c.charCodeAt(0));
 
   let i = 0;
@@ -178,13 +180,11 @@ export function extractTreedepthRawBytes(rawBytes: Uint8Array): Uint8Array[] {
       }
     }
 
-    // マーカーを見つけた。Shift-JIS を正しく解析しながら closing ' を探す
     let pos = i + markerBytes.length;
     const start = pos;
     while (pos < rawBytes.length) {
       const b = rawBytes[pos]!;
-      if (b === 0x27) {
-        // closing '
+      if (b === closingByte) {
         if (pos > start) {
           results.push(rawBytes.slice(start, pos));
         }
@@ -202,4 +202,29 @@ export function extractTreedepthRawBytes(rawBytes: Uint8Array): Uint8Array[] {
   }
 
   return results;
+}
+
+/**
+ * Shift-JIS raw bytes から treedepth 値の raw バイト列を全て抽出する。
+ *
+ * 2つのパターンに対応:
+ * 1. `document.viewtree.treedepth.value='...'` — 旧来の onclick JavaScript
+ * 2. `data-depth="..."` — 新しい CSS クラスベースの JavaScript
+ */
+export function extractTreedepthRawBytes(rawBytes: Uint8Array): Uint8Array[] {
+  // パターン1: document.viewtree.treedepth.value='...'
+  const pattern1 = extractRawBytesBetween(
+    rawBytes,
+    "document.viewtree.treedepth.value='",
+    0x27 // '
+  );
+  if (pattern1.length > 0) return pattern1;
+
+  // パターン2: data-depth="..."
+  const pattern2 = extractRawBytesBetween(
+    rawBytes,
+    'data-depth="',
+    0x22 // "
+  );
+  return pattern2;
 }

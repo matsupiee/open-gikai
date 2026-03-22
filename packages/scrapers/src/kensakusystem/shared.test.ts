@@ -6,6 +6,7 @@ import {
   stripHtmlTags,
   decodeShiftJis,
   percentEncodeBytes,
+  extractTreedepthRawBytes,
 } from "./shared";
 
 describe("normalizeFullWidth", () => {
@@ -103,5 +104,46 @@ describe("percentEncodeBytes", () => {
   test("各バイトを %XX 形式にエンコード", () => {
     const bytes = new Uint8Array([0x41, 0x42, 0x00, 0xff]);
     expect(percentEncodeBytes(bytes)).toBe("%41%42%00%FF");
+  });
+});
+
+describe("extractTreedepthRawBytes", () => {
+  test("document.viewtree.treedepth.value='...' パターンを抽出", () => {
+    const html = `document.viewtree.treedepth.value='abc'`;
+    const bytes = new TextEncoder().encode(html);
+    const results = extractTreedepthRawBytes(bytes);
+    expect(results).toHaveLength(1);
+    expect(new TextDecoder().decode(results[0]!)).toBe("abc");
+  });
+
+  test("data-depth=\"...\" パターンを抽出", () => {
+    const html = `<a href="#" class="js-tree-submit" data-depth="R07">tab</a>`;
+    const bytes = new TextEncoder().encode(html);
+    const results = extractTreedepthRawBytes(bytes);
+    expect(results).toHaveLength(1);
+    expect(new TextDecoder().decode(results[0]!)).toBe("R07");
+  });
+
+  test("treedepth.value パターンが優先される", () => {
+    const html = `document.viewtree.treedepth.value='old' data-depth="new"`;
+    const bytes = new TextEncoder().encode(html);
+    const results = extractTreedepthRawBytes(bytes);
+    expect(results).toHaveLength(1);
+    expect(new TextDecoder().decode(results[0]!)).toBe("old");
+  });
+
+  test("data-depth パターンで複数値を抽出", () => {
+    const html = `<a data-depth="R07">a</a><a data-depth="R06">b</a>`;
+    const bytes = new TextEncoder().encode(html);
+    const results = extractTreedepthRawBytes(bytes);
+    expect(results).toHaveLength(2);
+    expect(new TextDecoder().decode(results[0]!)).toBe("R07");
+    expect(new TextDecoder().decode(results[1]!)).toBe("R06");
+  });
+
+  test("どちらのパターンもない場合は空配列", () => {
+    const html = `<html><body>no depth</body></html>`;
+    const bytes = new TextEncoder().encode(html);
+    expect(extractTreedepthRawBytes(bytes)).toHaveLength(0);
   });
 });

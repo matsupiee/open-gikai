@@ -176,69 +176,44 @@ function extractYearFromLabel(label: string): number | null {
 }
 
 /**
- * sapphire.html から議事録一覧を取得。
+ * ツリーページから treedepth ナビゲーションで議事録スケジュールを収集する。
  *
- * 処理フロー:
- * 1. sapphire.html から See.exe ツリーページへのリンクを取得
- * 2. ツリーページから年タブの treedepth 値（Shift-JIS raw bytes）を抽出
- * 3. 各年の treedepth で POST → 委員会一覧を取得
- * 4. 各委員会の treedepth で POST → 個別議事録リンク (ResultFrame.exe) を取得
- * 5. ResultFrame.exe リンクをスケジュールとして返す
- *
- * POST body の treedepth は Shift-JIS のまま percent-encode する。
- * URLSearchParams は UTF-8 エンコードするため使用不可。
+ * 年タブ → 委員会タブ → ResultFrame.exe リンクの順に探索する。
  */
-export async function fetchFromSapphire(
-  baseUrl: string,
+async function navigateTreedepths(
+  treeRawBytes: Uint8Array,
+  treeHtml: string,
+  treePageUrl: string,
   targetYear?: number
-): Promise<KensakusystemSchedule[] | null> {
-  const html = await fetchWithEncoding(baseUrl);
-  if (!html) return null;
-
-  // sapphire.html に直接 See.exe 議事録リンクがあれば使う
-  const directLinks = extractSeeLinks(html, baseUrl);
-  if (directLinks.length > 0) return directLinks;
-
-  // sapphire.html から See.exe ツリーページへのリンクを探す
-  const seeExeMatch = html.match(/href=["']([^"']*See\.exe[^"']*)[\"']/i);
-  if (!seeExeMatch?.[1]) return null;
-
-  const seeExeUrl = new URL(seeExeMatch[1], baseUrl).toString();
-
-  // ツリーページを raw bytes と decoded HTML の両方で取得
-  const treeRawBytes = await fetchRawBytes(seeExeUrl);
-  if (!treeRawBytes) return null;
-  const treeHtml = decodeShiftJis(treeRawBytes);
-
-  // ツリーページに直接 See.exe 議事録リンクがあれば使う
-  const treeDirectLinks = extractSeeLinks(treeHtml, seeExeUrl);
-  if (treeDirectLinks.length > 0) return treeDirectLinks;
-
-  // viewtree フォームの action を取得
+): Promise<KensakusystemSchedule[]> {
   const formActionMatch = treeHtml.match(
     /name=["']viewtree["'][^>]*action=["']([^"']+)["']|action=["']([^"']+)["'][^>]*name=["']viewtree["']/i
   );
   const formAction = formActionMatch?.[1] ?? formActionMatch?.[2];
-  if (!formAction) return null;
+  if (!formAction) return [];
 
-  const absoluteFormAction = new URL(formAction, seeExeUrl).toString();
+  const absoluteFormAction = new URL(formAction, treePageUrl).toString();
   const hiddenInputs = extractHiddenInputs(treeHtml);
   const baseParams = buildBaseParams(hiddenInputs);
 
-  // ツリーページから年レベルの treedepth raw bytes を抽出
   const yearTreedepths = extractTreedepthRawBytes(treeRawBytes);
-  if (yearTreedepths.length === 0) return null;
+  if (yearTreedepths.length === 0) return [];
 
   const schedules: KensakusystemSchedule[] = [];
   const seenUrls = new Set<string>();
 
   for (const yearBytes of yearTreedepths) {
-    // targetYear が指定されている場合、treedepth ラベルから年を判定してスキップ
-    // 年度（4月〜翌3月）を考慮し、targetYear と targetYear-1 の年を探索する
     if (targetYear) {
       const yearLabel = normalizeFullWidth(decodeShiftJis(yearBytes));
       const labelYear = extractYearFromLabel(yearLabel);
-      if (labelYear && labelYear !== targetYear && labelYear !== targetYear - 1) {
+      // タブグループは複数年をカバーし、ラベルは最新年で表示される
+      // （例: "令和 8年" タブが令和7-8年をカバー）ため、targetYear + 1 も許可する
+      if (
+        labelYear &&
+        labelYear !== targetYear &&
+        labelYear !== targetYear - 1 &&
+        labelYear !== targetYear + 1
+      ) {
         continue;
       }
     }
@@ -248,7 +223,6 @@ export async function fetchFromSapphire(
     if (!yearRawBytes) continue;
     const yearHtml = decodeShiftJis(yearRawBytes);
 
-    // 年レベルのレスポンスに ResultFrame.exe リンクがあれば収集（本会議など）
     const directResultLinks = extractResultFrameLinks(
       yearHtml,
       absoluteFormAction
@@ -260,7 +234,6 @@ export async function fetchFromSapphire(
       }
     }
 
-    // 委員会レベルの treedepth を抽出（年レベルのものを除外）
     const allTreedepths = extractTreedepthRawBytes(yearRawBytes);
     const committeeTreedepths = allTreedepths.filter(
       (td) => !yearTreedepths.some((y) => bytesEqual(y, td))
@@ -292,7 +265,111 @@ export async function fetchFromSapphire(
     }
   }
 
-  return schedules.length > 0 ? schedules : null;
+  return schedules;
+}
+
+/**
+ * ページからスケジュール一覧を取得する汎用関数。
+ *
+ * 処理フロー:
+ * 1. ページを取得し、直接の See.exe / ResultFrame.exe リンクを探す
+ * 2. ページ自体がツリーページ（viewtree フォームあり）なら treedepth ナビゲーション
+ * 3. ページ内の See.exe リンクを辿ってツリーページに到達し、treedepth ナビゲーション
+ *
+ * POST body の treedepth は Shift-JIS のまま percent-encode する。
+ * URLSearchParams は UTF-8 エンコードするため使用不可。
+ */
+export async function fetchFromSapphire(
+  baseUrl: string,
+  targetYear?: number
+): Promise<KensakusystemSchedule[] | null> {
+  // raw bytes で取得（treedepth 抽出に必要）し、同時に HTML にデコード
+  const rawBytes = await fetchRawBytes(baseUrl);
+
+  if (rawBytes) {
+    const html = decodeShiftJis(rawBytes);
+
+    // 直接 See.exe 議事録リンクがあれば使う
+    const directLinks = extractSeeLinks(html, baseUrl);
+    if (directLinks.length > 0) return directLinks;
+
+    // 直接 ResultFrame.exe リンクがあれば使う（See.exe ツリーページが直接渡された場合）
+    const directResultLinks = extractResultFrameLinks(html, baseUrl);
+    if (directResultLinks.length > 0) return directResultLinks;
+
+    // 現在のページがツリーページ（viewtree フォームあり）の場合、直接 treedepth ナビゲーション
+    const currentTreedepths = extractTreedepthRawBytes(rawBytes);
+    if (currentTreedepths.length > 0) {
+      const treeSchedules = await navigateTreedepths(
+        rawBytes,
+        html,
+        baseUrl,
+        targetYear
+      );
+      if (treeSchedules.length > 0) return treeSchedules;
+    }
+
+    // See.exe ツリーページへのリンクを探して辿る
+    const result = await followSeeExeLink(html, baseUrl, targetYear);
+    if (result && result.length > 0) return result;
+  }
+
+  // See.exe リンクが見つからない場合、トップページから最新の Code を取得して再試行
+  // （Code 失効時や URL が 404 だった場合のフォールバック）
+  const slug = extractSlugFromUrl(baseUrl);
+  if (slug) {
+    const topPages = [
+      `https://www.kensakusystem.jp/${slug}/index.html`,
+      `https://www.kensakusystem.jp/${slug}/sapphire.html`,
+    ];
+    for (const topUrl of topPages) {
+      // 元の URL と同じページは二重取得を避ける
+      if (normalizeUrl(topUrl) === normalizeUrl(baseUrl)) continue;
+
+      const topRawBytes = await fetchRawBytes(topUrl);
+      if (!topRawBytes) continue;
+      const topHtml = decodeShiftJis(topRawBytes);
+
+      const topResult = await followSeeExeLink(topHtml, topUrl, targetYear);
+      if (topResult && topResult.length > 0) return topResult;
+    }
+  }
+
+  return null;
+}
+
+/** URL を正規化して比較可能にする（http/https とパスの違いを吸収） */
+function normalizeUrl(url: string): string {
+  return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+}
+
+/** HTML 中の See.exe リンクを辿ってツリーページに到達し、スケジュールを取得する */
+async function followSeeExeLink(
+  html: string,
+  pageUrl: string,
+  targetYear?: number
+): Promise<KensakusystemSchedule[] | null> {
+  const seeExeMatch = html.match(/href=["']([^"']*See\.exe[^"']*)[\"']/i);
+  if (!seeExeMatch?.[1]) return null;
+
+  const seeExeUrl = new URL(seeExeMatch[1], pageUrl).toString();
+
+  const treeRawBytes = await fetchRawBytes(seeExeUrl);
+  if (!treeRawBytes) return null;
+  const treeHtml = decodeShiftJis(treeRawBytes);
+
+  // ツリーページに直接 See.exe 議事録リンクがあれば使う
+  const treeDirectLinks = extractSeeLinks(treeHtml, seeExeUrl);
+  if (treeDirectLinks.length > 0) return treeDirectLinks;
+
+  // ツリーページで treedepth ナビゲーション
+  const treeSchedules = await navigateTreedepths(
+    treeRawBytes,
+    treeHtml,
+    seeExeUrl,
+    targetYear
+  );
+  return treeSchedules.length > 0 ? treeSchedules : null;
 }
 
 /**
