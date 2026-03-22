@@ -181,11 +181,30 @@ export function extractDateFromMemberList(memberList: string): string | null {
     昭和: 1925,
   };
 
+  // まず「年号+年+月+日」が連続（間にスペースあり可）している形式を試みる（最も精度が高い）
   for (const [era, base] of Object.entries(wareki)) {
-    const m = text.match(new RegExp(`${era}(\\d+)年(\\d{1,2})月(\\d{1,2})日`));
+    const m = text.match(new RegExp(`${era}\\s*(\\d+)年\\s*(\\d{1,2})月\\s*(\\d{1,2})日`));
     if (m?.[1] && m[2] && m[3]) {
       const y = base + Number(m[1]);
       return `${y}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+    }
+  }
+
+  // 「令和X年（YYYY年）MM月DD日」形式（括弧内の西暦が和暦と月日の間に挿入される）
+  const parenM = text.match(/（(\d{4})年）(\d{1,2})月(\d{1,2})日/);
+  if (parenM?.[1] && parenM[2] && parenM[3]) {
+    return `${parenM[1]}-${parenM[2].padStart(2, "0")}-${parenM[3].padStart(2, "0")}`;
+  }
+
+  // 北見市のように「令和7年」と「3月6日」が別行に分かれている場合は二段階で抽出する
+  for (const [era, base] of Object.entries(wareki)) {
+    const yearMatch = text.match(new RegExp(`${era}\\s*(\\d+)年`));
+    if (yearMatch?.[1]) {
+      const y = base + Number(yearMatch[1]);
+      const dateMatch = text.match(/(\d{1,2})月(\d{1,2})日/);
+      if (dateMatch?.[1] && dateMatch[2]) {
+        return `${y}-${dateMatch[1].padStart(2, "0")}-${dateMatch[2].padStart(2, "0")}`;
+      }
     }
   }
 

@@ -98,8 +98,31 @@ describe("extractDateFromMemberList", () => {
     expect(extractDateFromMemberList(memberList)).toBe("2024-03-15");
   });
 
+  test("令和X年（YYYY年）MM月DD日 形式から日付を抽出（越谷市など）", () => {
+    const memberList =
+      "<pre>令和\u3000７年\u3000１２月\u3000定例会（第４回）\n\n令和7年（2025年）12月1日（月曜日）\n</pre>";
+    expect(extractDateFromMemberList(memberList)).toBe("2025-12-01");
+  });
+
   test("日付がない場合は null", () => {
     expect(extractDateFromMemberList("<pre>日付なし</pre>")).toBeNull();
+  });
+
+  test("北見市形式: 年号と月日が別行に分かれている場合も抽出できる", () => {
+    // 令和7年 と 3月6日 が別行（間に他テキストあり）
+    const memberList = `<pre>令和\u3000\uff17年\u3000\u3000\uff13月\u3000定例会（第1回）
+
+                    令和7年\u3000第1回定例
+
+                    北見市議会会議録
+
+                    3月6日（木曜日）〔第1号〕\u3000午前10時00分\u3000開会</pre>`;
+    expect(extractDateFromMemberList(memberList)).toBe("2025-03-06");
+  });
+
+  test("スペース区切りの和暦でも抽出できる（令和\u3000\uff17年\u3000\u3000\uff13月6日）", () => {
+    const memberList = "<pre>令和\u3000\uff17年\u3000\u3000\uff13月6日 開会</pre>";
+    expect(extractDateFromMemberList(memberList)).toBe("2025-03-06");
   });
 });
 
