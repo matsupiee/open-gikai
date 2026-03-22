@@ -62,8 +62,10 @@ function detectSystemType(baseUrl: string): SystemType | null {
   if (baseUrl.includes("dbsr.jp")) return "dbsearch";
   if (baseUrl.includes("kensakusystem.jp")) return "kensakusystem";
   if (baseUrl.includes("gijiroku.com")) return "gijiroku_com";
-  // 自前ホスティングの VOICES インスタンス（茅ヶ崎等）も同じ voiweb.exe CGI
+  // 自前ホスティングの VOICES インスタンス（茅ヶ崎・春日部等）も同じ voiweb.exe CGI
   if (/\/VOICES\//i.test(baseUrl)) return "gijiroku_com";
+  // voiweb.exe ベースの検索ページ（大田区等、/voices/ パスを持たない自前ホスト）
+  if (/g0[78]v_search\.asp/i.test(baseUrl)) return "gijiroku_com";
 
   return null;
 }

@@ -74,6 +74,46 @@ describe("extractBaseInfo", () => {
     expect(info!.origin).toBe("http://info.city.chigasaki.kanagawa.jp");
   });
 
+  test("自前ホスト /voices/ パス（草加市）", () => {
+    const info = extractBaseInfo(
+      "http://www.soka-shigikai.jp/voices/g07v_search.asp"
+    );
+    expect(info).toEqual({
+      origin: "http://www.soka-shigikai.jp",
+      basePath: "/voices",
+    });
+  });
+
+  test("自前ホスト /VOICES/ パス（春日部市）", () => {
+    const info = extractBaseInfo(
+      "http://www.kasukabe-shigikai.jp/VOICES/g07v_search.asp?Sflg=2&FBKEY1="
+    );
+    expect(info).toEqual({
+      origin: "http://www.kasukabe-shigikai.jp",
+      basePath: "/VOICES",
+    });
+  });
+
+  test("自前ホスト /voices/ なし（大田区）", () => {
+    const info = extractBaseInfo(
+      "http://www.gikai-ota-tokyo.jp/ota/g08v_search.asp"
+    );
+    expect(info).toEqual({
+      origin: "http://www.gikai-ota-tokyo.jp",
+      basePath: "/ota",
+    });
+  });
+
+  test("自前ホスト HTTPS（港区）", () => {
+    const info = extractBaseInfo(
+      "https://gikai2.city.minato.tokyo.jp/voices/g07v_search.asp?Sflg=2&FBKEY1=&NAMES2="
+    );
+    expect(info).toEqual({
+      origin: "https://gikai2.city.minato.tokyo.jp",
+      basePath: "/voices",
+    });
+  });
+
   test("ルートパスのみは null", () => {
     expect(extractBaseInfo("http://example.com/")).toBeNull();
   });

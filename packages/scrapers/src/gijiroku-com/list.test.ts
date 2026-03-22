@@ -66,6 +66,26 @@ describe("buildListUrl", () => {
     );
   });
 
+  test("自前ホスト /voices/ パス（草加市）は HTTP を保持", () => {
+    const url = buildListUrl(
+      "http://www.soka-shigikai.jp/voices/g07v_search.asp",
+      2024
+    );
+    expect(url).toBe(
+      "http://www.soka-shigikai.jp/voices/cgi/voiweb.exe?ACT=100&KTYP=0,1,2,3&SORT=0&FYY=2024&TYY=2024&KGTP=1,3"
+    );
+  });
+
+  test("自前ホスト /voices/ なし（大田区）は HTTP を保持", () => {
+    const url = buildListUrl(
+      "http://www.gikai-ota-tokyo.jp/ota/g08v_search.asp",
+      2024
+    );
+    expect(url).toBe(
+      "http://www.gikai-ota-tokyo.jp/ota/cgi/voiweb.exe?ACT=100&KTYP=0,1,2,3&SORT=0&FYY=2024&TYY=2024&KGTP=1,3"
+    );
+  });
+
   test("ルートパスのみの URL は null", () => {
     expect(buildListUrl("http://example.com/", 2024)).toBeNull();
   });
