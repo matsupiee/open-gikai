@@ -3,7 +3,7 @@
  * Usage: bun --env-file ../web/.env src/utils/test-dbsearch.ts
  */
 
-import { getAdapter } from "@open-gikai/scrapers";
+import { getAdapter, initAdapterRegistry } from "@open-gikai/scrapers";
 
 // 音更町（シンプルな dbsr.jp URL）
 const BASE_URL =
@@ -12,6 +12,7 @@ const MUNICIPALITY_ID = "cezm3fpz2st0u233txdipfeu";
 const YEAR = 2024;
 
 async function main() {
+  await initAdapterRegistry();
   const adapter = getAdapter("dbsearch");
   if (!adapter) {
     console.error("❌ dbsearch adapter が見つかりません");

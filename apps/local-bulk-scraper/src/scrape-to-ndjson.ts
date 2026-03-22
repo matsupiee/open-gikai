@@ -23,7 +23,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { eq, and, inArray } from "drizzle-orm";
 import dotenv from "dotenv";
 import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";
-import { getAdapter, buildChunksFromStatements } from "@open-gikai/scrapers";
+import { getAdapter, initAdapterRegistry, buildChunksFromStatements } from "@open-gikai/scrapers";
 import type { SystemType } from "@open-gikai/db/schema";
 
 const EMBEDDING_BATCH_SIZE = 20;
@@ -172,6 +172,7 @@ function runGroupedByHost(
 }
 
 async function main() {
+  await initAdapterRegistry();
   const targetYear = parseYear();
   const targetSystemType = parseSystemType();
   const targetCodes = parseTarget();
