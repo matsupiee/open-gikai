@@ -1,0 +1,468 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=Shift_JIS">
+<TITLE>会議録の閲覧と検索</TITLE>
+<script language="javaScript" src="/meguro/style2.js?"></script>
+<script language="javascript">
+<!--
+function goList(){
+	if( parent.opener!=null ){
+		parent.opener.top.location.href='/meguro/cgi-bin3/ResultFrame.exe?Code=hxcvax8v0tgrybompl';
+		window.top.close();
+	}
+	else{
+		window.top.location.href='/meguro/cgi-bin3/ResultFrame.exe?Code=hxcvax8v0tgrybompl';
+	}
+}
+function checkall(){
+  var chen = -1;
+	for (var i=0;i<document.download.elements.length;i++){
+	    var e = document.download.elements[i];
+	    if (e.name == 'downloadPos'){
+	      if( chen<0 ){
+	        e.checked = ! e.checked;
+	        chen = i;
+	      }
+	      else{
+	        e.checked = document.download.elements[chen].checked;
+	      }
+      }
+    }
+}
+function checkalltarget(){
+	for (var i=0;i<document.viewtree.elements.length;i++){
+	    var e = document.viewtree.elements[i];
+	    if (e.name == 'eTarget')
+	      e.checked = document.viewtree.alltarget.checked;
+  }
+}
+var view=0;
+function viewTop(){
+  browserName = navigator.appName;
+  browserVer = parseInt(navigator.appVersion);
+  
+  if( browserName == "Microsoft Internet Explorer" ){
+  	n = navigator.appVersion.indexOf("MSIE",0);
+  	browserVer = parseInt(navigator.appVersion.substring(n+4));	
+  }
+  if( browserVer<5 ){
+		return;
+  }
+  var v;
+  if( view ){
+    v = 'none';
+    view = 0;
+    document.swbutton.src='/meguro/image/button34.gif';
+  }
+  else{
+    v = 'block';
+    view = 1;
+    document.swbutton.src='/meguro/image/button35.gif';
+  }
+  for (var i=1;i<26;i++){
+	  setVisible(document.getElementById('span'+i),v);
+  }
+}
+function setVisible(obj,v){
+  if(obj){
+    obj.style.display = v;
+  }
+}
+function downloadcheck(){
+  var ret = 0;
+	for (var i=0;i<document.download.elements.length;i++){
+	    var e = document.download.elements[i];
+	    if (e.name == 'downloadPos' && e.checked )
+	      ret = 1;
+  }
+  if( ret ){
+    document.download.submit();
+  }
+  else{
+    alert("ダウンロード対象を選択してください。");
+  }
+}
+//-->
+</script>
+</HEAD>
+<BODY bgColor=#ffffff>
+<table width=100%><tr>
+<td nowrap></td>
+<td nowrap align=right><A href="/meguro/cgi-bin3/Search2.exe?Code=hxcvax8v0tgrybompl" target="_top"><IMG src="/meguro/image/button02.gif" alt="検索画面へ" border=0></a></td>
+</tr></table>
+<FORM NAME="download" ACTION="/meguro/cgi-bin3/GetPerson.exe" METHOD="POST" target="_top">
+<INPUT type="hidden" name="Code" value="hxcvax8v0tgrybompl">
+<INPUT type="hidden" name="fileName" value="R070217A">
+<A href="javascript:downloadcheck()">
+<IMG src="/meguro/image/button06.gif" alt="ダウンロード" border=0></a>
+<A href="javascript:checkall()">
+<IMG src="/meguro/image/button22.gif" alt="すべてチェック" border=0></a>
+<br>
+<a href="javascript:viewTop()"><img name="swbutton" src="/meguro/image/button34.gif" alt="冒頭表示切替" border=0></a><br>
+<table>
+<tr><td nowrap>
+<IMG src="/meguro/image/point.gif" border=0></td>
+<td nowrap colspan=3><A href="/meguro/cgi-bin3/r_Speakers.exe?Code=hxcvax8v0tgrybompl&speaker=&keyMode=10&searchMode=1&dMode=4&speakerMode=1&sTarget=4194303:0Code=hxcvax8v0tgrybompl&speaker=&keyMode=10&searchMode=1&dMode=4&speakerMode=1&sTarget=4194303:0&treedepth=%97%DF%98%61%20%37%94%4E">
+<font class="TEXT5">令和 7年</font></a></td></tr>
+<tr><td></td><td nowrap>
+<IMG src="/meguro/image/point2.gif" border=0></td>
+<td nowrap colspan=2><A href="/meguro/cgi-bin3/r_Speakers.exe?Code=hxcvax8v0tgrybompl&speaker=&keyMode=10&searchMode=1&dMode=4&speakerMode=1&sTarget=4194303:0Code=hxcvax8v0tgrybompl&speaker=&keyMode=10&searchMode=1&dMode=4&speakerMode=1&sTarget=4194303:0&treedepth=%97%DF%98%61%20%37%94%4E%20%97%DF%98%61%20%37%94%4E%91%E6%31%89%F1%92%E8%97%E1%89%EF%20">
+<font class="TEXT5">第1回定例会</font></a><tr><td colspan=2></td><td nowrap>
+<IMG src="/meguro/image/point2.gif" border=0></td>
+<td nowrap><A href="/meguro/cgi-bin3/r_Speakers.exe?hxcvax8v0tgrybompl/R070217A/0/0//10/1/4194303:0/3137/1//0/0/0">
+<font class="TEXT5">（第1日 2月17日）</font></a><br></td></tr>
+</table>
+<table>
+<tr>
+<td></td>
+<td><input type="checkbox" name="downloadPos" value="4" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/4/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">議事日程<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr>
+<td nowrap><font class="TEXT5">No.1</font></td><td><input type="checkbox" name="downloadPos" value="2756" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/2756/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">おのせ康裕議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span1" style="color:#808080;display:none;">　ただいまから令和７年第１回目黒区議会定例会を開会いたします</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.2</font></td><td><input type="checkbox" name="downloadPos" value="2873" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/2873/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">おのせ康裕議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span2" style="color:#808080;display:none;">
+　　◎会議録署名議員の指名
+
+　まず、会議録署名議員を定めま</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.3</font></td><td><input type="checkbox" name="downloadPos" value="3207" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/3207/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">おのせ康裕議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span3" style="color:#808080;display:none;">
+　　◎諸般の報告
+
+　次に、諸般の報告を申し上げます。
+　区長</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.4</font></td><td><input type="checkbox" name="downloadPos" value="3833" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/3833/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">おのせ康裕議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span4" style="color:#808080;display:none;">
+　◎会期の決定
+
+　お諮りいたします。
+　今期定例会の会期は、</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.5</font></td><td><input type="checkbox" name="downloadPos" value="4042" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/4042/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">おのせ康裕議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span5" style="color:#808080;display:none;">　御異議なしと認めます。
+　よって、会期は３３日間と決定いた</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.6</font></td><td><input type="checkbox" name="downloadPos" value="4209" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/4209/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">青木英二区長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span6" style="color:#808080;display:none;">
+　　◎区長所信表明
+　　　〔青木英二区長登壇〕
+
+　令和７年第</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.7</font></td><td><input type="checkbox" name="downloadPos" value="19994" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/19994/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">おのせ康裕議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span7" style="color:#808080;display:none;">　次に日程第２、代表質問を行います。
+―――――――――――</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.8</font></td><td><input type="checkbox" name="downloadPos" value="20149" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/20149/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">おのせ康裕議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span8" style="color:#808080;display:none;">
+　◎代表質問
+
+　各会派の代表から質問の通告がありましたので</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.9</font></td><td><input type="checkbox" name="downloadPos" value="20304" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/20304/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">鈴木まさし議員<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span9" style="color:#808080;display:none;">　自由民主党目黒区議団・区民の会は、コロナ禍を経て、物価高騰</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.10</font></td><td><input type="checkbox" name="downloadPos" value="27018" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/27018/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">青木英二区長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span10" style="color:#808080;display:none;">　鈴木まさし議員の６点にわたる御質問に順次お答えを申し上げま</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.11</font></td><td><input type="checkbox" name="downloadPos" value="39784" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/39784/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">関根義孝教育長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span11" style="color:#808080;display:none;">　鈴木議員の第６点目、学校と地域の連携と協働についてにつきま</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.12</font></td><td><input type="checkbox" name="downloadPos" value="42178" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/42178/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">鈴木まさし議員<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span12" style="color:#808080;display:none;">　それでは、順次再質問をさせていただきます。
+　まず、事務事</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.13</font></td><td><input type="checkbox" name="downloadPos" value="50764" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/50764/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">青木英二区長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span13" style="color:#808080;display:none;">　順次私からお答え申し上げます。
+　まず、スクラップについて</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.14</font></td><td><input type="checkbox" name="downloadPos" value="55778" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/55778/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">関根義孝教育長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span14" style="color:#808080;display:none;">　コミュニティ・スクールのお答えといたしましては、せっかくの</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.15</font></td><td><input type="checkbox" name="downloadPos" value="56242" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/56242/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">おのせ康裕議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span15" style="color:#808080;display:none;">　鈴木まさし議員の代表質問を終わります。
+　議事の都合により</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.16</font></td><td><input type="checkbox" name="downloadPos" value="56404" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/56404/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">おのせ康裕議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span16" style="color:#808080;display:none;">　休憩前に引き続き会議を開きます。
+　次に、２２番たぞえ麻友</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.17</font></td><td><input type="checkbox" name="downloadPos" value="56516" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/56516/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">たぞえ麻友議員<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span17" style="color:#808080;display:none;">　私、たぞえ麻友はめぐろの未来をつくる会を代表し、区長の所信</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.18</font></td><td><input type="checkbox" name="downloadPos" value="64890" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/64890/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">青木英二区長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span18" style="color:#808080;display:none;">　たぞえ麻友議員の８点にわたる御質問に順次お答えを申し上げま</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.19</font></td><td><input type="checkbox" name="downloadPos" value="78064" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/78064/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">関根義孝教育長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span19" style="color:#808080;display:none;">　たぞえ議員の第７点目、子ども読書推進計画についてにつきまし</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.20</font></td><td><input type="checkbox" name="downloadPos" value="79786" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/79786/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">たぞえ麻友議員<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span20" style="color:#808080;display:none;">　幾つか再質問をしていきます。
+　まず、１点目、ＩＣＳ組織に</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.21</font></td><td><input type="checkbox" name="downloadPos" value="84632" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/84632/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">青木英二区長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span21" style="color:#808080;display:none;">　まず、ＩＣＳに関連して、自衛隊のＯＢに期待するということで</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.22</font></td><td><input type="checkbox" name="downloadPos" value="87804" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/87804/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">関根義孝教育長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span22" style="color:#808080;display:none;">　では、子ども読書活動推進計画と学校図書館のお尋ねです。
+　</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.23</font></td><td><input type="checkbox" name="downloadPos" value="89300" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/89300/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">たぞえ麻友議員<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span23" style="color:#808080;display:none;">　再度、最後区長に伺いたいと思います。
+　スピード感の話って</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.24</font></td><td><input type="checkbox" name="downloadPos" value="91054" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/91054/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">青木英二区長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span24" style="color:#808080;display:none;">　例えば権限移譲で言えば、私は区長になったときは一定のという</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.25</font></td><td><input type="checkbox" name="downloadPos" value="92542" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/92542/0//10/1/3137//0/0/0" TARGET="TEXTW"><font class="TEXT5">おのせ康裕議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span25" style="color:#808080;display:none;">　たぞえ麻友議員の代表質問を終わります。
+　本日はこれをもっ</div>
+</td></tr>
+</TABLE>
+<A href="javascript:downloadcheck()">
+<IMG src="/meguro/image/button06.gif" alt="ダウンロード" border=0></a><br><br>
+</FORM>
+<script language="javascript">
+<!--
+parent.TEXTW.location.href='/meguro/cgi-bin3/r_TextFrame.exe?hxcvax8v0tgrybompl/R070217A/0/0//10/1/3137//0/0/0';
+//-->
+</script>
+<A HREF="/meguro/sapphire.html" target="_top"><IMG src="/meguro/image/button21.gif" alt="ホームへ戻る" border=0></a><br>
+<A HREF="javascript:history.back()" target="_top"><IMG src="/meguro/image/button31.gif" alt="前へ戻る" border=0></a><br>
+</BODY>
+</HTML>

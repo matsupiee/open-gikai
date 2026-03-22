@@ -1,0 +1,561 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=Shift_JIS">
+<TITLE>会議録の閲覧と検索</TITLE>
+<script language="javaScript" src="/katsushika/style2.js?"></script>
+<script language="javascript">
+<!--
+function goList(){
+	if( parent.opener!=null ){
+		parent.opener.top.location.href='/katsushika/cgi-bin3/ResultFrame.exe?Code=n9goyxzrwrkcenlj8f';
+		window.top.close();
+	}
+	else{
+		window.top.location.href='/katsushika/cgi-bin3/ResultFrame.exe?Code=n9goyxzrwrkcenlj8f';
+	}
+}
+function checkall(){
+  var chen = -1;
+	for (var i=0;i<document.download.elements.length;i++){
+	    var e = document.download.elements[i];
+	    if (e.name == 'downloadPos'){
+	      if( chen<0 ){
+	        e.checked = ! e.checked;
+	        chen = i;
+	      }
+	      else{
+	        e.checked = document.download.elements[chen].checked;
+	      }
+      }
+    }
+}
+function checkalltarget(){
+	for (var i=0;i<document.viewtree.elements.length;i++){
+	    var e = document.viewtree.elements[i];
+	    if (e.name == 'eTarget')
+	      e.checked = document.viewtree.alltarget.checked;
+  }
+}
+var view=0;
+function viewTop(){
+  browserName = navigator.appName;
+  browserVer = parseInt(navigator.appVersion);
+  
+  if( browserName == "Microsoft Internet Explorer" ){
+  	n = navigator.appVersion.indexOf("MSIE",0);
+  	browserVer = parseInt(navigator.appVersion.substring(n+4));	
+  }
+  if( browserVer<5 ){
+		return;
+  }
+  var v;
+  if( view ){
+    v = 'none';
+    view = 0;
+    document.swbutton.src='/katsushika/image/button34.gif';
+  }
+  else{
+    v = 'block';
+    view = 1;
+    document.swbutton.src='/katsushika/image/button35.gif';
+  }
+  for (var i=1;i<34;i++){
+	  setVisible(document.getElementById('span'+i),v);
+  }
+}
+function setVisible(obj,v){
+  if(obj){
+    obj.style.display = v;
+  }
+}
+function downloadcheck(){
+  var ret = 0;
+	for (var i=0;i<document.download.elements.length;i++){
+	    var e = document.download.elements[i];
+	    if (e.name == 'downloadPos' && e.checked )
+	      ret = 1;
+  }
+  if( ret ){
+    document.download.submit();
+  }
+  else{
+    alert("ダウンロード対象を選択してください。");
+  }
+}
+//-->
+</script>
+</HEAD>
+<BODY bgColor=#ffffff>
+<table width=100%><tr>
+<td nowrap></td>
+<td nowrap align=right><A href="/katsushika/cgi-bin3/Search2.exe?Code=n9goyxzrwrkcenlj8f" target="_top"><IMG src="/katsushika/image/button02.gif" alt="検索画面へ" border=0></a></td>
+</tr></table>
+<FORM NAME="download" ACTION="/katsushika/cgi-bin3/GetPerson.exe" METHOD="POST" target="_top">
+<INPUT type="hidden" name="Code" value="n9goyxzrwrkcenlj8f">
+<INPUT type="hidden" name="fileName" value="R070214A">
+<A href="javascript:downloadcheck()">
+<IMG src="/katsushika/image/button06.gif" alt="ダウンロード" border=0></a>
+<A href="javascript:checkall()">
+<IMG src="/katsushika/image/button22.gif" alt="すべてチェック" border=0></a>
+<br>
+<a href="javascript:viewTop()"><img name="swbutton" src="/katsushika/image/button34.gif" alt="冒頭表示切替" border=0></a><br>
+<table>
+<tr><td nowrap>
+<IMG src="/katsushika/image/point.gif" border=0></td>
+<td nowrap colspan=3><A href="/katsushika/cgi-bin3/r_Speakers.exe?Code=n9goyxzrwrkcenlj8f&speaker=&keyMode=10&searchMode=1&dMode=4&speakerMode=1&sTarget=268435455:0Code=n9goyxzrwrkcenlj8f&speaker=&keyMode=10&searchMode=1&dMode=4&speakerMode=1&sTarget=268435455:0&treedepth=%97%DF%98%61%20%37%94%4E">
+<font class="TEXT5">令和 7年</font></a></td></tr>
+<tr><td></td><td nowrap>
+<IMG src="/katsushika/image/point2.gif" border=0></td>
+<td nowrap colspan=2><A href="/katsushika/cgi-bin3/r_Speakers.exe?Code=n9goyxzrwrkcenlj8f&speaker=&keyMode=10&searchMode=1&dMode=4&speakerMode=1&sTarget=268435455:0Code=n9goyxzrwrkcenlj8f&speaker=&keyMode=10&searchMode=1&dMode=4&speakerMode=1&sTarget=268435455:0&treedepth=%97%DF%98%61%20%37%94%4E%20%97%DF%98%61%20%37%94%4E%91%E6%31%89%F1%92%E8%97%E1%89%EF%20">
+<font class="TEXT5">第1回定例会</font></a><tr><td colspan=2></td><td nowrap>
+<IMG src="/katsushika/image/point2.gif" border=0></td>
+<td nowrap><A href="/katsushika/cgi-bin3/r_Speakers.exe?n9goyxzrwrkcenlj8f/R070214A/0/0//10/1/268435455:0/1870/1//0/0/0">
+<font class="TEXT5">（第1日 2月14日）</font></a><br></td></tr>
+</table>
+<table>
+<tr>
+<td></td>
+<td><input type="checkbox" name="downloadPos" value="226" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/226/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">議事日程<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr>
+<td nowrap><font class="TEXT5">No.1</font></td><td><input type="checkbox" name="downloadPos" value="8502" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/8502/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span1" style="color:#808080;display:none;">　出席議員は定足数に達しております。
+　ただいまから、令和７</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.2</font></td><td><input type="checkbox" name="downloadPos" value="8746" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/8746/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span2" style="color:#808080;display:none;">　初めに、会議録署名議員を指名いたします。
+　本日の会議録署</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.3</font></td><td><input type="checkbox" name="downloadPos" value="9094" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/9094/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span3" style="color:#808080;display:none;">　次に、事務局長に庶務報告をいたさせます。
+　（杉立敏也事務</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.4</font></td><td><input type="checkbox" name="downloadPos" value="9746" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/9746/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span4" style="color:#808080;display:none;">　区長から発言の申出がありますので、これを許します。
+　区長</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.5</font></td><td><input type="checkbox" name="downloadPos" value="9858" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/9858/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">青木克德区長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span5" style="color:#808080;display:none;">　令和７年第１回区議会定例会の開催に当たりまして、所信の一端</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.6</font></td><td><input type="checkbox" name="downloadPos" value="34774" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/34774/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span6" style="color:#808080;display:none;">　次に、さきの定例会において任命同意を受け、このたび就任され</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.7</font></td><td><input type="checkbox" name="downloadPos" value="34928" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/34928/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">久保洋子教育委員<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span7" style="color:#808080;display:none;">　ただいま御紹介をいただきました、教育委員の久保洋子でござい</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.8</font></td><td><input type="checkbox" name="downloadPos" value="36708" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/36708/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span8" style="color:#808080;display:none;">　これより本日の日程に入ります。
+　日程第１、会期についてを</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.9</font></td><td><input type="checkbox" name="downloadPos" value="37130" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/37130/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span9" style="color:#808080;display:none;">　次に、日程第２、議案第１号から日程第７、議案第６号までの議</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.10</font></td><td><input type="checkbox" name="downloadPos" value="37792" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/37792/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span10" style="color:#808080;display:none;">　提出者の説明を求めます。
+　副区長。
+　〔植竹　貴副区長　登</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.11</font></td><td><input type="checkbox" name="downloadPos" value="37882" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/37882/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">植竹貴副区長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span11" style="color:#808080;display:none;">　ただいま上程されました議案第１号から議案第６号までの６議案</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.12</font></td><td><input type="checkbox" name="downloadPos" value="44736" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/44736/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span12" style="color:#808080;display:none;">　上程中の案件について、質疑を許します。
+　２２番、筒井たか</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.13</font></td><td><input type="checkbox" name="downloadPos" value="44830" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/44830/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">筒井たかひさ議員<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span13" style="color:#808080;display:none;">　議会運営委員会所属の議員全員の賛成を得まして、３８名をもっ</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.14</font></td><td><input type="checkbox" name="downloadPos" value="45094" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/45094/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span14" style="color:#808080;display:none;">　お諮りいたします。
+　筒井たかひさ議員の動議を本日の日程に</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.15</font></td><td><input type="checkbox" name="downloadPos" value="45474" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/45474/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">筒井たかひさ議員<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span15" style="color:#808080;display:none;">　予算審査特別委員会の設置について、動議提出者を代表して提案</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.16</font></td><td><input type="checkbox" name="downloadPos" value="47156" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/47156/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span16" style="color:#808080;display:none;">　お諮りいたします。
+　筒井たかひさ議員の動議のとおり決する</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.17</font></td><td><input type="checkbox" name="downloadPos" value="48096" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/48096/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span17" style="color:#808080;display:none;">　休憩前に引き続き、会議を開きます。
+　予算審査特別委員会に</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.18</font></td><td><input type="checkbox" name="downloadPos" value="48510" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/48510/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span18" style="color:#808080;display:none;">　次に、日程第８、議案第７号から日程第４２、議案第４１号まで</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.19</font></td><td><input type="checkbox" name="downloadPos" value="51916" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/51916/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span19" style="color:#808080;display:none;">　提出者の説明を求めます。
+　副区長。
+　〔植竹　貴副区長　登</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.20</font></td><td><input type="checkbox" name="downloadPos" value="52006" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/52006/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">植竹貴副区長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span20" style="color:#808080;display:none;">　ただいま上程されました議案第７号から議案第４１号までの３５</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.21</font></td><td><input type="checkbox" name="downloadPos" value="65190" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/65190/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span21" style="color:#808080;display:none;">　なお、ただいまの議案中、議案第９号及び議案第１５号の議案２</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.22</font></td><td><input type="checkbox" name="downloadPos" value="65904" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/65904/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span22" style="color:#808080;display:none;">　上程中の案件について、質疑を許します。
+　１２番、齊藤大介</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.23</font></td><td><input type="checkbox" name="downloadPos" value="65994" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/65994/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">齊藤大介議員<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span23" style="color:#808080;display:none;">　議会運営委員会所属の議員全員の賛成を得まして、ただいま上程</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.24</font></td><td><input type="checkbox" name="downloadPos" value="66154" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/66154/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span24" style="color:#808080;display:none;">　お諮りいたします。
+　齊藤大介議員の動議のとおり決すること</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.25</font></td><td><input type="checkbox" name="downloadPos" value="66550" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/66550/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span25" style="color:#808080;display:none;">　次に、日程第４３、議員提出議案第１号から日程第４７、議員提</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.26</font></td><td><input type="checkbox" name="downloadPos" value="67232" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/67232/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span26" style="color:#808080;display:none;">　提出者代表の説明を求めます。
+　２９番、木村ひでこ議員。
+　</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.27</font></td><td><input type="checkbox" name="downloadPos" value="67350" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/67350/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">木村ひでこ議員<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span27" style="color:#808080;display:none;">　ただいま上程されました議員提出議案第１号から第５号までの５</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.28</font></td><td><input type="checkbox" name="downloadPos" value="68552" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/68552/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span28" style="color:#808080;display:none;">　上程中の案件について、質疑を許します。
+　１２番、齊藤大介</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.29</font></td><td><input type="checkbox" name="downloadPos" value="68642" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/68642/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">齊藤大介議員<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span29" style="color:#808080;display:none;">　議会運営委員会所属の議員全員の賛成を得まして、ただいま上程</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.30</font></td><td><input type="checkbox" name="downloadPos" value="68802" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/68802/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span30" style="color:#808080;display:none;">　お諮りいたします。
+　齊藤大介議員の動議のとおり決すること</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.31</font></td><td><input type="checkbox" name="downloadPos" value="69198" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/69198/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span31" style="color:#808080;display:none;">　次に、本日までに議長において受理いたしました請願は８件であ</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.32</font></td><td><input type="checkbox" name="downloadPos" value="69524" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/69524/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span32" style="color:#808080;display:none;">　以上をもちまして、本日の議事日程を全部終了いたしました。
+</div>
+</td></tr>
+<tr>
+<td nowrap><font class="TEXT5">No.33</font></td><td><input type="checkbox" name="downloadPos" value="69802" ></td>
+<td nowrap>
+</td>
+<td nowrap>
+<A HREF="/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/69802/0//10/1/1870//0/0/0" TARGET="TEXTW"><font class="TEXT5">伊藤よしのり議長<font></A>
+</td>
+<td></td>
+<td width=100%>&nbsp;</td>
+</tr>
+<tr><td colspan=3></td><td nowrap colspan=3><div id="span33" style="color:#808080;display:none;">　本日はこれをもって散会いたします。
+　午後３時７分散会
+
+
+
+</div>
+</td></tr>
+</TABLE>
+<A href="javascript:downloadcheck()">
+<IMG src="/katsushika/image/button06.gif" alt="ダウンロード" border=0></a><br><br>
+</FORM>
+<script language="javascript">
+<!--
+parent.TEXTW.location.href='/katsushika/cgi-bin3/r_TextFrame.exe?n9goyxzrwrkcenlj8f/R070214A/0/0//10/1/1870//0/0/0';
+//-->
+</script>
+<A HREF="/katsushika/sapphire.html" target="_top"><IMG src="/katsushika/image/button21.gif" alt="ホームへ戻る" border=0></a><br>
+<A HREF="javascript:history.back()" target="_top"><IMG src="/katsushika/image/button31.gif" alt="前へ戻る" border=0></a><br>
+</BODY>
+</HTML>
