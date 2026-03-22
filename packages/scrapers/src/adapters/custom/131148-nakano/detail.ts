@@ -13,7 +13,7 @@
  *   例: 委員長
  *       　定足数に達しましたので...
  *
- * エンコーディング: Shift_JIS
+ * エンコーディング: UTF-8
  */
 
 import { createHash } from "node:crypto";
