@@ -40,13 +40,13 @@ export async function scrapeAll(
 
   let schedules;
   if (isSapphireType(baseUrl)) {
-    schedules = await fetchFromSapphire(baseUrl);
+    schedules = await fetchFromSapphire(baseUrl, targetYear);
   } else if (isCgiType(baseUrl)) {
-    schedules = await fetchFromCgi(baseUrl);
+    schedules = await fetchFromCgi(baseUrl, targetYear);
   } else if (isIndexHtmlType(baseUrl)) {
-    schedules = await fetchFromIndexHtml(baseUrl);
+    schedules = await fetchFromIndexHtml(baseUrl, targetYear);
   } else {
-    schedules = await fetchFromSapphire(baseUrl);
+    schedules = await fetchFromSapphire(baseUrl, targetYear);
   }
 
   if (!schedules || schedules.length === 0) {
@@ -56,11 +56,22 @@ export async function scrapeAll(
     return results;
   }
 
-  const limited = meetingLimit ? schedules.slice(0, meetingLimit) : schedules;
+  // targetYear フィルタを meetingLimit の前に適用する
+  // （meetingLimit 後にフィルタすると、対象年度以外の会議を取得して除外されてしまう）
+  const yearFiltered = targetYear
+    ? schedules.filter((s) => {
+        const year = new Date(s.heldOn).getFullYear();
+        return year === targetYear;
+      })
+    : schedules;
+
+  const limited = meetingLimit
+    ? yearFiltered.slice(0, meetingLimit)
+    : yearFiltered;
   const limitNote = meetingLimit ? ` (上限 ${meetingLimit} 件に制限)` : "";
 
   console.log(
-    `  [kensakusystem] ${municipalityName}: ${limited.length} 件のスケジュールを処理${limitNote} (${schedules.length} 件中)`
+    `  [kensakusystem] ${municipalityName}: ${limited.length} 件のスケジュールを処理${limitNote} (${yearFiltered.length} 件中)`
   );
 
   for (const schedule of limited) {
@@ -72,12 +83,6 @@ export async function scrapeAll(
     if (meeting) {
       results.push(meeting);
     }
-  }
-
-  if (targetYear) {
-    return results.filter(
-      (m) => new Date(m.heldOn).getFullYear() === targetYear
-    );
   }
 
   return results;
