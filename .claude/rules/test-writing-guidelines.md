@@ -4,6 +4,14 @@
 
 テストデータの準備処理（Arrange）でヘルパー関数を使わない。各テストケース内でデータをインラインに作成し、「何が設定されたか」「何が渡されたか」を一目で分かるようにする。
 
+**例外**: `readFileSync` ベースのフィクスチャ読み込み関数は許容する。フィクスチャファイルのパス解決を毎テストケースに書くのは冗長であり、読み込み関数はテストデータの内容を隠蔽しない（ファイル名から何を読んでいるか明確）ため。
+
+```typescript
+// ✅ フィクスチャ読み込みヘルパーは許容
+const fixture = (pattern: string, file: string) =>
+  readFileSync(join(__dirname, "__fixtures__/patterns", pattern, file), "utf-8");
+```
+
 ```typescript
 // ❌ ヘルパー関数の使用
 const { municipality } = await seedTestData(tx);
