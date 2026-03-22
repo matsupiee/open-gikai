@@ -3,28 +3,12 @@ import type { ScraperQueueMessage } from "./types";
 import { updateScraperJobStatus } from "./job-logger";
 import { handleDiscussnetSspSchedule } from "../system-types/discussnet-ssp/schedule/handler";
 import { handleDiscussnetSspMinute } from "../system-types/discussnet-ssp/minute/handler";
-import { handleDbsearchList } from "../system-types/dbsearch/list/handler";
-import { handleDbsearchDetail } from "../system-types/dbsearch/detail/handler";
-import { handleKensakusystemList } from "../system-types/kensakusystem/list/handler";
-import { handleKensakusystemDetail } from "../system-types/kensakusystem/detail/handler";
-import { handleGijirokuComList } from "../system-types/gijiroku-com/list/handler";
-import { handleGijirokuComDetail } from "../system-types/gijiroku-com/detail/handler";
+import { handleGenericList } from "../handlers/generic-list";
+import { handleGenericDetail } from "../handlers/generic-detail";
 
 type DiscussnetSspMessage = Extract<
   ScraperQueueMessage,
   { type: `discussnet-ssp:${string}` }
->;
-type DbsearchMessage = Extract<
-  ScraperQueueMessage,
-  { type: `dbsearch:${string}` }
->;
-type KensakusystemMessage = Extract<
-  ScraperQueueMessage,
-  { type: `kensakusystem:${string}` }
->;
-type GijirokuComMessage = Extract<
-  ScraperQueueMessage,
-  { type: `gijiroku-com:${string}` }
 >;
 
 /**
@@ -43,14 +27,13 @@ export async function handleQueueMessage(
     case "discussnet-ssp":
       await handleDiscussnetSsp(db, queue, msg as DiscussnetSspMessage, openaiApiKey);
       break;
-    case "dbsearch":
-      await handleDbsearch(db, queue, msg as DbsearchMessage, openaiApiKey);
-      break;
-    case "kensakusystem":
-      await handleKensakusystem(db, queue, msg as KensakusystemMessage, openaiApiKey);
-      break;
-    case "gijiroku-com":
-      await handleGijirokuCom(db, queue, msg as GijirokuComMessage, openaiApiKey);
+    case "scraper":
+      // 汎用 2フェーズハンドラー（adapter registry 経由で処理）
+      if (msg.type === "scraper:list") {
+        await handleGenericList(db, queue, msg);
+      } else if (msg.type === "scraper:detail") {
+        await handleGenericDetail(db, msg, openaiApiKey);
+      }
       break;
     default:
       console.warn(`[scraper-worker] unknown message type:`, msg.type);
@@ -69,54 +52,6 @@ async function handleDiscussnetSsp(
       break;
     case "discussnet-ssp:minute":
       await handleDiscussnetSspMinute(db, msg, openaiApiKey);
-      break;
-  }
-}
-
-async function handleDbsearch(
-  db: Db,
-  queue: Queue<ScraperQueueMessage>,
-  msg: DbsearchMessage,
-  openaiApiKey?: string
-): Promise<void> {
-  switch (msg.type) {
-    case "dbsearch:list":
-      await handleDbsearchList(db, queue, msg);
-      break;
-    case "dbsearch:detail":
-      await handleDbsearchDetail(db, msg, openaiApiKey);
-      break;
-  }
-}
-
-async function handleKensakusystem(
-  db: Db,
-  queue: Queue<ScraperQueueMessage>,
-  msg: KensakusystemMessage,
-  openaiApiKey?: string
-): Promise<void> {
-  switch (msg.type) {
-    case "kensakusystem:list":
-      await handleKensakusystemList(db, queue, msg);
-      break;
-    case "kensakusystem:detail":
-      await handleKensakusystemDetail(db, msg, openaiApiKey);
-      break;
-  }
-}
-
-async function handleGijirokuCom(
-  db: Db,
-  queue: Queue<ScraperQueueMessage>,
-  msg: GijirokuComMessage,
-  openaiApiKey?: string
-): Promise<void> {
-  switch (msg.type) {
-    case "gijiroku-com:list":
-      await handleGijirokuComList(db, queue, msg);
-      break;
-    case "gijiroku-com:detail":
-      await handleGijirokuComDetail(db, msg, openaiApiKey);
       break;
   }
 }

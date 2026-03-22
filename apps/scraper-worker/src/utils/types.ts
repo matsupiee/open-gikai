@@ -13,8 +13,37 @@ export interface LocalScraperTarget {
 
 /**
  * Cloudflare Queue に投入するメッセージの型定義。
+ *
+ * - scraper:list / scraper:detail — 汎用2フェーズメッセージ（ScraperAdapter 経由で処理）
+ * - discussnet-ssp:* — 4フェーズの特殊ケース（個別ハンドラーで処理）
  */
 export type ScraperQueueMessage =
+  // ── 汎用 2フェーズメッセージ（registry に登録された adapter が処理） ──
+  | {
+      /** adapter の fetchList を呼び出す汎用 list メッセージ */
+      type: "scraper:list";
+      /** system_types.name（adapter の名前と一致） */
+      systemType: string;
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      prefecture: string;
+      baseUrl: string;
+      year: number;
+    }
+  | {
+      /** adapter の fetchDetail を呼び出す汎用 detail メッセージ */
+      type: "scraper:detail";
+      /** system_types.name（adapter の名前と一致） */
+      systemType: string;
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      prefecture: string;
+      /** list フェーズで生成された adapter 固有のパラメータ */
+      detailParams: Record<string, unknown>;
+    }
+  // ── DiscussNet SSP（4フェーズの特殊ケース） ──
   | {
       /**
        * DiscussNet SSP (SaaS版): council_id ごとに schedule 一覧を取得するメッセージ。
@@ -58,78 +87,6 @@ export type ScraperQueueMessage =
       memberList: string;
       /** 自ホスト版のホスト（省略時は ssp.kaigiroku.net） */
       host?: string;
-    }
-  | {
-      /** dbsr.jp: 議事録一覧ページから ID 一覧を取得するメッセージ */
-      type: "dbsearch:list";
-      jobId: string;
-      municipalityId: string;
-      municipalityName: string;
-      prefecture: string;
-      baseUrl: string;
-      year: number;
-    }
-  | {
-      /** dbsr.jp: 議事録詳細ページを取得・保存するメッセージ */
-      type: "dbsearch:detail";
-      jobId: string;
-      municipalityId: string;
-      municipalityName: string;
-      prefecture: string;
-      baseUrl: string;
-      meetingId: string;
-      detailUrl: string;
-      /** 一覧ページから取得したタイトル（詳細ページにタイトルがない場合のフォールバック） */
-      listTitle?: string;
-    }
-  | {
-      /** kensakusystem.jp: 議事録一覧ページから一覧を取得するメッセージ */
-      type: "kensakusystem:list";
-      jobId: string;
-      municipalityId: string;
-      municipalityName: string;
-      baseUrl: string;
-      year: number;
-    }
-  | {
-      /** kensakusystem.jp: 議事録詳細ページを取得・保存するメッセージ */
-      type: "kensakusystem:detail";
-      jobId: string;
-      municipalityId: string;
-      municipalityName: string;
-      slug: string;
-      title: string;
-      heldOn: string;
-      detailUrl: string;
-    }
-  | {
-      /** gijiroku.com: voiweb.exe CGI から会議一覧を取得するメッセージ */
-      type: "gijiroku-com:list";
-      jobId: string;
-      municipalityId: string;
-      municipalityName: string;
-      prefecture: string;
-      baseUrl: string;
-      year: number;
-    }
-  | {
-      /** gijiroku.com: voiweb.exe CGI から議事録本文を取得・保存するメッセージ */
-      type: "gijiroku-com:detail";
-      jobId: string;
-      municipalityId: string;
-      municipalityName: string;
-      prefecture: string;
-      baseUrl: string;
-      /** FINO パラメータ（ファイル番号） */
-      fino: string;
-      /** KGNO パラメータ（会議番号） */
-      kgno: string;
-      /** UNID パラメータ（一意識別子） */
-      unid: string;
-      /** 会議タイトル */
-      title: string;
-      /** 日付ラベル（例: "12月05日-01号"） */
-      dateLabel: string;
     };
 
 /** Cloudflare Worker の環境変数（bindings） */
