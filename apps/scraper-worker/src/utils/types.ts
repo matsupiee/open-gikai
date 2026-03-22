@@ -130,6 +130,31 @@ export type ScraperQueueMessage =
       title: string;
       /** 日付ラベル（例: "12月05日-01号"） */
       dateLabel: string;
+    }
+  | {
+      /** 飯塚市議会: 年度別ページから会議一覧を取得するメッセージ */
+      type: "iizuka:list";
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      prefecture: string;
+      baseUrl: string;
+      year: number;
+    }
+  | {
+      /** 飯塚市議会: 会議詳細ページから PDF URL を取得・保存するメッセージ */
+      type: "iizuka:detail";
+      jobId: string;
+      municipalityId: string;
+      municipalityName: string;
+      prefecture: string;
+      baseUrl: string;
+      /** 詳細ページ URL */
+      detailUrl: string;
+      /** 記事 ID */
+      pageId: string;
+      /** 会議タイトル */
+      listTitle: string;
     };
 
 /** Cloudflare Worker の環境変数（bindings） */

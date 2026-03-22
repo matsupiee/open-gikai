@@ -155,6 +155,22 @@ export async function dispatchJob(
       break;
     }
 
+    case "iizuka": {
+      await logger.info(
+        `飯塚市: ${municipalities.name} の議事録一覧をキューに投入します`
+      );
+      await queue.send({
+        type: "iizuka:list",
+        jobId: scraper_jobs.id,
+        municipalityId: municipalities.id,
+        municipalityName: municipalities.name,
+        prefecture: municipalities.prefecture,
+        baseUrl: municipalities.baseUrl,
+        year: scraper_jobs.year,
+      });
+      break;
+    }
+
     default: {
       await logger.error(`未対応の systemType: ${systemType?.name ?? "null"}`);
       await updateJobStatus(db, scraper_jobs.id, "failed", {
