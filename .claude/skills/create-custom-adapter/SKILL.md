@@ -173,7 +173,21 @@ bun tsc --noEmit 2>&1 | grep {adapter-dir}
 cd packages/scrapers && bun test src/adapters/custom/{dir}/
 ```
 
-### Step 10: コミット・プッシュ・PR
+### Step 10: NDJSON 出力による動作確認
+
+ユニットテストに加えて、実際にスクレイピングを実行して NDJSON 出力で動作確認する:
+
+```bash
+# scraper-worker ディレクトリから実行
+cd apps/scraper-worker && bun run scrape:ndjson -- --target {自治体コード} --year {対象年}
+```
+
+例: `bun run scrape:ndjson -- --target 382051 --year 2025`
+
+- 一覧取得 → 詳細取得の一連のフローが正常に動作することを確認する
+- 出力された NDJSON の内容（会議名、発言者、発言内容など）が妥当か目視チェックする
+
+### Step 11: コミット・プッシュ・PR
 
 worktree ルールに従い、PR まで自動で作成する。
 
