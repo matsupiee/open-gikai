@@ -84,7 +84,7 @@ export async function scrapeAll(
         council.name,
         schedule,
         municipalityId,
-        { apiBase, host }
+        { apiBase, host, viewYear: council.viewYear }
       );
       if (meeting) {
         results.push(meeting);

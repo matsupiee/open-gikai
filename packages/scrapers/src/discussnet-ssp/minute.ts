@@ -56,7 +56,7 @@ export async function fetchMinuteData(
   councilName: string,
   schedule: SspSchedule,
   municipalityId: string,
-  options?: { apiBase?: string; host?: string }
+  options?: { apiBase?: string; host?: string; viewYear?: string }
 ): Promise<MeetingData | null> {
   const data = await postJson<MinuteApiResponse>("minutes/get_minute", {
     tenant_id: tenantId,
@@ -101,7 +101,11 @@ export async function fetchMinuteData(
     offset = endOffset + 1;
   }
 
-  const heldOn = extractDateFromMemberList(schedule.memberList);
+  const heldOn =
+    extractDateFromMemberList(schedule.memberList) ??
+    (options?.viewYear
+      ? extractDateFromScheduleName(schedule.name, options.viewYear)
+      : null);
   if (!heldOn) return null;
 
   const title = `${councilName} ${normalizeScheduleName(schedule.name)}`;
@@ -169,6 +173,25 @@ export function extractTextFromBody(body: string): string {
     .trim();
 }
 
+/** 漢数字を算用数字に変換する */
+function kanjiToNumber(str: string): number {
+  const kanjiDigits: Record<string, number> = {
+    〇: 0, 一: 1, 二: 2, 三: 3, 四: 4,
+    五: 5, 六: 6, 七: 7, 八: 8, 九: 9,
+  };
+  let result = 0;
+  let current = 0;
+  for (const ch of str) {
+    if (ch === "十") {
+      result += current === 0 ? 10 : current * 10;
+      current = 0;
+    } else if (ch in kanjiDigits) {
+      current = kanjiDigits[ch]!;
+    }
+  }
+  return result + current;
+}
+
 /** @internal テスト用にexport */
 export function extractDateFromMemberList(memberList: string): string | null {
   const text = normalizeFullWidth(
@@ -181,7 +204,7 @@ export function extractDateFromMemberList(memberList: string): string | null {
     昭和: 1925,
   };
 
-  // まず「年号+年+月+日」が連続（間にスペースあり可）している形式を試みる（最も精度が高い）
+  // 1. 「年号+年+月+日」が連続（間にスペースあり可）している形式（最も精度が高い）
   for (const [era, base] of Object.entries(wareki)) {
     const m = text.match(new RegExp(`${era}\\s*(\\d+)年\\s*(\\d{1,2})月\\s*(\\d{1,2})日`));
     if (m?.[1] && m[2] && m[3]) {
@@ -190,13 +213,30 @@ export function extractDateFromMemberList(memberList: string): string | null {
     }
   }
 
-  // 「令和X年（YYYY年）MM月DD日」形式（括弧内の西暦が和暦と月日の間に挿入される）
-  const parenM = text.match(/（(\d{4})年）(\d{1,2})月(\d{1,2})日/);
+  // 2. 「YYYY年(令和X年)MM月DD日」形式（西暦先行、括弧内に和暦）— 福山市等
+  const westernFirst = text.match(/(\d{4})年\s*[（(][^）)]+[）)]\s*(\d{1,2})月(\d{1,2})日/);
+  if (westernFirst?.[1] && westernFirst[2] && westernFirst[3]) {
+    return `${westernFirst[1]}-${westernFirst[2].padStart(2, "0")}-${westernFirst[3].padStart(2, "0")}`;
+  }
+
+  // 3. 「令和X年（YYYY年）MM月DD日」形式（和暦先行、括弧内に西暦）— 越谷市等
+  const parenM = text.match(/[（(](\d{4})年[）)]\s*(\d{1,2})月(\d{1,2})日/);
   if (parenM?.[1] && parenM[2] && parenM[3]) {
     return `${parenM[1]}-${parenM[2].padStart(2, "0")}-${parenM[3].padStart(2, "0")}`;
   }
 
-  // 北見市のように「令和7年」と「3月6日」が別行に分かれている場合は二段階で抽出する
+  // 4. 漢数字の日付形式（「令和七年二月十九日」）— 山形県、天理市等
+  for (const [era, base] of Object.entries(wareki)) {
+    const m = text.match(new RegExp(`${era}([〇一二三四五六七八九十]+)年([〇一二三四五六七八九十]+)月([〇一二三四五六七八九十]+)日`));
+    if (m?.[1] && m[2] && m[3]) {
+      const y = base + kanjiToNumber(m[1]);
+      const month = kanjiToNumber(m[2]);
+      const day = kanjiToNumber(m[3]);
+      return `${y}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+  }
+
+  // 5. 年と月日が別行に分かれている場合の二段階抽出 — 北見市、足利市等
   for (const [era, base] of Object.entries(wareki)) {
     const yearMatch = text.match(new RegExp(`${era}\\s*(\\d+)年`));
     if (yearMatch?.[1]) {
@@ -208,11 +248,44 @@ export function extractDateFromMemberList(memberList: string): string | null {
     }
   }
 
+  // 6. 漢数字の月日のみ（年号+算用数字年は別箇所にある）— 大阪府等
+  for (const [era, base] of Object.entries(wareki)) {
+    const yearMatch = text.match(new RegExp(`${era}\\s*(\\d+)年`));
+    if (yearMatch?.[1]) {
+      const y = base + Number(yearMatch[1]);
+      const kanjiDateMatch = text.match(/([〇一二三四五六七八九十]+)月([〇一二三四五六七八九十]+)日/);
+      if (kanjiDateMatch?.[1] && kanjiDateMatch[2]) {
+        const month = kanjiToNumber(kanjiDateMatch[1]);
+        const day = kanjiToNumber(kanjiDateMatch[2]);
+        return `${y}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      }
+    }
+  }
+
+  // 7. 西暦の一般形式
   const m = text.match(/(\d{4})[.\-\/年](\d{1,2})[.\-\/月](\d{1,2})/);
   if (m?.[1] && m[2] && m[3]) {
     return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
   }
 
+  return null;
+}
+
+/**
+ * schedule.name から日付を抽出するフォールバック。
+ * 帯広市等の「02月27日－01号」形式に対応。
+ * viewYear（例: "2025"）が必要。
+ */
+/** @internal テスト用にexport */
+export function extractDateFromScheduleName(
+  scheduleName: string,
+  viewYear: string
+): string | null {
+  const normalized = normalizeFullWidth(scheduleName);
+  const m = normalized.match(/(\d{1,2})月(\d{1,2})日/);
+  if (m?.[1] && m[2]) {
+    return `${viewYear}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
+  }
   return null;
 }
 
