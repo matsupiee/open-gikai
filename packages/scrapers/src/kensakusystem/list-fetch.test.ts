@@ -59,8 +59,13 @@ vi.mock("./shared", () => {
   };
 });
 
-import { fetchFromIndexHtml, fetchFromCgi } from "./list";
-import { fetchWithEncoding, fetchRawBytes } from "./shared";
+import { fetchFromIndexHtml, fetchFromCgi, fetchFromSapphire } from "./list";
+import {
+  fetchWithEncoding,
+  fetchRawBytes,
+  decodeShiftJis,
+  extractTreedepthRawBytes,
+} from "./shared";
 
 describe("fetchFromIndexHtml", () => {
   const mockFetchWithEncoding = (fetchWithEncoding as ReturnType<typeof vi.fn>);
@@ -168,5 +173,142 @@ describe("fetchFromCgi", () => {
     // fetchFromSapphire へのフォールバックで fetchRawBytes が呼ばれることを確認
     expect(mockFetchWithEncoding).toHaveBeenCalledTimes(1);
     expect(mockFetchRawBytes).toHaveBeenCalled();
+  });
+});
+
+describe("fetchFromSapphire", () => {
+  const mockFetchRawBytes = fetchRawBytes as ReturnType<typeof vi.fn>;
+  const mockDecodeShiftJis = decodeShiftJis as ReturnType<typeof vi.fn>;
+  const mockExtractTreedepthRawBytes =
+    extractTreedepthRawBytes as ReturnType<typeof vi.fn>;
+
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  test("直接 ResultFrame.exe リンクがある場合はそのまま返す", async () => {
+    const html = `<html><body>
+      <a href="ResultFrame.exe?Code=abc&amp;fileName=R070301QUES.html">3月1日</a>
+    </body></html>`;
+    mockFetchRawBytes.mockResolvedValue(new Uint8Array([0x41]));
+    mockDecodeShiftJis.mockReturnValue(html);
+    mockExtractTreedepthRawBytes.mockReturnValue([]);
+
+    const result = await fetchFromSapphire(
+      "http://www.kensakusystem.jp/testcity/cgi-bin3/See.exe?Code=abc"
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result![0]!.heldOn).toBe("2025-03-01");
+  });
+
+  test("ページに treedepth がある場合は navigateTreedepths を試みる", async () => {
+    const treeHtml = `<html>
+      <form name="viewtree" action="See.exe" method="POST">
+        <input type="hidden" name="Code" value="abc">
+        <input type="hidden" name="treedepth" value="">
+      </form>
+    </html>`;
+
+    const treedepthBytes = new Uint8Array([0x52, 0x30, 0x37]); // "R07"
+    mockFetchRawBytes.mockResolvedValue(new Uint8Array([0x41]));
+    mockDecodeShiftJis.mockReturnValue(treeHtml);
+    // extractTreedepthRawBytes は fetchFromSapphire と navigateTreedepths の両方から呼ばれる
+    mockExtractTreedepthRawBytes
+      .mockReturnValueOnce([treedepthBytes])  // fetchFromSapphire でのチェック
+      .mockReturnValueOnce([treedepthBytes])  // navigateTreedepths での年タブ抽出
+      .mockReturnValue([]);                    // POST レスポンスの委員会抽出（以降は空）
+
+    const { fetchRawBytesPost } = await import("./shared");
+    const mockFetchRawBytesPost = fetchRawBytesPost as ReturnType<typeof vi.fn>;
+    mockFetchRawBytesPost.mockResolvedValue(new Uint8Array([0x42]));
+
+    const { percentEncodeBytes } = await import("./shared");
+    (percentEncodeBytes as ReturnType<typeof vi.fn>).mockReturnValue("%52%30%37");
+
+    await fetchFromSapphire(
+      "http://www.kensakusystem.jp/testcity/cgi-bin3/See.exe?Code=abc"
+    );
+
+    // treedepth がページにあったため、POST による treedepth ナビゲーションが試みられた
+    expect(mockFetchRawBytesPost).toHaveBeenCalled();
+  });
+
+  test("初回フェッチ失敗時にトップページからフォールバックする", async () => {
+    // 1回目: baseUrl の取得が失敗（404 等）
+    // 2回目: index.html のフォールバック（See.exe リンクあり）
+    // 3回目: See.exe ツリーページの取得
+    const indexHtml = `<html><body>
+      <a href="cgi-bin3/See.exe?Code=newcode">会議録の閲覧</a>
+    </body></html>`;
+    const treeHtml = `<html><body>
+      <a href="See.exe?Code=newcode">令和7年6月15日 本会議</a>
+    </body></html>`;
+
+    mockFetchRawBytes
+      .mockResolvedValueOnce(null)                      // baseUrl → 404
+      .mockResolvedValueOnce(new Uint8Array([0x41]))    // index.html
+      .mockResolvedValueOnce(new Uint8Array([0x42]));   // See.exe ツリーページ
+
+    mockDecodeShiftJis
+      .mockReturnValueOnce(indexHtml)
+      .mockReturnValueOnce(treeHtml);
+
+    mockExtractTreedepthRawBytes.mockReturnValue([]);
+
+    const result = await fetchFromSapphire(
+      "http://www.kensakusystem.jp/testcity/cgi-bin3/Search2.exe?Code=expired"
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result![0]!.heldOn).toBe("2025-06-15");
+    // fetchRawBytes が3回呼ばれる（baseUrl + index.html + See.exe）
+    expect(mockFetchRawBytes).toHaveBeenCalledTimes(3);
+  });
+
+  test("初回フェッチ成功だが See.exe リンクがない場合もトップページからフォールバックする", async () => {
+    const errorHtml = `<html><body>議会名が登録されていません。</body></html>`;
+    const indexHtml = `<html><body>
+      <a href="cgi-bin3/See.exe?Code=fresh">閲覧</a>
+    </body></html>`;
+    const treeHtml = `<html><body>
+      <a href="See.exe?Code=fresh">令和7年3月10日 定例会</a>
+    </body></html>`;
+
+    mockFetchRawBytes
+      .mockResolvedValueOnce(new Uint8Array([0x41]))    // baseUrl（エラーページ）
+      .mockResolvedValueOnce(new Uint8Array([0x42]))    // index.html
+      .mockResolvedValueOnce(new Uint8Array([0x43]));   // See.exe
+
+    mockDecodeShiftJis
+      .mockReturnValueOnce(errorHtml)
+      .mockReturnValueOnce(indexHtml)
+      .mockReturnValueOnce(treeHtml);
+
+    mockExtractTreedepthRawBytes.mockReturnValue([]);
+
+    const result = await fetchFromSapphire(
+      "http://www.kensakusystem.jp/testcity/cgi-bin3/Search2.exe?Code=expired&sTarget=2"
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result![0]!.heldOn).toBe("2025-03-10");
+  });
+
+  test("トップページフォールバックで元URLと同じページはスキップする", async () => {
+    const indexHtml = `<html><body>リンクなし</body></html>`;
+
+    mockFetchRawBytes.mockResolvedValue(new Uint8Array([0x41]));
+    mockDecodeShiftJis.mockReturnValue(indexHtml);
+    mockExtractTreedepthRawBytes.mockReturnValue([]);
+
+    const result = await fetchFromSapphire(
+      "https://www.kensakusystem.jp/testcity/index.html"
+    );
+
+    expect(result).toBeNull();
+    // baseUrl と index.html が同じなのでスキップ → sapphire.html のみ試行
+    // baseUrl(1回) + sapphire.html(1回) = 2回
+    expect(mockFetchRawBytes).toHaveBeenCalledTimes(2);
   });
 });
