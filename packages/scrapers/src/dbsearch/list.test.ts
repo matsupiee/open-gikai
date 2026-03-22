@@ -69,6 +69,7 @@ describe("parseListHtml", () => {
     expect(records[0]!.id).toBe("100");
     expect(records[0]!.title).toBe("令和６年第１回定例会");
     expect(records[0]!.url).toContain("Template=view");
+    expect(records[0]!.date).toBeNull();
     expect(records[1]!.id).toBe("101");
   });
 
@@ -96,6 +97,34 @@ describe("parseListHtml", () => {
     expect(records[0]!.url.startsWith("https://foo.dbsr.jp")).toBe(true);
   });
 
+  test("Template=doc-one-frame のリンクからレコードを抽出", () => {
+    const html = `
+      <div class="result-title">
+        <a href="/index.php/1234567?Template=doc-one-frame&amp;VoiceType=onehit&amp;DocumentID=500">令和７年第１回定例会</a>
+        <span class="result-title__date">2025-12-24</span>
+      </div>
+      <div class="result-title">
+        <a href="/index.php/1234567?Template=doc-one-frame&amp;VoiceType=onehit&amp;DocumentID=501">令和７年第２回定例会</a>
+        <span class="result-title__date">2025-12-11</span>
+      </div>
+    `;
+    const records = parseListHtml(html, "https://www.city.aomori.aomori.dbsr.jp");
+    expect(records).toHaveLength(2);
+    expect(records[0]!.id).toBe("500");
+    expect(records[0]!.title).toBe("令和７年第１回定例会");
+    expect(records[0]!.date).toBe("2025-12-24");
+    expect(records[1]!.id).toBe("501");
+    expect(records[1]!.date).toBe("2025-12-11");
+  });
+
+  test("Template=doc-all-frame のリンクからレコードを抽出", () => {
+    const html =
+      '<a href="/index.php/2753880?Template=doc-all-frame&amp;VoiceType=all&amp;DocumentID=600">令和７年第１回定例会</a>';
+    const records = parseListHtml(html, "https://www.city.shizuoka.shizuoka.dbsr.jp");
+    expect(records).toHaveLength(1);
+    expect(records[0]!.id).toBe("600");
+  });
+
   test("新形式の DocumentID パラメータからレコードを抽出", () => {
     const html = `
       <a href="/index.php/7519522?Template=view&amp;VoiceType=all&amp;DocumentID=3650">令和７年 意見書第０４号</a>
@@ -106,6 +135,26 @@ describe("parseListHtml", () => {
     expect(records[0]!.id).toBe("3650");
     expect(records[0]!.title).toBe("令和７年 意見書第０４号");
     expect(records[1]!.id).toBe("3651");
+  });
+
+  test("日本語日付形式の span からも日付を抽出", () => {
+    const html = `
+      <a href="/index.php/12345?Template=doc-one-frame&amp;VoiceType=onehit&amp;DocumentID=700">定例会</a>
+      <span class="date">2025年12月19日</span>
+    `;
+    const records = parseListHtml(html, "https://example.dbsr.jp");
+    expect(records).toHaveLength(1);
+    expect(records[0]!.date).toBe("2025-12-19");
+  });
+
+  test("開催日プレフィックス付き日付を抽出", () => {
+    const html = `
+      <a href="/index.php/12345?Template=doc-one-frame&amp;VoiceType=onehit&amp;DocumentID=800">定例会</a>
+      <span class="result-title__date">開催日：2025-12-11</span>
+    `;
+    const records = parseListHtml(html, "https://example.dbsr.jp");
+    expect(records).toHaveLength(1);
+    expect(records[0]!.date).toBe("2025-12-11");
   });
 });
 

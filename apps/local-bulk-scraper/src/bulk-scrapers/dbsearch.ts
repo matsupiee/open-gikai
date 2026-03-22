@@ -47,7 +47,8 @@ export async function scrapeAll(
         record.url,
         municipalityId,
         record.id,
-        record.title
+        record.title,
+        record.date ?? undefined
       );
       if (meeting) {
         results.push(meeting);
