@@ -60,10 +60,11 @@ vi.mock("./shared", () => {
 });
 
 import { fetchFromIndexHtml, fetchFromCgi } from "./list";
-import { fetchWithEncoding } from "./shared";
+import { fetchWithEncoding, fetchRawBytes } from "./shared";
 
 describe("fetchFromIndexHtml", () => {
   const mockFetchWithEncoding = (fetchWithEncoding as ReturnType<typeof vi.fn>);
+  const mockFetchRawBytes = (fetchRawBytes as ReturnType<typeof vi.fn>);
 
   afterEach(() => {
     vi.resetAllMocks();
@@ -93,21 +94,22 @@ describe("fetchFromIndexHtml", () => {
 
   test("日付なし See.exe リンクのみの場合は fetchFromSapphire にフォールバック", async () => {
     // 1回目: fetchFromIndexHtml が index.html を取得（日付なしリンクのみ）
-    // 2回目: fetchFromSapphire が同じ URL を取得（See.exe リンクを探す）
-    mockFetchWithEncoding
-      .mockResolvedValueOnce(
-        `<html><body>
-          <a href="cgi-bin3/See.exe?Code=abc">会議録の閲覧</a>
-        </body></html>`
-      )
-      .mockResolvedValueOnce(null);
+    mockFetchWithEncoding.mockResolvedValueOnce(
+      `<html><body>
+        <a href="cgi-bin3/See.exe?Code=abc">会議録の閲覧</a>
+      </body></html>`
+    );
+    // fetchFromSapphire は fetchRawBytes を使う
+    mockFetchRawBytes.mockResolvedValue(null);
 
     const result = await fetchFromIndexHtml(
       "http://www.kensakusystem.jp/testcity/index.html"
     );
 
-    // fetchFromSapphire にフォールバックしたことを確認（2回呼ばれる）
-    expect(mockFetchWithEncoding).toHaveBeenCalledTimes(2);
+    // fetchFromIndexHtml が fetchWithEncoding を1回呼び、
+    // fetchFromSapphire へのフォールバックで fetchRawBytes が呼ばれることを確認
+    expect(mockFetchWithEncoding).toHaveBeenCalledTimes(1);
+    expect(mockFetchRawBytes).toHaveBeenCalled();
   });
 
   test("HTML 取得に失敗した場合は null を返す", async () => {
@@ -123,6 +125,7 @@ describe("fetchFromIndexHtml", () => {
 
 describe("fetchFromCgi", () => {
   const mockFetchWithEncoding = (fetchWithEncoding as ReturnType<typeof vi.fn>);
+  const mockFetchRawBytes = (fetchRawBytes as ReturnType<typeof vi.fn>);
 
   afterEach(() => {
     vi.resetAllMocks();
@@ -151,18 +154,19 @@ describe("fetchFromCgi", () => {
 
   test("日付なしリンクのみの場合は fetchFromSapphire にフォールバック", async () => {
     // 1回目: fetchFromCgi が Search2.exe を取得（日付なし）
-    // 2回目: fetchFromSapphire が同じ URL を取得
-    mockFetchWithEncoding
-      .mockResolvedValueOnce(
-        `<html><body><p>検索フォーム</p></body></html>`
-      )
-      .mockResolvedValueOnce(null);
+    mockFetchWithEncoding.mockResolvedValueOnce(
+      `<html><body><p>検索フォーム</p></body></html>`
+    );
+    // fetchFromSapphire は fetchRawBytes を使う
+    mockFetchRawBytes.mockResolvedValue(null);
 
     const result = await fetchFromCgi(
       "http://www.kensakusystem.jp/testcity/cgi/Search2.exe"
     );
 
-    // fetchFromSapphire にフォールバックしたことを確認（2回呼ばれる）
-    expect(mockFetchWithEncoding).toHaveBeenCalledTimes(2);
+    // fetchFromCgi が fetchWithEncoding を1回呼び、
+    // fetchFromSapphire へのフォールバックで fetchRawBytes が呼ばれることを確認
+    expect(mockFetchWithEncoding).toHaveBeenCalledTimes(1);
+    expect(mockFetchRawBytes).toHaveBeenCalled();
   });
 });
