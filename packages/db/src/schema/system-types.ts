@@ -23,7 +23,7 @@ export const system_types = pgTable(
 );
 
 /** 既知のシステム種別（アプリコードでの型付けに使用） */
-export type SystemType = "discussnet_ssp" | "dbsearch" | "kensakusystem" | "gijiroku_com";
+export type SystemType = "discussnet_ssp" | "dbsearch" | "kensakusystem" | "gijiroku_com" | "shinagawa_kaigiroku";
 
 /** system_types テーブルの初期データ */
 export const SYSTEM_TYPES_SEED: Array<{
@@ -42,5 +42,9 @@ export const SYSTEM_TYPES_SEED: Array<{
   {
     name: "gijiroku_com",
     description: "gijiroku.com（voiweb.exe ベースの議事録検索システム）",
+  },
+  {
+    name: "shinagawa_kaigiroku",
+    description: "品川区議会 会議録検索システム（kaigiroku.city.shinagawa.tokyo.jp）",
   },
 ];
