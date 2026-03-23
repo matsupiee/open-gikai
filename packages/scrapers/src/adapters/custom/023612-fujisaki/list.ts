@@ -50,10 +50,10 @@ export function parseDateFromFilename(filename: string): string | null {
  * 例: "令和5年第1回定例会" → "2023-01-01"
  */
 export function fallbackDateFromSession(session: string): string | null {
-  const match = session.match(/(令和|平成)(\d+)年/);
+  const match = session.match(/(令和|平成)(元|\d+)年/);
   if (!match) return null;
 
-  const eraYear = parseInt(match[2]!, 10);
+  const eraYear = match[2] === "元" ? 1 : parseInt(match[2]!, 10);
   let westernYear: number;
   if (match[1] === "令和") westernYear = eraYear + 2018;
   else if (match[1] === "平成") westernYear = eraYear + 1988;

@@ -32,6 +32,14 @@ describe("fallbackDateFromSession", () => {
     expect(fallbackDateFromSession("平成30年第2回定例会")).toBe("2018-01-01");
   });
 
+  it("令和元年を正しく変換する", () => {
+    expect(fallbackDateFromSession("令和元年第1回定例会")).toBe("2019-01-01");
+  });
+
+  it("平成元年を正しく変換する", () => {
+    expect(fallbackDateFromSession("平成元年第1回定例会")).toBe("1989-01-01");
+  });
+
   it("和暦を含まない文字列は null を返す", () => {
     expect(fallbackDateFromSession("不明な会期")).toBeNull();
   });

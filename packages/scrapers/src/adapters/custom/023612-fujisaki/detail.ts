@@ -18,19 +18,19 @@ import { detectMeetingType, extractExternalIdKey, fetchBinary } from "./shared";
 
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
-  "委員長",
   "副委員長",
+  "委員長",
   "副議長",
-  "副町長",
-  "教育長",
   "議長",
+  "副町長",
   "町長",
-  "委員",
-  "議員",
+  "副教育長",
+  "教育長",
   "副部長",
-  "副課長",
   "部長",
+  "副課長",
   "課長",
+  "事務局長",
   "室長",
   "局長",
   "係長",
@@ -38,6 +38,8 @@ const ROLE_SUFFIXES = [
   "主幹",
   "主査",
   "補佐",
+  "議員",
+  "委員",
 ];
 
 // 行政側の役職（答弁者として分類する）
@@ -119,7 +121,9 @@ export function parseSpeaker(text: string): {
 }
 
 /** 役職から発言種別を分類 */
-export function classifyKind(speakerRole: string | null): string {
+export function classifyKind(
+  speakerRole: string | null,
+): "remark" | "question" | "answer" {
   if (!speakerRole) return "remark";
   if (ANSWER_ROLES.has(speakerRole)) return "answer";
   if (
