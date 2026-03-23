@@ -32,11 +32,11 @@ const DIRECT_ROLES = [
 
 // 役職サフィックス（部分一致で判定、長い方を先に）
 const ROLE_SUFFIXES = [
-  "委員長",
   "副委員長",
+  "委員長",
   "副部長",
-  "副課長",
   "部長",
+  "副課長",
   "課長",
   "室長",
   "局長",
@@ -89,7 +89,9 @@ export function normalizeRole(roleText: string): string {
 }
 
 /** 役職から発言種別を分類 */
-export function classifyKind(speakerRole: string | null): string {
+export function classifyKind(
+  speakerRole: string | null
+): "remark" | "question" | "answer" {
   if (!speakerRole) return "remark";
   if (ANSWER_ROLES.has(speakerRole)) return "answer";
   if (
