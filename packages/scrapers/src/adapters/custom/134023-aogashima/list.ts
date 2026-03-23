@@ -8,7 +8,9 @@
  * レスポンス形式: <ul><li><a href="kohoYYMM.pdf">...（ファイルサイズ）</a></li></ul>
  */
 
-import { buildListUrl, buildPdfUrl, fetchPage } from "./shared";
+import { buildListUrl, buildPdfUrl, fetchPage, fetchBinary } from "./shared";
+import { getDocumentProxy, extractText } from "unpdf";
+import { parseSessions } from "./detail";
 
 export interface AogashimaPdf {
   /** PDF の完全 URL */
@@ -58,4 +60,52 @@ export async function fetchPdfList(year: number): Promise<AogashimaPdf[]> {
   if (!html) return [];
 
   return parsePressList(html);
+}
+
+/** PDF 内の1セッションを表す list フェーズの出力 */
+export interface AogashimaPdfSession {
+  /** PDF の完全 URL */
+  pdfUrl: string;
+  /** PDF ファイル名 (e.g., "koho2501.pdf") */
+  filename: string;
+  /** PDF の年月 YYYY-MM */
+  yearMonth: string;
+  /** セッションタイトル (e.g., "令和6年青ヶ島村議会第1回定例会") */
+  sessionTitle: string;
+}
+
+/**
+ * 指定年の広報誌 PDF を取得・パースし、PDF 内の各セッションごとに1エントリを返す。
+ * 議決一覧を含まない PDF はスキップされる。
+ */
+export async function fetchPdfSessions(year: number): Promise<AogashimaPdfSession[]> {
+  const pdfs = await fetchPdfList(year);
+  const results: AogashimaPdfSession[] = [];
+
+  for (const pdf of pdfs) {
+    try {
+      const buffer = await fetchBinary(pdf.pdfUrl);
+      if (!buffer) continue;
+
+      const pdfDoc = await getDocumentProxy(new Uint8Array(buffer));
+      const { text } = await extractText(pdfDoc, { mergePages: true });
+      const sessions = parseSessions(text);
+
+      for (const session of sessions) {
+        results.push({
+          pdfUrl: pdf.pdfUrl,
+          filename: pdf.filename,
+          yearMonth: pdf.yearMonth,
+          sessionTitle: session.title,
+        });
+      }
+    } catch (err) {
+      console.warn(
+        `[134023-aogashima] PDF パース失敗: ${pdf.pdfUrl}`,
+        err instanceof Error ? err.message : err
+      );
+    }
+  }
+
+  return results;
 }

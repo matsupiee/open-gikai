@@ -9,7 +9,7 @@
  */
 
 import type { ScraperAdapter, ListRecord } from "../../adapter";
-import { fetchPdfList } from "./list";
+import { fetchPdfSessions } from "./list";
 import { fetchMeetingDataFromPdf } from "./detail";
 import type { MeetingData } from "../../../utils/types";
 
@@ -20,13 +20,14 @@ export const adapter: ScraperAdapter = {
   name: "134023",
 
   async fetchList({ year }): Promise<ListRecord[]> {
-    const pdfs = await fetchPdfList(year);
+    const sessions = await fetchPdfSessions(year);
 
-    return pdfs.map((pdf) => ({
+    return sessions.map((session) => ({
       detailParams: {
-        pdfUrl: pdf.pdfUrl,
-        filename: pdf.filename,
-        yearMonth: pdf.yearMonth,
+        pdfUrl: session.pdfUrl,
+        filename: session.filename,
+        yearMonth: session.yearMonth,
+        sessionTitle: session.sessionTitle,
       },
     }));
   },
@@ -36,6 +37,7 @@ export const adapter: ScraperAdapter = {
       pdfUrl: string;
       filename: string;
       yearMonth: string;
+      sessionTitle: string;
     };
 
     const meetings = await fetchMeetingDataFromPdf(
@@ -43,9 +45,7 @@ export const adapter: ScraperAdapter = {
       municipalityId
     );
 
-    // fetchDetail は単一の MeetingData を返す仕様。
-    // 議決一覧が見つからない号は null を返す。
-    // 複数セッションがある場合は最初のものを返す。
-    return meetings[0] ?? null;
+    // sessionTitle で該当セッションの MeetingData を特定して返す
+    return meetings.find((m) => m.title === `${params.sessionTitle}議決一覧`) ?? null;
   },
 };
