@@ -161,7 +161,7 @@ describe("fetchMeetingDetail integration", () => {
     expect(result).not.toBeNull();
     expect(result!.heldOn).toBe("2024-12-26");
     expect(result!.meetingType).toBe("committee");
-    expect(result!.externalId).toBe("gijiroku_K_R06122614011");
+    expect(result!.externalId).toBe("gijiroku_tsukuba.gijiroku.com_K_R06122614011");
     expect(result!.municipalityId).toBe("test-municipality-id");
     expect(result!.statements.length).toBeGreaterThan(0);
     expect(result!.statements[0]!.speakerName).toBe("塩田");
@@ -196,7 +196,7 @@ describe("fetchMeetingDetail integration", () => {
     expect(result).not.toBeNull();
     expect(result!.heldOn).toBe("2024-11-29");
     expect(result!.meetingType).toBe("plenary");
-    expect(result!.externalId).toBe("gijiroku_K_R06112900011");
+    expect(result!.externalId).toBe("gijiroku_www.city.kamogawa.chiba.jp_K_R06112900011");
     expect(result!.statements.length).toBeGreaterThan(0);
     expect(result!.statements[0]!.speakerName).toBe("川崎浩之");
     expect(result!.statements[0]!.speakerRole).toBe("議長");
@@ -224,7 +224,7 @@ describe("fetchMeetingDetail integration", () => {
     expect(result).not.toBeNull();
     expect(result!.heldOn).toBe("2024-12-17");
     expect(result!.meetingType).toBe("plenary");
-    expect(result!.externalId).toBe("gijiroku_k_R06121742011");
+    expect(result!.externalId).toBe("gijiroku_www2.city.hachinohe.aomori.jp_k_R06121742011");
     expect(result!.statements.length).toBeGreaterThan(0);
 
     // offset の連続性を検証

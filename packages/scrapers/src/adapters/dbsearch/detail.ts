@@ -23,23 +23,11 @@
 
 import { createHash } from "node:crypto";
 import type { MeetingData, ParsedStatement } from "../../utils/types";
+import { extractHostPrefix } from "../../utils/url";
 
 const USER_AGENT =
   "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
 
-/**
- * baseUrl またはdetailUrl からホスト名を抽出し、externalId のプレフィックスとして使う。
- * 例: "https://foo.dbsr.jp/index.php/12345" → "foo.dbsr.jp"
- */
-function extractHostPrefix(baseUrl?: string, detailUrl?: string): string {
-  try {
-    const url = baseUrl ?? detailUrl;
-    if (!url) return "unknown";
-    return new URL(url).hostname;
-  } catch {
-    return "unknown";
-  }
-}
 
 /**
  * 議事録詳細ページを取得し、MeetingData に変換して返す。

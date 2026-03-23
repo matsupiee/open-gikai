@@ -130,7 +130,7 @@ describe("fetchMeetingDetail integration", () => {
     expect(result!.title).toBe("令和６年第４回定例会（第５号） 本文");
     expect(result!.heldOn).toBe("2024-12-17");
     expect(result!.meetingType).toBe("plenary");
-    expect(result!.externalId).toBe("dbsearch_1673");
+    expect(result!.externalId).toBe("dbsearch_www.town.otofuke.hokkaido.dbsr.jp_1673");
     expect(result!.municipalityId).toBe("test-municipality-id");
     expect(result!.statements.length).toBeGreaterThan(0);
     expect(result!.statements[0]!.speakerName).toBe("高瀬博文");
@@ -172,7 +172,7 @@ describe("fetchMeetingDetail integration", () => {
     // 日付は command フレームに無いため listDate からフォールバック
     expect(result!.heldOn).toBe("2024-12-25");
     expect(result!.meetingType).toBe("plenary");
-    expect(result!.externalId).toBe("dbsearch_1486");
+    expect(result!.externalId).toBe("dbsearch_www.city.aomori.aomori.dbsr.jp_1486");
     expect(result!.statements.length).toBeGreaterThan(0);
     // 2番目の発言者が議長（最初は「午前10時開議」で発言者なし）
     expect(result!.statements[1]!.speakerName).toBe("奈良岡隆");
@@ -202,7 +202,7 @@ describe("fetchMeetingDetail integration", () => {
     expect(result!.title).toBe("ＤＸ推進調査特別委員会 本文");
     expect(result!.heldOn).toBe("2024-12-26");
     expect(result!.meetingType).toBe("committee");
-    expect(result!.externalId).toBe("dbsearch_16091");
+    expect(result!.externalId).toBe("dbsearch_www.city.sendai.miyagi.dbsr.jp_16091");
     expect(result!.statements.length).toBeGreaterThan(0);
   });
 });

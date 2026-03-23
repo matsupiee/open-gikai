@@ -22,20 +22,10 @@
 
 import { createHash } from "node:crypto";
 import type { MeetingData, ParsedStatement } from "../../utils/types";
+import { extractHostPrefix } from "../../utils/url";
 import { fetchShiftJisPage } from "./fetch-page";
 import { extractBaseInfo } from "./url";
 
-/**
- * baseUrl からホスト名を抽出し、externalId のプレフィックスとして使う。
- * 例: "http://tsukuba.gijiroku.com/voices/g08v_search.asp" → "tsukuba.gijiroku.com"
- */
-function extractHostPrefix(baseUrl: string): string {
-  try {
-    return new URL(baseUrl).hostname;
-  } catch {
-    return "unknown";
-  }
-}
 
 /**
  * voiweb.exe から議事録本文を取得し、MeetingData に変換する。
