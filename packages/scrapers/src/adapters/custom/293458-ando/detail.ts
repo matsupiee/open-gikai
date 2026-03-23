@@ -27,20 +27,19 @@ export interface AndoDetailParams {
 
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
-  "委員長",
   "副委員長",
+  "委員長",
   "副議長",
-  "副町長",
-  "教育長",
-  "教育次長",
   "議長",
+  "副町長",
   "町長",
-  "委員",
-  "議員",
+  "教育次長",
+  "教育長",
   "副部長",
-  "副課長",
   "部長",
+  "副課長",
   "課長",
+  "事務局長",
   "室長",
   "局長",
   "係長",
@@ -49,6 +48,8 @@ const ROLE_SUFFIXES = [
   "主幹",
   "主査",
   "補佐",
+  "議員",
+  "委員",
 ];
 
 // 行政側の役職（答弁者として分類する）
@@ -110,7 +111,7 @@ export function parseSpeaker(header: string): {
 }
 
 /** 役職から発言種別を分類 */
-export function classifyKind(speakerRole: string | null): string {
+export function classifyKind(speakerRole: string | null): "remark" | "question" | "answer" {
   if (!speakerRole) return "remark";
   if (ANSWER_ROLES.has(speakerRole)) return "answer";
   if (
@@ -136,7 +137,7 @@ export function classifyKind(speakerRole: string | null): string {
  * カッコ前に役職・番号が必要。
  */
 const SPEAKER_PATTERN =
-  /(?:[\d０-９]+番|(?:[^\s（(）)]*?(?:議長|副議長|町長|副町長|教育長|教育次長|委員長|副委員長|委員|議員|部長|副部長|課長|副課長|室長|局長|係長|次長|参事|主幹|主査|補佐)))[（(][^）)]+[）)]/g;
+  /(?:[\d０-９]+番|(?:[^\s（(）)]*?(?:副委員長|委員長|副議長|議長|副町長|町長|教育次長|教育長|副部長|部長|副課長|課長|事務局長|室長|局長|係長|次長|参事|主幹|主査|補佐|議員|委員)))[（(][^）)]+[）)]/g;
 
 /**
  * PDF から抽出したテキストを ParsedStatement 配列に変換する。
@@ -220,9 +221,11 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
 export async function buildMeetingData(
   params: AndoDetailParams,
   municipalityId: string,
-): Promise<MeetingData> {
+): Promise<MeetingData | null> {
   const text = await fetchPdfText(params.pdfUrl);
   const statements = text ? parseStatements(text) : [];
+
+  if (statements.length === 0) return null;
 
   return {
     municipalityId,
