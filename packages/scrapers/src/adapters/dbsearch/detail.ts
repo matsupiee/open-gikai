@@ -502,32 +502,40 @@ function extractStatementsNew(html: string): ParsedStatement[] {
 /**
  * 新形式（フレームセット）の page サブフレームから発言を抽出する。
  *
- * HTML 構造:
+ * HTML 構造（div パターン）:
  *   <div class="page-text__voice" id="VoiceNo1">
  *     <p class="page-text__text ...">
  *       <span class="page-text__number ...">1</span>
  *       ◯議長（奈良岡隆君）　本文テキスト<br />...
  *     </p>
  *   </div>
+ *
+ * HTML 構造（li パターン）:
+ *   <li class="page-text__voice border " data-voice-no="1">
+ *     <input type="checkbox" class="page-text__checkbox" ...>
+ *     <p class="page-text__text textwrap">...</p>
+ *   </li>
+ *
+ * page-text__text は page-text__voice の中にのみ出現するため、
+ * 外側のコンテナ（div/li）をマッチせず <p> を直接抽出する。
+ * これにより、li 内にネストされた要素があっても安全に動作する。
  */
 function extractStatementsPageText(html: string): ParsedStatement[] {
   const statements: ParsedStatement[] = [];
   let offset = 0;
 
-  const voicePattern =
-    /<(?:div|li)[^>]+class="[^"]*page-text__voice[^"]*"[^>]*>([\s\S]*?)<\/(?:div|li)>/gi;
+  // page-text__text の <p> を直接マッチする。
+  // page-text__voice コンテナ内にのみ存在するため、外側タグの閉じタグ問題を回避できる。
+  const textPattern =
+    /<p[^>]+class="[^"]*page-text__text[^"]*"[^>]*>([\s\S]*?)<\/p>/gi;
 
   let m: RegExpExecArray | null;
-  while ((m = voicePattern.exec(html)) !== null) {
-    const blockInner = m[1] ?? "";
-
-    const textMatch = blockInner.match(
-      /<p[^>]+class="[^"]*page-text__text[^"]*"[^>]*>([\s\S]*?)<\/p>/i
-    );
-    if (!textMatch?.[1]) continue;
+  while ((m = textPattern.exec(html)) !== null) {
+    const textContent = m[1];
+    if (!textContent) continue;
 
     // page-text__number span を除去
-    const cleanedHtml = textMatch[1].replace(
+    const cleanedHtml = textContent.replace(
       /<span[^>]*class="[^"]*page-text__number[^"]*"[^>]*>[^<]*<\/span>/gi,
       ""
     );

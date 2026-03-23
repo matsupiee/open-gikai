@@ -399,4 +399,39 @@ describe("extractStatements", () => {
     expect(stmts[1]!.kind).toBe("question");
     expect(stmts[1]!.content).toBe("市の方針について質問します。");
   });
+
+  test("新形式: li 内にネストされた div があっても正しく抽出する", () => {
+    const html = `
+      <ul class="page-text__list">
+        <li class="page-text__voice border " data-voice-no="1">
+          <div class="page-text__controls">
+            <input type="checkbox" class="page-text__checkbox" id="chk1">
+          </div>
+          <p class="page-text__text textwrap">
+            <span class="page-text__number VoiceAnchor" data-voiceno="1">1</span>
+            ◯議長（山田太郎君）　これより本日の会議を開きます。
+          </p>
+        </li>
+        <li class="page-text__voice border " data-voice-no="2">
+          <div class="page-text__controls">
+            <input type="checkbox" class="page-text__checkbox" id="chk2">
+          </div>
+          <p class="page-text__text textwrap">
+            <span class="page-text__number VoiceAnchor" data-voiceno="2">2</span>
+            ◯議員（鈴木花子）　市の方針について質問します。
+          </p>
+        </li>
+      </ul>
+    `;
+    const stmts = extractStatements(html);
+    expect(stmts).toHaveLength(2);
+
+    expect(stmts[0]!.speakerRole).toBe("議長");
+    expect(stmts[0]!.speakerName).toBe("山田太郎");
+    expect(stmts[0]!.content).toBe("これより本日の会議を開きます。");
+
+    expect(stmts[1]!.speakerRole).toBe("議員");
+    expect(stmts[1]!.speakerName).toBe("鈴木花子");
+    expect(stmts[1]!.content).toBe("市の方針について質問します。");
+  });
 });
