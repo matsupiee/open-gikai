@@ -27,13 +27,13 @@ import { detectMeetingType, extractExternalIdKey, fetchBinary } from "./shared";
  */
 const ROLE_LABELS: { pattern: RegExp; role: string; kind: "remark" | "question" | "answer" }[] = [
   { pattern: /^教\s*育\s*長$/, role: "教育長", kind: "remark" },
-  { pattern: /^議\s*長$/, role: "議長", kind: "remark" },
   { pattern: /^副\s*議\s*長$/, role: "副議長", kind: "remark" },
-  { pattern: /^課\s*長$/, role: "課長", kind: "answer" },
+  { pattern: /^議\s*長$/, role: "議長", kind: "remark" },
   { pattern: /^教\s*育\s*文\s*化\s*課\s*長$/, role: "教育文化課長", kind: "answer" },
+  { pattern: /^課\s*長$/, role: "課長", kind: "answer" },
   { pattern: /^主\s*幹$/, role: "主幹", kind: "answer" },
   { pattern: /^補\s*佐$/, role: "補佐", kind: "answer" },
-  { pattern: /^課\s*長\s*補\s*佐/, role: "課長補佐", kind: "answer" },
+  { pattern: /^課\s*長\s*補\s*佐$/, role: "課長補佐", kind: "answer" },
   { pattern: /^主\s*査$/, role: "主査", kind: "answer" },
   { pattern: /^係\s*長$/, role: "係長", kind: "answer" },
   { pattern: /^生\s*涯\s*学\s*習\s*係\s*長$/, role: "生涯学習係長", kind: "answer" },
@@ -77,7 +77,7 @@ export function parseStatements(text: string): ParsedStatement[] {
   // 役職パターンの直前で分割してから行単位で処理する。
   // 「教 育 長 - 」「議 長 - 」「3 番 委 員 - 」等のパターンの前で改行を挿入
   const normalized = targetText.replace(
-    /(?=(?:教\s*育\s*長|議\s*長|副\s*議\s*長|課\s*長|主\s*幹|補\s*佐|主\s*査|係\s*長|指\s*導\s*主\s*事|事\s*務\s*局\s*長|事\s*務\s*局\s*次\s*長|教\s*育\s*文\s*化\s*課\s*長|生\s*涯\s*学\s*習\s*係\s*長|課\s*長\s*補\s*佐|\d+\s*番\s*委\s*員)\s*[-－–]\s)/g,
+    /(?=(?:教\s*育\s*長|副\s*議\s*長|議\s*長|教\s*育\s*文\s*化\s*課\s*長|課\s*長\s*補\s*佐|課\s*長|主\s*幹|補\s*佐|主\s*査|生\s*涯\s*学\s*習\s*係\s*長|係\s*長|指\s*導\s*主\s*事|事\s*務\s*局\s*次\s*長|事\s*務\s*局\s*長|\d+\s*番\s*委\s*員)\s*[-－–]\s)/g,
     "\n"
   );
 
