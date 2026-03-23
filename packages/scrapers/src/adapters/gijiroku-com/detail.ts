@@ -26,6 +26,18 @@ import { fetchShiftJisPage } from "./fetch-page";
 import { extractBaseInfo } from "./url";
 
 /**
+ * baseUrl からホスト名を抽出し、externalId のプレフィックスとして使う。
+ * 例: "http://tsukuba.gijiroku.com/voices/g08v_search.asp" → "tsukuba.gijiroku.com"
+ */
+function extractHostPrefix(baseUrl: string): string {
+  try {
+    return new URL(baseUrl).hostname;
+  } catch {
+    return "unknown";
+  }
+}
+
+/**
  * voiweb.exe から議事録本文を取得し、MeetingData に変換する。
  *
  * 1. ACT=203（HUID なし）でヘッダーページを取得し、開催日を抽出する。
@@ -97,7 +109,8 @@ export async function fetchMeetingDetail(
     }
 
     const meetingType = detectMeetingType(title);
-    const externalId = `gijiroku_${unid}`;
+    const hostPrefix = extractHostPrefix(baseUrl);
+    const externalId = `gijiroku_${hostPrefix}_${unid}`;
 
     return {
       municipalityId,

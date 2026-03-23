@@ -25,6 +25,9 @@ export interface ChunkInput {
 /** 1 チャンクの最大文字数（≒ 2,550 tokens、8,191 token 上限に対して余裕を持たせる） */
 const MAX_CHUNK_CHARS = 1500;
 
+/** チャンク生成対象とする最小文字数（トリム後）。これ未満の発言はノイズとしてスキップ */
+const MIN_CONTENT_CHARS = 5;
+
 /**
  * 手続き系発言（議長・委員長の議事進行）かどうかを判定する。
  *
@@ -45,17 +48,37 @@ export function isProcedural(content: string): boolean {
 }
 
 /**
+ * 内容が短すぎる発言かどうかを判定する。
+ *
+ * トリム後の文字数が MIN_CONTENT_CHARS 未満の発言は検索ノイズになるため
+ * チャンク生成から除外する（例: "異議なし", "はい" など）。
+ * ステートメント自体は NDJSON に残る。
+ */
+export function isTooShort(content: string): boolean {
+  // trim は文字数判定のみに使用し、実際の content は変更しない。
+  // チャンク化された発言テキストは元の空白を保持する。
+  return content.trim().length < MIN_CONTENT_CHARS;
+}
+
+/**
  * ステートメント列からスピーカーグループのチャンクを構築する。
  *
  * 処理手順:
- * 1. 手続き系発言を除外
+ * 1. 手続き系発言および短すぎる発言（MIN_CONTENT_CHARS 文字未満）を除外
  * 2. 連続する同一スピーカーの発言をグループ化
  * 3. 各グループを MAX_CHUNK_CHARS 単位でチャンク分割
  */
 export function buildChunksFromStatements(
   statements: StatementRecord[]
 ): ChunkInput[] {
-  const substantive = statements.filter((s) => !isProcedural(s.content));
+  // 2段階のフィルタリングで検索ノイズを除去する:
+  // - isProcedural: ○/△ 開始の議事進行や、◆/◎ 開始の短い応答・アクション記録を除外
+  // - isTooShort: 上記に該当しない発言のうち、内容が MIN_CONTENT_CHARS 文字未満のものを除外
+  // 両フィルタは補完的に機能し、isProcedural は記号パターンに基づく除外、
+  // isTooShort は記号に依存しない汎用的な最小文字数チェックを担う。
+  const substantive = statements.filter(
+    (s) => !isProcedural(s.content) && !isTooShort(s.content),
+  );
   const groups = groupBySpeaker(substantive);
   const chunks: ChunkInput[] = [];
 
