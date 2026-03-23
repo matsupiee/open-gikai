@@ -8,7 +8,7 @@
  * 既存の汎用アダプターでは対応できないためカスタムアダプターとして実装する。
  *
  * list フェーズで一覧ページから全 ID を収集し、各詳細ページから PDF URL を取得する。
- * detail フェーズでは収集済みパラメータから MeetingData を組み立てる。
+ * detail フェーズでは PDF をダウンロードしてテキスト抽出・発言分割を行う。
  */
 
 import type { ScraperAdapter, ListRecord } from "../../adapter";
@@ -16,7 +16,7 @@ import { fetchSessionList } from "./list";
 import { buildMeetingData, type AbiraDetailParams } from "./detail";
 
 export { parseListPage, parsePdfLinks, extractHeldOnFromPdfLinkText } from "./list";
-export { buildMeetingData } from "./detail";
+export { buildMeetingData, parseSpeaker, classifyKind, parseStatements } from "./detail";
 
 export const adapter: ScraperAdapter = {
   name: "015857",
