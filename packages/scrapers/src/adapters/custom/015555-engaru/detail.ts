@@ -20,20 +20,20 @@ import {
   fetchBinary,
 } from "./shared";
 
-// 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
+// 役職サフィックス（副○○ を ○○ より前に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
-  "委員長",
   "副委員長",
+  "委員長",
   "副議長",
-  "副町長",
-  "教育長",
   "議長",
+  "副町長",
   "町長",
+  "教育長",
   "委員",
   "議員",
   "副部長",
-  "副課長",
   "部長",
+  "副課長",
   "課長",
   "室長",
   "局長",
@@ -208,6 +208,7 @@ export async function fetchMeetingData(
   if (!text) return null;
 
   const statements = parseStatements(text);
+  if (statements.length === 0) return null;
 
   const idKey = extractExternalIdKey(new URL(meeting.pdfUrl).pathname);
   const externalId = idKey ? `engaru_${idKey}` : null;

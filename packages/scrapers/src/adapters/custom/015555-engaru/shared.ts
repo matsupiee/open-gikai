@@ -31,7 +31,11 @@ export async function fetchPage(url: string): Promise<string | null> {
     });
     if (!res.ok) return null;
     return await res.text();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[015555-engaru] fetchPage failed: ${url}`,
+      err instanceof Error ? err.message : err,
+    );
     return null;
   }
 }
@@ -45,7 +49,11 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
     });
     if (!res.ok) return null;
     return await res.arrayBuffer();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[015555-engaru] fetchBinary failed: ${url}`,
+      err instanceof Error ? err.message : err,
+    );
     return null;
   }
 }
