@@ -24,12 +24,12 @@ describe("estimateHeldOn", () => {
     expect(estimateHeldOn("令和6年第4回定例会会議録", 2024)).toBe("2024-12-01");
   });
 
-  it("回次がマッピング外の場合は1月1日にフォールバックする", () => {
-    expect(estimateHeldOn("令和6年第5回臨時会会議録", 2024)).toBe("2024-01-01");
+  it("回次がマッピング外の場合は null を返す", () => {
+    expect(estimateHeldOn("令和6年第5回臨時会会議録", 2024)).toBeNull();
   });
 
-  it("回次がない場合は1月1日にフォールバックする", () => {
-    expect(estimateHeldOn("令和6年議会会議録", 2024)).toBe("2024-01-01");
+  it("回次がない場合は null を返す", () => {
+    expect(estimateHeldOn("令和6年議会会議録", 2024)).toBeNull();
   });
 });
 
