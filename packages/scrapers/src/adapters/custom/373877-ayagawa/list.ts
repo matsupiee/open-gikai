@@ -120,33 +120,7 @@ export function parseMeetingPage(
     const linkText = match[2]!.trim();
 
     // ナビゲーションリンクをスキップ
-    if (
-      [
-        "index.html",
-        "greeting.html",
-        "info.html",
-        "gaiyou.html",
-        "soshiki.html",
-        "shikumi.html",
-        "yakuwari.html",
-        "profile.html",
-        "profile1.html",
-        "profile2.html",
-        "teireikai.html",
-        "gikaidayori.html",
-        "gikaijoho.html",
-        "seimukatsudohi.html",
-        "ukeoijokyo.html",
-        "katsudouhoukoku.html",
-        "annai.html",
-        "audience.html",
-        "gyoseisisatsu.html",
-        "seigan.html",
-        "sitemap.html",
-        "kihonjikou.html",
-      ].includes(href)
-    )
-      continue;
+    if (isNavLink(href)) continue;
 
     if (href.endsWith(".pdf")) {
       const url = href.startsWith("http")

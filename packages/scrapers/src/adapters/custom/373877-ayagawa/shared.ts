@@ -29,7 +29,11 @@ export async function fetchPage(url: string): Promise<string | null> {
     });
     if (!res.ok) return null;
     return await res.text();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[373877-ayagawa] fetch 失敗: ${url}`,
+      err instanceof Error ? err.message : err
+    );
     return null;
   }
 }
@@ -43,20 +47,13 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
     });
     if (!res.ok) return null;
     return await res.arrayBuffer();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[373877-ayagawa] fetchBinary 失敗: ${url}`,
+      err instanceof Error ? err.message : err
+    );
     return null;
   }
-}
-
-/**
- * 西暦年度を和暦の年度テキストに変換する（年度ベース）。
- * 綾川町は年度単位で管理: 例えば year=2025 は令和7年度（2025年4月〜2026年3月）。
- * e.g., 2025 → "令和7年度", 2021 → "令和3年度"
- */
-export function toFiscalYearEraText(year: number): string {
-  const reiwaYear = year - 2018;
-  if (reiwaYear === 1) return "令和元年度";
-  return `令和${reiwaYear}年度`;
 }
 
 /**
