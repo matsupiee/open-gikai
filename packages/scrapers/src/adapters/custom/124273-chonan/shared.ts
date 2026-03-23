@@ -27,7 +27,8 @@ export async function fetchPage(url: string): Promise<string | null> {
     });
     if (!res.ok) return null;
     return await res.text();
-  } catch {
+  } catch (err) {
+    console.warn(`[124273-chonan] fetchPage failed: ${url}`, err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -41,7 +42,8 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
     });
     if (!res.ok) return null;
     return await res.arrayBuffer();
-  } catch {
+  } catch (err) {
+    console.warn(`[124273-chonan] fetchBinary failed: ${url}`, err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -61,6 +63,7 @@ export function toJapaneseEra(year: number): string[] {
   } else if (year === 2019) {
     results.push("令和元年");
     results.push("平成31年");
+    results.push(`平成${toFullWidth(31)}年`);
   } else if (year >= 1989) {
     const eraYear = year - 1988;
     results.push(eraYear === 1 ? "平成元年" : `平成${eraYear}年`);

@@ -79,8 +79,6 @@ describe("parseLinkText", () => {
 });
 
 describe("parseYearPage", () => {
-  const PAGE_URL =
-    "https://www.town.chonan.chiba.jp/chousei/gikai/%e4%bc%9a%e8%ad%b0%e9%8c%b2/41773/";
 
   it("セクション見出しと PDF リンクを正しく抽出する", () => {
     const html = `
@@ -93,7 +91,7 @@ describe("parseYearPage", () => {
       <a href="https://www.town.chonan.chiba.jp/wp-content/uploads/2024/09/bbb222.pdf">令和６年第３回定例会第１号　9月3日</a>
     `;
 
-    const meetings = parseYearPage(html, PAGE_URL);
+    const meetings = parseYearPage(html);
 
     expect(meetings).toHaveLength(3);
 
@@ -119,7 +117,7 @@ describe("parseYearPage", () => {
       <a href="https://example.com/content.pdf">令和６年第４回定例会第１号　12月3日</a>
     `;
 
-    const meetings = parseYearPage(html, PAGE_URL);
+    const meetings = parseYearPage(html);
     expect(meetings).toHaveLength(1);
     expect(meetings[0]!.title).toBe("令和6年第4回定例会第1号");
   });
@@ -130,7 +128,7 @@ describe("parseYearPage", () => {
       <a href="https://example.com/rinji.pdf">令和６年第１回臨時会第１号　5月15日</a>
     `;
 
-    const meetings = parseYearPage(html, PAGE_URL);
+    const meetings = parseYearPage(html);
 
     expect(meetings).toHaveLength(1);
     expect(meetings[0]!.section).toBe("令和6年第1回臨時会");
@@ -142,7 +140,7 @@ describe("parseYearPage", () => {
       <a href="https://example.com/doc.pdf">令和６年第４回定例会第１号　１２月３日</a>
     `;
 
-    const meetings = parseYearPage(html, PAGE_URL);
+    const meetings = parseYearPage(html);
 
     expect(meetings).toHaveLength(1);
     expect(meetings[0]!.heldOn).toBe("2024-12-03");

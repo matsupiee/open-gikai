@@ -58,11 +58,11 @@ export function parseDateText(text: string): string | null {
     String.fromCharCode(c.charCodeAt(0) - 0xfee0)
   );
 
-  const match = normalized.match(/(令和|平成)(\d+)年(\d+)月(\d+)日/);
+  const match = normalized.match(/(令和|平成)(元|\d+)年(\d+)月(\d+)日/);
   if (!match) return null;
 
   const [, era, eraYearStr, monthStr, dayStr] = match;
-  const eraYear = parseInt(eraYearStr!, 10);
+  const eraYear = eraYearStr === "元" ? 1 : parseInt(eraYearStr!, 10);
   const month = parseInt(monthStr!, 10);
   const day = parseInt(dayStr!, 10);
 
@@ -90,7 +90,7 @@ export function parseLinkText(linkText: string): {
   );
 
   const match = normalized.match(
-    /((?:令和|平成)\d+年第\d+回(?:定例会|臨時会))第(\d+)号[\s　]+(\d+)月(\d+)日/
+    /((?:令和|平成)(?:元|\d+)年第\d+回(?:定例会|臨時会))第(\d+)号[\s　]+(\d+)月(\d+)日/
   );
   if (!match) return null;
 
@@ -111,8 +111,7 @@ export function parseLinkText(linkText: string): {
  * - "目次" リンクはスキップ
  */
 export function parseYearPage(
-  html: string,
-  _pageUrl: string
+  html: string
 ): ChonanMeeting[] {
   const results: ChonanMeeting[] = [];
 
@@ -170,10 +169,10 @@ export function parseYearPage(
     }
 
     // 年度を heldOn から決定するためセクション名の和暦をパース
-    const eraMatch = parsed.section.match(/(令和|平成)(\d+)年/);
+    const eraMatch = parsed.section.match(/(令和|平成)(元|\d+)年/);
     if (!eraMatch) continue;
 
-    const eraYear = parseInt(eraMatch[2]!, 10);
+    const eraYear = eraMatch[2] === "元" ? 1 : parseInt(eraMatch[2]!, 10);
     const westernYear =
       eraMatch[1] === "令和" ? eraYear + 2018 : eraYear + 1988;
     const heldOn = `${westernYear}-${String(parsed.month).padStart(2, "0")}-${String(parsed.day).padStart(2, "0")}`;
@@ -218,5 +217,5 @@ export async function fetchMeetingList(
   const yearHtml = await fetchPage(targetPage.url);
   if (!yearHtml) return [];
 
-  return parseYearPage(yearHtml, targetPage.url);
+  return parseYearPage(yearHtml);
 }
