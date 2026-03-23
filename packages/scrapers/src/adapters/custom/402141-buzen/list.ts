@@ -121,11 +121,6 @@ export function parseDetailPage(
       heldOn = `${westernYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     }
 
-    // 日付が取得できない場合は年の1月1日
-    if (!heldOn && westernYear) {
-      heldOn = `${westernYear}-01-01`;
-    }
-
     // タイトル構築: 日付がリンクテキストにある場合はそれを含める
     const title = dateMatch
       ? `${pageTitle} ${linkText.replace(/（PDF[^）]*）/, "").trim()}`
@@ -166,12 +161,17 @@ export async function fetchMeetingList(
   // Step 2: 各詳細ページから PDF リンクを抽出
   const allMeetings: BuzenMeeting[] = [];
 
-  for (const link of targetLinks) {
+  for (let i = 0; i < targetLinks.length; i++) {
+    const link = targetLinks[i]!;
     const detailHtml = await fetchPage(link.detailUrl);
     if (!detailHtml) continue;
 
     const meetings = parseDetailPage(detailHtml, link.detailUrl, link.title);
     allMeetings.push(...meetings);
+
+    if (i < targetLinks.length - 1) {
+      await new Promise((r) => setTimeout(r, 1000));
+    }
   }
 
   return allMeetings;
