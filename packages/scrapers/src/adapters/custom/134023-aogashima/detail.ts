@@ -67,12 +67,12 @@ export function parseSessions(rawText: string): AogashimaSession[] {
   // セッションヘッダー検出
   // 実際の PDF テキスト: "令和 6 年青ヶ島村議会第1回定例会議決一覧"
   const sessionPattern =
-    /((?:令和|平成) ?(\d+) ?年)青ヶ島村議会第 ?(\d+) ?回 ?(定例会|臨時会)議決一覧/g;
+    /((?:令和|平成) ?(元|\d+) ?年)青ヶ島村議会第 ?(\d+) ?回 ?(定例会|臨時会)議決一覧/g;
 
   for (const headerMatch of text.matchAll(sessionPattern)) {
     const eraText = headerMatch[1]!;
     const era = eraText.startsWith("令和") ? "令和" : "平成";
-    const eraYear = parseInt(headerMatch[2]!, 10);
+    const eraYear = headerMatch[2] === "元" ? 1 : parseInt(headerMatch[2]!, 10);
     const westernYear = eraToWesternYear(era, eraYear);
     const sessionNum = headerMatch[3]!;
     const sessionType = headerMatch[4]!;
@@ -91,12 +91,10 @@ export function parseSessions(rawText: string): AogashimaSession[] {
 
     // 開催日を抽出（セクション内の最初の日付）
     const dateMatch = sectionText.match(/(\d{1,2}) ?月 ?(\d{1,2}) ?日/);
-    let heldOn = "";
-    if (dateMatch) {
-      const month = parseInt(dateMatch[1]!, 10);
-      const day = parseInt(dateMatch[2]!, 10);
-      heldOn = `${westernYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    }
+    if (!dateMatch) continue; // 日付が解析できない場合はスキップ
+    const month = parseInt(dateMatch[1]!, 10);
+    const day = parseInt(dateMatch[2]!, 10);
+    const heldOn = `${westernYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
     // 議案を抽出
     const bills = parseBills(sectionText);
