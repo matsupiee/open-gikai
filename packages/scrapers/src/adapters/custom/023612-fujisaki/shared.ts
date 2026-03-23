@@ -40,7 +40,10 @@ const YEAR_PAGE_MAP: Record<number, string> = {
 /** 年度別ページの URL を構築する */
 export function buildYearPageUrl(year: number): string | null {
   const path = YEAR_PAGE_MAP[year];
-  if (!path) return null;
+  if (!path) {
+    console.warn(`[023612-fujisaki] YEAR_PAGE_MAP に未登録の年: ${year}`);
+    return null;
+  }
   return `${BASE_ORIGIN}${path}`;
 }
 

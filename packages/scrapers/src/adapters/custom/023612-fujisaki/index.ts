@@ -15,6 +15,7 @@ import { fetchMeetingList } from "./list";
 export { parseYearPage, parseDateFromFilename, fallbackDateFromSession } from "./list";
 export { parseStatements, parseSpeaker, classifyKind, fullyNormalizePdfText } from "./detail";
 
+
 export const adapter: ScraperAdapter = {
   name: "023612",
 

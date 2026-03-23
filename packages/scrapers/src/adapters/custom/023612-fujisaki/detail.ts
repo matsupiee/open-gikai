@@ -142,7 +142,7 @@ export function classifyKind(speakerRole: string | null): string {
  * この関数は CJK 文字間のスペースを除去し、正規化されたテキストを返す。
  * ASCII 文字間のスペースは保持する。
  */
-export function normalizePdfText(text: string): string {
+function normalizePdfText(text: string): string {
   // CJK文字（漢字・ひらがな・カタカナ・句読点・記号など）の間のスペースを除去
   // パターン: CJK文字 + スペース + CJK文字
   return text.replace(
@@ -236,6 +236,7 @@ export async function fetchMeetingData(
   if (!text) return null;
 
   const statements = parseStatements(text);
+  if (statements.length === 0) return null;
 
   const idKey = extractExternalIdKey(new URL(meeting.pdfUrl).pathname);
   const externalId = idKey ? `fujisaki_${idKey}` : null;

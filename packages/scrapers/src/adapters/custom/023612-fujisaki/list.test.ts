@@ -32,8 +32,8 @@ describe("fallbackDateFromSession", () => {
     expect(fallbackDateFromSession("平成30年第2回定例会")).toBe("2018-01-01");
   });
 
-  it("和暦を含まない文字列は 1970-01-01 を返す", () => {
-    expect(fallbackDateFromSession("不明な会期")).toBe("1970-01-01");
+  it("和暦を含まない文字列は null を返す", () => {
+    expect(fallbackDateFromSession("不明な会期")).toBeNull();
   });
 });
 
@@ -163,6 +163,28 @@ describe("parseYearPage", () => {
 
     expect(meetings).toHaveLength(1);
     expect(meetings[0]!.heldOn).toBe("2023-01-01");
+  });
+
+  it("title 属性が href より前にある場合も正しく抽出する", () => {
+    const html = `
+      <table border="1">
+        <tbody>
+          <tr>
+            <td><p>令和6年第1回定例会</p></td>
+            <td>
+              <p><a title="令和6年第1回定例会会議録（開会）.pdf [ 100 KB pdfファイル]"
+                 href="/index.cfm/9,18933,c,html/18933/20240301-100000.pdf">
+                 会議録（開会）</a></p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    const meetings = parseYearPage(html);
+
+    expect(meetings).toHaveLength(1);
+    expect(meetings[0]!.heldOn).toBe("2024-03-01");
   });
 
   it("title 属性に会議録が含まれる場合も抽出する", () => {

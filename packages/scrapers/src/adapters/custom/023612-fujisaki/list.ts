@@ -49,15 +49,15 @@ export function parseDateFromFilename(filename: string): string | null {
  *
  * 例: "令和5年第1回定例会" → "2023-01-01"
  */
-export function fallbackDateFromSession(session: string): string {
+export function fallbackDateFromSession(session: string): string | null {
   const match = session.match(/(令和|平成)(\d+)年/);
-  if (!match) return "1970-01-01";
+  if (!match) return null;
 
   const eraYear = parseInt(match[2]!, 10);
   let westernYear: number;
   if (match[1] === "令和") westernYear = eraYear + 2018;
   else if (match[1] === "平成") westernYear = eraYear + 1988;
-  else return "1970-01-01";
+  else return null;
 
   return `${westernYear}-01-01`;
 }
@@ -104,12 +104,14 @@ export function parseYearPage(html: string): FujisakiMeeting[] {
     // 右 <td>: PDF リンクを抽出
     const linkTd = tds[1]!;
     const linkPattern =
-      /<a[^>]+href="([^"]*\.pdf)"[^>]*(?:title="([^"]*)")?[^>]*>([\s\S]*?)<\/a>/gi;
+      /<a[^>]+href="([^"]*\.pdf)"[^>]*>([\s\S]*?)<\/a>/gi;
 
     for (const linkMatch of linkTd.matchAll(linkPattern)) {
       const href = linkMatch[1]!;
-      const titleAttr = linkMatch[2] ?? "";
-      const linkText = linkMatch[3]!.replace(/<[^>]+>/g, "").trim();
+      const fullTag = linkMatch[0]!;
+      const titleAttrMatch = fullTag.match(/title="([^"]*)"/i);
+      const titleAttr = titleAttrMatch ? titleAttrMatch[1]! : "";
+      const linkText = linkMatch[2]!.replace(/<[^>]+>/g, "").trim();
 
       // 「会議録」を含むリンクのみを対象にする
       if (!linkText.includes("会議録") && !titleAttr.includes("会議録"))
@@ -132,6 +134,7 @@ export function parseYearPage(html: string): FujisakiMeeting[] {
       // 日付推定: ファイル名からタイムスタンプ → セッション名からフォールバック
       const heldOn =
         parseDateFromFilename(fileKey) ?? fallbackDateFromSession(sessionName);
+      if (!heldOn) continue;
 
       // タイトルを構築: 会期名 + リンクテキストからファイル情報を除去
       // 実際の形式: "令和7年第1回臨時会会議録.pdf [ 369 KB pdfファイル]"
