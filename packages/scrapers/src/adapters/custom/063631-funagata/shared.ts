@@ -19,7 +19,9 @@ const FETCH_TIMEOUT_MS = 30_000;
  * - 委員会（決算審査特別委員会、予算審査特別委員会等） → committee
  * - それ以外（定例会等） → plenary
  */
-export function detectMeetingType(title: string): string {
+export function detectMeetingType(
+  title: string
+): "plenary" | "extraordinary" | "committee" {
   if (title.includes("臨時")) return "extraordinary";
   if (title.includes("委員会")) return "committee";
   return "plenary";
@@ -32,9 +34,13 @@ export async function fetchPage(url: string): Promise<string | null> {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`fetchPage failed: ${url} status=${res.status}`);
+      return null;
+    }
     return await res.text();
-  } catch {
+  } catch (e) {
+    console.warn(`fetchPage error: ${url}`, e instanceof Error ? e.message : e);
     return null;
   }
 }
@@ -46,9 +52,13 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(60_000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`fetchBinary failed: ${url} status=${res.status}`);
+      return null;
+    }
     return await res.arrayBuffer();
-  } catch {
+  } catch (e) {
+    console.warn(`fetchBinary error: ${url}`, e instanceof Error ? e.message : e);
     return null;
   }
 }
