@@ -133,7 +133,7 @@ export function parseSpeaker(text: string): {
 }
 
 /** 役職から発言種別を分類 */
-export function classifyKind(speakerRole: string | null): string {
+export function classifyKind(speakerRole: string | null): "remark" | "question" | "answer" {
   if (!speakerRole) return "remark";
   if (ANSWER_ROLES.has(speakerRole)) return "answer";
   if (
@@ -245,22 +245,12 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
 export async function buildMeetingData(
   params: EchizenDetailParams,
   municipalityId: string,
-): Promise<MeetingData> {
+): Promise<MeetingData | null> {
   const externalId = `echizen_${params.pageId}`;
 
   // 詳細ページを取得して PDF リンクを収集
   const html = await fetchPage(params.detailUrl);
-  if (!html) {
-    return {
-      municipalityId,
-      title: params.title,
-      meetingType: params.meetingType,
-      heldOn: params.heldOn,
-      sourceUrl: params.detailUrl,
-      externalId,
-      statements: [],
-    };
-  }
+  if (!html) return null;
 
   const pdfLinks = parsePdfLinks(html);
 
@@ -276,6 +266,9 @@ export async function buildMeetingData(
       await delay(1000);
     }
   }
+
+  // statements が空なら null を返す
+  if (allStatements.length === 0) return null;
 
   return {
     municipalityId,

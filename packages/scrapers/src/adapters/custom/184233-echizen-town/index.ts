@@ -1,5 +1,5 @@
 /**
- * 越前町議会 — ScraperAdapter 実装
+ * 越前町議会 -- ScraperAdapter 実装
  *
  * サイト: https://www.town.echizen.fukui.jp/chousei/04/06/index.html
  * 自治体コード: 184233
@@ -14,9 +14,6 @@
 import type { ScraperAdapter, ListRecord } from "../../adapter";
 import { fetchMeetingLinks } from "./list";
 import { buildMeetingData, type EchizenDetailParams } from "./detail";
-
-export { parseIndexPage } from "./list";
-export { buildMeetingData, parsePdfLinks, parseSpeaker, parseStatements } from "./detail";
 
 export const adapter: ScraperAdapter = {
   name: "184233",
