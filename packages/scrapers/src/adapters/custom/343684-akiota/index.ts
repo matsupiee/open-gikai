@@ -6,18 +6,11 @@
  *
  * 安芸太田町は公式サイトで会議録を PDF 形式で公開しており、
  * 既存の汎用アダプターでは対応できないためカスタムアダプターとして実装する。
- *
- * list フェーズで一覧ページ → 年度ページ → PDF リンクを辿り、
- * セッション日ごとの PDF URL を収集する。
- * detail フェーズでは収集済みパラメータから MeetingData を組み立てる。
  */
 
 import type { ScraperAdapter, ListRecord } from "../../adapter";
 import { fetchSessionList } from "./list";
 import { buildMeetingData, type AkiotaDetailParams } from "./detail";
-
-export { parseYearPageLinks, parsePdfLinks } from "./list";
-export { buildMeetingData, parseSpeaker, classifyKind, parseStatements } from "./detail";
 
 export const adapter: ScraperAdapter = {
   name: "343684",
