@@ -86,6 +86,7 @@ gh pr merge --merge --auto
 各 Agent は以下のように起動する:
 
 - `subagent_type`: 指定なし（general-purpose）
+- `model`: `"sonnet"`（各エージェントを Sonnet モデルで実行する）
 - `isolation`: `"worktree"`（各エージェントが独立した worktree で作業）
 - プロンプト: `/create-custom-adapter {ファイル名（拡張子なし）}` スキルの内容を展開して渡す
 
