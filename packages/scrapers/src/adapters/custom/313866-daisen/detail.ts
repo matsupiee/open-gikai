@@ -18,8 +18,8 @@ import { fetchBinary } from "./shared";
 
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
-  "委員長",
   "副委員長",
+  "委員長",
   "副議長",
   "副町長",
   "事務局次長",

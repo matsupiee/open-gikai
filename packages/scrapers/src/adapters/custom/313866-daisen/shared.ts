@@ -17,12 +17,6 @@ const USER_AGENT =
 
 const FETCH_TIMEOUT_MS = 30_000;
 
-/** 会議タイプを検出 */
-export function detectMeetingType(text: string): string {
-  if (text.includes("臨時会")) return "extraordinary";
-  return "plenary";
-}
-
 /**
  * 和暦テキスト（「令和N年」「平成N年」）から西暦年を返す。
  */
@@ -34,19 +28,6 @@ export function warekiToSeireki(text: string): number | null {
   return era === "令和" ? 2018 + eraYear : 1988 + eraYear;
 }
 
-/**
- * 西暦年を和暦に変換する。
- */
-export function toWareki(year: number): { era: string; eraYear: number } | null {
-  if (year >= 2019) {
-    return { era: "令和", eraYear: year - 2018 };
-  }
-  if (year >= 1989) {
-    return { era: "平成", eraYear: year - 1988 };
-  }
-  return null;
-}
-
 /** fetch して UTF-8 テキストを返す */
 export async function fetchPage(url: string): Promise<string | null> {
   try {
@@ -56,7 +37,11 @@ export async function fetchPage(url: string): Promise<string | null> {
     });
     if (!res.ok) return null;
     return await res.text();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[313866-daisen] fetch 失敗: ${url}`,
+      err instanceof Error ? err.message : err,
+    );
     return null;
   }
 }
@@ -70,7 +55,11 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
     });
     if (!res.ok) return null;
     return await res.arrayBuffer();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[313866-daisen] fetch 失敗: ${url}`,
+      err instanceof Error ? err.message : err,
+    );
     return null;
   }
 }
