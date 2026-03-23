@@ -15,13 +15,7 @@
 
 import type { ScraperAdapter, ListRecord } from "../../adapter";
 import { fetchSessionList } from "./list";
-import {
-  buildMeetingData,
-  type AwaDetailParams,
-} from "./detail";
-
-export { parseSessionLinks, extractPdfRecords } from "./list";
-export { buildMeetingData, parseSpeaker, classifyKind, parseStatements } from "./detail";
+import { buildMeetingData, type AwaDetailParams } from "./detail";
 
 export const adapter: ScraperAdapter = {
   name: "362069",
