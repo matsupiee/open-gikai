@@ -6,9 +6,7 @@
  * 2. 各会議別詳細ページから本文 PDF リンクとメタ情報を抽出
  */
 
-import { BASE_ORIGIN, buildYearPageUrl, fetchPage, parseDateText } from "./shared";
-
-export { parseDateText };
+import { BASE_ORIGIN, buildYearPageUrl, fetchPage } from "./shared";
 
 export interface FuchuMeeting {
   pdfUrl: string;

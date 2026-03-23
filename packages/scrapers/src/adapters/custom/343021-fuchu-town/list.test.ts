@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { parseYearPage, parseDetailPage, parseDateText, extractYearFromTitle } from "./list";
+import { parseYearPage, parseDetailPage, extractYearFromTitle } from "./list";
+import { parseDateText } from "./shared";
 
 describe("parseDateText", () => {
   it("令和の全角数字日付をパースする", () => {
