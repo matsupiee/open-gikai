@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { fetchMeetingList, parseListHtml, hasNextPage } from "./list";
+import { fetchMeetingList, parseListHtml, hasNextPage, detectIndexPhpFromHtml } from "./list";
 
 const fixture = (pattern: string, file: string) =>
   readFileSync(
@@ -23,7 +23,7 @@ describe("parseListHtml with real fixtures", () => {
     expect(records[0]!.id).toBe("1674");
     expect(records[0]!.title).toBe("令和６年第４回定例会（第５号） 名簿");
     expect(records[0]!.url).toContain("Template=document");
-    expect(records[0]!.date).toBeNull();
+    expect(records[0]!.date).toBe("2024-12-17");
 
     expect(records[1]!.id).toBe("1673");
     expect(records[1]!.title).toBe("令和６年第４回定例会（第５号） 本文");
@@ -185,5 +185,75 @@ describe("fetchMeetingList integration", () => {
     expect(records![0]!.title).toBe("ＤＸ推進調査特別委員会 表紙");
     expect(records![3]!.id).toBe("16091");
     expect(records![3]!.title).toBe("ＤＸ推進調査特別委員会 本文");
+  });
+
+  test("new-version-no-csrf: baseUrl に /index.php/ がなくても HTML から pathPrefix を検出して一覧を取得", async () => {
+    const topHtml = fixture("new-version-no-csrf", "top.html");
+    const searchHtml = fixture("new-version-no-csrf", "search-result.html");
+
+    const mockFetch = vi.fn();
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(topHtml),
+      headers: new Headers({ "set-cookie": "DSNeo=abc; path=/" }),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(searchHtml),
+      headers: new Headers(),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    const records = await fetchMeetingList(
+      "https://www.city.miyawaka.fukuoka.dbsr.jp/",
+      2025,
+    );
+
+    expect(records).not.toBeNull();
+    expect(records!.length).toBeGreaterThan(0);
+    expect(records![0]!.date).not.toBeNull();
+
+    // POST URL が /index.php/ を含むことを確認（pathPrefix が HTML から検出されている）
+    const postCall = mockFetch.mock.calls[1];
+    const postUrl = postCall![0] as string;
+    expect(postUrl).toContain("/index.php/");
+  });
+});
+
+describe("parseListHtml with real fixtures — new patterns", () => {
+  test("new-version-no-csrf: div.date 内の日本語日付を抽出", () => {
+    const html = fixture("new-version-no-csrf", "search-result.html");
+    const records = parseListHtml(
+      html,
+      "https://www.city.miyawaka.fukuoka.dbsr.jp",
+    );
+
+    expect(records.length).toBeGreaterThan(0);
+    expect(records[0]!.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(records[0]!.url).toContain("Template=doc-one-frame");
+  });
+
+  test("nested-span-date: ネストされた span 内の ISO 日付を抽出", () => {
+    const html = fixture("nested-span-date", "search-result.html");
+    const records = parseListHtml(
+      html,
+      "https://www.city.itoshima.fukuoka.dbsr.jp",
+    );
+
+    expect(records.length).toBeGreaterThan(0);
+    expect(records[0]!.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+});
+
+describe("detectIndexPhpFromHtml with real fixtures", () => {
+  test("new-version-no-csrf: /index.php/ を使うサイトを検出", () => {
+    const html = fixture("new-version-no-csrf", "top.html");
+    expect(detectIndexPhpFromHtml(html)).toBe(true);
+  });
+
+  test("template-view: Laravel 版は form action にフルURLを使うので true", () => {
+    const html = fixture("template-view", "top.html");
+    // template-view の form action は /index.php/ を含む
+    expect(detectIndexPhpFromHtml(html)).toBe(true);
   });
 });

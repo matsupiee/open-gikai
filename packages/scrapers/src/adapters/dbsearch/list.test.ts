@@ -5,6 +5,8 @@ import {
   extractEndpointIdFromUrl,
   parseListHtml,
   hasNextPage,
+  detectIndexPhpFromHtml,
+  extractListDate,
 } from "./list";
 
 describe("extractCsrfToken", () => {
@@ -155,6 +157,61 @@ describe("parseListHtml", () => {
     const records = parseListHtml(html, "https://example.dbsr.jp");
     expect(records).toHaveLength(1);
     expect(records[0]!.date).toBe("2025-12-11");
+  });
+});
+
+describe("detectIndexPhpFromHtml", () => {
+  test("form action に /index.php/ が含まれる場合は true", () => {
+    const html = '<form action="/index.php/5420889?Template=list">';
+    expect(detectIndexPhpFromHtml(html)).toBe(true);
+  });
+
+  test("href リンクに /index.php/ が含まれる場合は true", () => {
+    const html = '<a href="/index.php/2548019?Template=search-detail">検索</a>';
+    expect(detectIndexPhpFromHtml(html)).toBe(true);
+  });
+
+  test("フルURL の action でも検出", () => {
+    const html = '<form action="https://example.dbsr.jp/index.php/12345">';
+    expect(detectIndexPhpFromHtml(html)).toBe(true);
+  });
+
+  test("/index.php/ がない場合は false", () => {
+    const html = '<form action="https://example.dbsr.jp/100000"><a href="/search">検索</a>';
+    expect(detectIndexPhpFromHtml(html)).toBe(false);
+  });
+});
+
+describe("extractListDate", () => {
+  test("ISO 形式 (YYYY-MM-DD) を抽出", () => {
+    expect(extractListDate('<span class="date">2025-12-24</span>')).toBe("2025-12-24");
+  });
+
+  test("開催日プレフィックス付き ISO 形式", () => {
+    expect(extractListDate('<span class="result-title__date">開催日：2025-12-11</span>')).toBe("2025-12-11");
+  });
+
+  test("日本語日付形式", () => {
+    expect(extractListDate('<span class="date">2025年12月19日</span>')).toBe("2025-12-19");
+  });
+
+  test("開催日プレフィックス付き日本語日付形式", () => {
+    expect(extractListDate('<span class="date">開催日：2025年02月25日</span>')).toBe("2025-02-25");
+  });
+
+  test("div タグ内の日本語日付（宮若市パターン）", () => {
+    const html = `<div class="date">
+                        開催日：2025年02月25日</div>`;
+    expect(extractListDate(html)).toBe("2025-02-25");
+  });
+
+  test("ネストされた span 内の ISO 日付（糸島市パターン）", () => {
+    const html = '<span class="result__title__date"><span class="result__title__date--label">開催日:</span> 2025-12-18</span>';
+    expect(extractListDate(html)).toBe("2025-12-18");
+  });
+
+  test("日付がない場合は null", () => {
+    expect(extractListDate("<span>テスト</span>")).toBeNull();
   });
 });
 

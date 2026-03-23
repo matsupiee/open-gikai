@@ -1,0 +1,188 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta http-equiv="Content-Language" content="ja-JP">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<meta name="robots" content="index,nofollow">
+<meta name="author" content="糸島市議会事務局">
+<meta name="description" content="糸島市議会で行われた会議の内容を検索できる。">
+<meta name="keywords" content="福岡県,糸島市,議会,会議録,議事録,検索,本会議">
+<link rel="stylesheet" href="../css/normalize.css" type="text/css" media="all">
+<link rel="stylesheet" href="../css/main.css" type="text/css" media="all">
+<script type="text/javascript" src="../js/jquery.min.js"></script>
+<script type="text/javascript" src="../js/common.js"></script>
+<title>糸島市議会会議録</title>
+</head>
+
+<body class="body__query">
+    <div class="wrap__header">
+        <p class="hide"><a href="#content" accesskey="1">ナビゲーションをスキップする</a></p>
+        <div class="header">
+                        <h1 class="header__title"><img src="../image/title.png" width="390" height="140" alt="糸島市議会会議録"></h1>
+            <ul class="header__nav">
+                <li class="nav__item nav__item__top">
+                                    </li>
+                <li class="nav__item nav__item__help">
+
+                    <a href="/index.php/4815903?Template=help_help-search-simple" rel="HelpWindow"><img src="../image/btn-help.png" width="130" height="42" alt="ヘルプ"></a>
+
+                </li>
+            </ul>
+            <dl class="header__fontsize">
+                <dt class="header__fontsize__title"><img src="../image/header-fontsize.png" width="77" height="27" alt="文字サイズ"></dt>
+                <dd class="header__fontsize__item"><a href="javascript:void(0)" id="fontSize-Large"><img src="../image/header-fontsize-large.png" width="24" height="27" alt="大きく"></a></dd>
+                <dd class="header__fontsize__item"><a href="javascript:void(0)" id="fontSize-Middle"><img src="../image/header-fontsize-middle.png" width="38" height="27" alt="標準"></a></dd>
+                <dd class="header__fontsize__item"><a href="javascript:void(0)" id="fontSize-Small"><img src="../image/header-fontsize-small.png" width="26" height="27" alt="小さく"></a></dd>
+            </dl>
+
+        </div>
+        <div class="wrap__nav">
+                    <ul class="header__nav">
+            <li class="nav__item">
+                <a href="/index.php/4815903?Template=search-phrase"><img src="../image/btn-phrase_over_off.png" width="180" height="60" alt="ことばでさがす"></a>
+                            </li>
+            <li class="nav__item">
+                <a href="/index.php/4815903?Template=search-speaker"><img src="../image/btn-speaker_over_off.png" width="180" height="60" alt="発言者でさがす"></a>
+                            </li>
+            <li class="nav__item">
+                <a href="/index.php/4815903?Template=search-meeting"><img src="../image/btn-meeting_over_off.png" width="180" height="60" alt="会議名でさがす"></a>
+                            </li>
+            <li class="nav__item">
+                <a href="/index.php/4815903?Template=search-term"><img src="../image/btn-term_over_off.png" width="180" height="60" alt="期間でさがす"></a>
+                            </li>
+            <li class="nav__item">
+                <a href="/index.php/4815903?Template=search-library"><img src="../image/btn-library_over_off.png" width="180" height="60" alt="会議録ライブラリ"></a>
+                            </li>
+        </ul>
+
+        </div>
+    </div>
+
+    <div class="wrap__content">
+        <div id="content" class="content">
+            <!-- maincol 始まり -->
+            <div class="maincol__query">
+                
+                <div class="whatsnew">
+                    <h2 class="whatsnew__header"><img src="../image/header-whatsnew.png" alt="新着情報" width="180" height="45"></h2>
+                    <dl class="whatsnew__body">
+                        <dt class="whatsnew__date">2026-03-18</dt>
+                        <dd class="whatsnew__comment">
+                            令和７年
+                            <a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2025-12-01&amp;TermEnd=2025-12-18">第４回定例会</a>、
+                            <a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=4&amp;TermStart=2025-12-03&amp;TermEnd=2025-12-12">長期総合計画審査特別委員会</a>
+                            を公開いたしました。
+                        </dd>
+                    </dl>
+                </div>
+                <div class="simple">
+                    <h2 class="simple__header"><img src="../image/header-simplesearch.png" alt="かんたん検索" width="180" height="45"></h2>
+                    <form class="simple__body" action="/index.php/4815903?Template=list" method="post">
+                        <fieldset>
+                            <legend>かんたん検索</legend>
+                            <p class="sipmale__note">会議の内容をことばで検索します</p>
+                            <div class="simple__searchbox">
+                                <input class="simple__searchbox__text" type="text" name="Phrase[]" id="Phrases" size="40" maxlength="40" title="ここをクリックしてことばを入力">
+                                <input class="simple__searchbox__submit btn" type="submit" name="PhrasesSubmit" id="PhrasesSubmit" value="検索実行">
+                            </div>
+                            <p class="simple__option">
+                                検索範囲:
+                                <input class="radio__input" type="radio" name="Class[]" value="4" id="textbody" checked="checked"><label class="radio__label" for="textbody">本文から</label>
+                                <input class="radio__input" type="radio" name="Class[]" value="" id="all"><label class="radio__label" for="all">すべての文書から</label>
+                                <input type="hidden" name="PhraseConnection" value="And">
+                                <input type="hidden" name="QueryType" value="New">
+                            </p>
+                        </fieldset>
+                    </form>
+                </div>
+                <div class="detail">
+                    <h2 class="detail__header"><img src="../image/header-detailsearch.png" alt="くわしく検索" width="180" height="45"></h2>
+                    <ul class="detail__body">
+                        <li class="detail__item">
+                            <a href="/index.php/4815903?Template=search-phrase"><img src="../image/btn-detail-phrase.png" width="149" height="164" alt="ことばでさがす"><span class="detail__item__phrase">ことばを入力して<br>検索します</span></a>
+                        </li>
+                        <li class="detail__item">
+                            <a href="/index.php/4815903?Template=search-speaker"><img src="../image/btn-detail-speaker.png" width="149" height="164" alt="発言者でさがす"><span class="detail__item__speaker">発言者を指定して<br>検索します</span></a>
+                        </li>
+                        <li class="detail__item">
+                            <a href="/index.php/4815903?Template=search-meeting"><img src="../image/btn-detail-meeting.png" width="149" height="164" alt="会議名でさがす"><span class="detail__item__meeting">会議名や分類を<br>指定して検索します</span></a>
+                        </li>
+                        <li class="detail__item">
+                            <a href="/index.php/4815903?Template=search-term"><img src="../image/btn-detail-term.png" width="149" height="164" alt="期間でさがす"><span class="detail__item__term">会議の期間を<br>指定して検索します</span></a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="library">
+                    <h2 class="library__header"><img src="../image/header-recentlibrary.png" alt="最近の会議録" width="180" height="45"></h2>
+                    <div class="library__body">
+                        <dl class="library__block">
+                            <dt class="library__block__title">令和７年</dt>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2025-01-28&amp;TermEnd=2025-01-28">第１回臨時会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2025-02-27&amp;TermEnd=2025-03-25">第１回定例会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2025-06-02&amp;TermEnd=2025-06-19">第２回定例会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2025-08-01&amp;TermEnd=2025-08-01">第２回臨時会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2025-09-01&amp;TermEnd=2025-09-26">第３回定例会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2025-12-01&amp;TermEnd=2025-12-18">第４回定例会</a></dd>
+                        </dl>
+                        <dl class="library__block">
+                            <dt class="library__block__title">令和６年</dt>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2024-02-02&amp;TermEnd=2024-02-02">第１回臨時会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2024-02-29&amp;TermEnd=2024-03-25">第１回定例会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2024-06-03&amp;TermEnd=2024-06-19">第２回定例会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2024-07-16&amp;TermEnd=2024-07-16">第２回臨時会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2024-09-02&amp;TermEnd=2024-09-26">第３回定例会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2024-12-02&amp;TermEnd=2024-12-18">第４回定例会</a></dd>
+                        </dl>
+                        <dl class="library__block">
+                            <dt class="library__block__title">令和５年</dt>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2023-01-31&amp;TermEnd=2023-01-31">第１回臨時会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2023-03-01&amp;TermEnd=2023-03-23">第１回定例会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2023-04-28&amp;TermEnd=2023-04-28">第２回臨時会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2023-06-01&amp;TermEnd=2023-06-20">第２回定例会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2023-09-01&amp;TermEnd=2023-09-21">第３回定例会</a></dd>
+                            <dd class="library__block__item list__item"><a href="/index.php/4815903?QueryType=New&amp;Template=List&amp;Cabinet=1&amp;TermStart=2023-12-01&amp;TermEnd=2023-12-18">第４回定例会</a></dd>
+                        </dl>
+                    </div>
+                    <p class="library__other">
+                        <a class="library__other__item list__item" href="/index.php/4815903?Template=search-library">すべての会議録一覧へ</a>
+                    </p>
+                </div>
+            </div>
+            <!-- maincol 終わり -->
+            <!-- subcol 始まり -->
+            <div class="subcol__query">
+                <div class="notice">
+                    <h2 class="notice__header">ご注意</h2>
+                    <p class="notice__comment">会議録の公開は、議会が終わってから２～３ヶ月後になります。<br>
+                        また、個人情報保護等の観点から、会議録冊子とは異なる表記で公開している部分があります。正規の「会議録」とは異なることをご了承の上、ご利用ください。</p>
+                    <h2 class="notice__header">お問い合わせ</h2>
+                    <address class="notice__comment">糸島市議会事務局
+                        <br> 〒819-1192
+                        <br> 福岡県糸島市前原西1丁目1番1号
+                        <br> 電話: 092-332-2084 (直通)
+                    </address>
+                    <ul class="notice__comment list">
+                        <li class="list__item"><a href="http://www.city.itoshima.lg.jp/site/gikai/">糸島市議会ページ</a></li>
+                        <li class="list__item"><a href="http://www.city.itoshima.lg.jp/">糸島市ホームページ</a></li>
+                    </ul>
+                    <div class="mascot">
+                        <img class="mascot__image" src="../image/itogon.png" alt="「いとゴン」の画像">
+                        <br>糸島市のイメージキャラクター
+                        <br>「いとゴン」
+                    </div>
+                </div>
+            </div>
+            <!-- subcol 終わり -->
+        </div>
+    </div>
+    <div class="wrap__footer">
+        <div class="footer">
+            <p>Copyright &copy; Itoshima City Council Minutes, All Rights Reserved.</p>
+        </div>
+    </div>
+</body>
+
+</html>
