@@ -75,6 +75,20 @@ export function buildPdfBaseUrl(pagePath: string): string {
   return `${BASE_ORIGIN}${withoutExt}_d/fil/`;
 }
 
+/** バイナリデータを取得する */
+export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    if (!res.ok) return null;
+    return await res.arrayBuffer();
+  } catch {
+    return null;
+  }
+}
+
 /** リクエスト間の待機 */
 export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

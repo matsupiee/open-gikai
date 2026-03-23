@@ -36,6 +36,6 @@ export const adapter: ScraperAdapter = {
 
   async fetchDetail({ detailParams, municipalityId }) {
     const params = detailParams as unknown as AwaraDetailParams;
-    return buildMeetingData(params, municipalityId);
+    return await buildMeetingData(params, municipalityId);
   },
 };
