@@ -58,8 +58,9 @@ export const adapter: ScraperAdapter = {
       );
     }
 
-    // council 一覧を取得
-    const councils = await fetchCouncils(tenantId, year, apiBase);
+    // council 一覧を取得（「別冊」は議事録テキストを持たないため除外）
+    const allCouncils = await fetchCouncils(tenantId, year, apiBase);
+    const councils = allCouncils.filter((c) => !c.name.includes("別冊"));
     if (councils.length === 0) return [];
 
     // 各 council の schedule 一覧を取得してフラットなリストに展開
