@@ -15,9 +15,6 @@ import type { ScraperAdapter, ListRecord } from "../../adapter";
 import { fetchMeetingList } from "./list";
 import { buildMeetingData, type AwaraDetailParams } from "./detail";
 
-export { parseYearPage } from "./list";
-export { buildMeetingData } from "./detail";
-
 export const adapter: ScraperAdapter = {
   name: "182087",
 
