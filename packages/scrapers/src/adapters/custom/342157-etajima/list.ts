@@ -57,23 +57,23 @@ export function parseSectionDate(section: string): string | null {
   // 全角数字を半角に正規化してからパース
   const normalized = toHalfWidth(section);
 
-  // セクション見出しのカッコ内の年月を取得
+  // セクション見出しのカッコ内の年月を取得（「元」年にも対応）
   const match = normalized.match(
-    /[（(](令和|平成)\s*(\d+)\s*年\s*(\d+)\s*月[）)]/
+    /[（(](令和|平成)\s*(元|\d+)\s*年\s*(\d+)\s*月[）)]/
   );
   if (!match) {
     // カッコなしで先頭の年から推定
-    const eraMatch = normalized.match(/(令和|平成)\s*(\d+)\s*年/);
+    const eraMatch = normalized.match(/(令和|平成)\s*(元|\d+)\s*年/);
     if (!eraMatch) return null;
     const era = eraMatch[1]!;
-    const eraYear = parseInt(eraMatch[2]!, 10);
+    const eraYear = eraMatch[2] === "元" ? 1 : parseInt(eraMatch[2]!, 10);
     const westernYear =
       era === "令和" ? eraYear + 2018 : eraYear + 1988;
     return `${westernYear}-01`;
   }
 
   const [, era, eraYearStr, monthStr] = match;
-  const eraYear = parseInt(eraYearStr!, 10);
+  const eraYear = eraYearStr === "元" ? 1 : parseInt(eraYearStr!, 10);
   const month = parseInt(monthStr!, 10);
 
   let westernYear: number;
@@ -162,7 +162,8 @@ export function parseYearPage(
 
     // リンクテキストから日目の数字を取得して日付推定
     // 正確な日付は PDF 内から取得する必要があるが、YYYY-MM-01 をデフォルトとする
-    const heldOn = yearMonth ? `${yearMonth}-01` : "1970-01-01";
+    if (!yearMonth) continue;
+    const heldOn = `${yearMonth}-01`;
 
     // PDF の完全 URL を構築
     let pdfUrl: string;
