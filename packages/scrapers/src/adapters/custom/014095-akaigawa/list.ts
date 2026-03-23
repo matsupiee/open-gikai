@@ -51,7 +51,7 @@ export function parseLinkText(text: string): {
 
   // 開催日を抽出
   const dateMatch = normalized.match(
-    /[(\(（](令和\d+年\d+月\d+日)開催[)\)）]/
+    /[(\(（](令和(?:元|\d+)年\d+月\d+日)開催[)\)）]/
   );
   if (!dateMatch) return null;
 
