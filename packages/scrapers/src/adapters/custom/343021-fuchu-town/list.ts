@@ -6,39 +6,15 @@
  * 2. 各会議別詳細ページから本文 PDF リンクとメタ情報を抽出
  */
 
-import { BASE_ORIGIN, buildYearPageUrl, fetchPage } from "./shared";
+import { BASE_ORIGIN, buildYearPageUrl, fetchPage, parseDateText } from "./shared";
+
+export { parseDateText };
 
 export interface FuchuMeeting {
   pdfUrl: string;
   title: string;
   heldOn: string;
   detailPageUrl: string;
-}
-
-/**
- * 和暦の開催日テキストから YYYY-MM-DD を返す。
- * e.g., "令和７年１２月１２日（金）" → "2025-12-12"
- */
-export function parseDateText(text: string): string | null {
-  // 全角数字を半角に変換
-  const normalized = text.replace(/[０-９]/g, (ch) =>
-    String.fromCharCode(ch.charCodeAt(0) - 0xfee0)
-  );
-
-  const match = normalized.match(/(令和|平成)(\d+)年(\d+)月(\d+)日/);
-  if (!match) return null;
-
-  const [, era, eraYearStr, monthStr, dayStr] = match;
-  const eraYear = parseInt(eraYearStr!, 10);
-  const month = parseInt(monthStr!, 10);
-  const day = parseInt(dayStr!, 10);
-
-  let westernYear: number;
-  if (era === "令和") westernYear = eraYear + 2018;
-  else if (era === "平成") westernYear = eraYear + 1988;
-  else return null;
-
-  return `${westernYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 /**
@@ -148,11 +124,11 @@ export function extractYearFromTitle(title: string): number | null {
     String.fromCharCode(ch.charCodeAt(0) - 0xfee0)
   );
 
-  const match = normalized.match(/(令和|平成)(\d+)年/);
+  const match = normalized.match(/(令和|平成)(元|\d+)年/);
   if (!match) return null;
 
   const [, era, eraYearStr] = match;
-  const eraYear = parseInt(eraYearStr!, 10);
+  const eraYear = eraYearStr === "元" ? 1 : parseInt(eraYearStr!, 10);
 
   if (era === "令和") return eraYear + 2018;
   if (era === "平成") return eraYear + 1988;

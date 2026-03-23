@@ -7,6 +7,33 @@
 
 export const BASE_ORIGIN = "https://www.town.fuchu.hiroshima.jp";
 
+/**
+ * 和暦の開催日テキストから YYYY-MM-DD を返す。
+ * e.g., "令和７年１２月１２日（金）" → "2025-12-12"
+ * e.g., "令和元年５月１日" → "2019-05-01"
+ */
+export function parseDateText(text: string): string | null {
+  // 全角数字を半角に変換
+  const normalized = text.replace(/[０-９]/g, (ch) =>
+    String.fromCharCode(ch.charCodeAt(0) - 0xfee0)
+  );
+
+  const match = normalized.match(/(令和|平成)(元|\d+)年(\d+)月(\d+)日/);
+  if (!match) return null;
+
+  const [, era, eraYearStr, monthStr, dayStr] = match;
+  const eraYear = eraYearStr === "元" ? 1 : parseInt(eraYearStr!, 10);
+  const month = parseInt(monthStr!, 10);
+  const day = parseInt(dayStr!, 10);
+
+  let westernYear: number;
+  if (era === "令和") westernYear = eraYear + 2018;
+  else if (era === "平成") westernYear = eraYear + 1988;
+  else return null;
+
+  return `${westernYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 const USER_AGENT =
   "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
 
@@ -49,7 +76,11 @@ export async function fetchPage(url: string): Promise<string | null> {
     });
     if (!res.ok) return null;
     return await res.text();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[343021-fuchu-town] fetchPage 失敗: ${url}`,
+      err instanceof Error ? err.message : err
+    );
     return null;
   }
 }
@@ -63,7 +94,11 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
     });
     if (!res.ok) return null;
     return await res.arrayBuffer();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[343021-fuchu-town] fetchBinary 失敗: ${url}`,
+      err instanceof Error ? err.message : err
+    );
     return null;
   }
 }

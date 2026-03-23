@@ -17,13 +17,12 @@ import { createHash } from "node:crypto";
 import { extractText, getDocumentProxy } from "unpdf";
 import type { MeetingData, ParsedStatement } from "../../../utils/types";
 import type { FuchuMeeting } from "./list";
-import { parseDateText } from "./list";
-import { detectMeetingType, extractExternalIdKey, fetchBinary } from "./shared";
+import { detectMeetingType, extractExternalIdKey, fetchBinary, parseDateText } from "./shared";
 
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
-  "委員長",
   "副委員長",
+  "委員長",
   "副議長",
   "副町長",
   "教育長",
@@ -150,10 +149,13 @@ export function normalizeSpacedText(text: string): string {
   // 全角・半角スペースが1文字ずつ挟まっているパターンを除去
   // "○ 議 長" → "○議長", "力 山 彰 君" → "力山彰君"
   // ただし複数連続するスペースは区切りとして残す
-  return text
-    .replace(/([^\s]) ([^\s])/g, "$1$2")
-    .replace(/([^\s]) ([^\s])/g, "$1$2") // 2回適用で "a b c d" → "abcd"
-    .replace(/([^\s]) ([^\s])/g, "$1$2"); // 3回目で残りをカバー
+  let prev = "";
+  let curr = text;
+  while (prev !== curr) {
+    prev = curr;
+    curr = curr.replace(/([^\s]) ([^\s])/g, "$1$2");
+  }
+  return curr;
 }
 
 /**
@@ -209,13 +211,13 @@ export function extractHeldOn(text: string): string | null {
 
   // 「開会年月日」パターン
   const match = normalized.match(
-    /開会年月日[\s　]*((?:令和|平成)[\d０-９]+年[\d０-９]+月[\d０-９]+日)/
+    /開会年月日[\s　]*((?:令和|平成)(?:元|[\d０-９]+)年[\d０-９]+月[\d０-９]+日)/
   );
   if (match) {
     return parseDateText(match[1]!);
   }
   // フォールバック: テキスト先頭付近から日付を検索
-  const fallback = normalized.match(/((?:令和|平成)[\d０-９]+年[\d０-９]+月[\d０-９]+日)/);
+  const fallback = normalized.match(/((?:令和|平成)(?:元|[\d０-９]+)年[\d０-９]+月[\d０-９]+日)/);
   if (fallback) {
     return parseDateText(fallback[1]!);
   }
@@ -253,6 +255,7 @@ export async function fetchMeetingData(
   if (!text) return null;
 
   const statements = parseStatements(text);
+  if (statements.length === 0) return null;
 
   // PDF テキストから開催日を抽出（list フェーズで取得できなかった場合のフォールバック）
   const heldOn = meeting.heldOn || extractHeldOn(text);
