@@ -15,6 +15,7 @@ const FETCH_TIMEOUT_MS = 30_000;
 /** 会議タイプを検出 */
 export function detectMeetingType(title: string): string {
   if (title.includes("臨時会")) return "extraordinary";
+  if (title.includes("委員会")) return "committee";
   return "plenary";
 }
 

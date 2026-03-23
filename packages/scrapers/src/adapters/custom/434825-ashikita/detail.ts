@@ -235,11 +235,12 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
 export async function buildMeetingData(
   params: AshikitaDetailParams,
   municipalityId: string,
-): Promise<MeetingData> {
+): Promise<MeetingData | null> {
   const heldOn = estimateHeldOn(params.title, params.year);
 
   const text = await fetchPdfText(params.pdfUrl);
   const statements = text ? parseStatements(text) : [];
+  if (statements.length === 0) return null;
 
   return {
     municipalityId,
