@@ -68,7 +68,7 @@ function toFullWidth(s: string): string {
 export function extractHeldOn(name: string): string | null {
   const dates = [
     ...name.matchAll(
-      /(?:令和|平成)([０-９\d]+)年([０-９\d]+)月([０-９\d]+)日/g,
+      /(?:令和|平成)(元|[０-９\d]+)年([０-９\d]+)月([０-９\d]+)日/g,
     ),
   ];
   if (dates.length === 0) return null;
@@ -79,7 +79,7 @@ export function extractHeldOn(name: string): string | null {
     s.replace(/[０-９]/g, (c) =>
       String.fromCharCode(c.charCodeAt(0) - 0xfee0),
     );
-  const eraYear = parseInt(toHalf(last[1]!));
+  const eraYear = last[1] === "元" ? 1 : parseInt(toHalf(last[1]!));
   const month = parseInt(toHalf(last[2]!));
   const day = parseInt(toHalf(last[3]!));
 

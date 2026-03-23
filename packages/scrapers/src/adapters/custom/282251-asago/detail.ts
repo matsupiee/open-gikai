@@ -25,23 +25,26 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// 行政側の役職（答弁者として分類する）
-const ANSWER_ROLES = new Set([
-  "市長",
+// 行政側の役職サフィックス（答弁者として分類する）
+// endsWith でマッチさせるため、長い（具体的な）サフィックスを先に配置する
+const ANSWER_ROLE_SUFFIXES = [
   "副市長",
+  "市長",
+  "副教育長",
   "教育長",
+  "副部長",
   "部長",
+  "副課長",
   "課長",
+  "支所長",
   "室長",
+  "事務局長",
   "局長",
   "係長",
   "参事",
   "主幹",
-  "副部長",
-  "副課長",
-  "支所長",
   "理事",
-]);
+];
 
 /**
  * 発言ヘッダーから話者名・役職・本文を抽出する。
@@ -82,7 +85,9 @@ export function parseSpeaker(text: string): {
 }
 
 /** 役職から発言種別を分類 */
-export function classifyKind(speakerRole: string | null): string {
+export function classifyKind(
+  speakerRole: string | null,
+): "remark" | "question" | "answer" {
   if (!speakerRole) return "remark";
   if (
     speakerRole === "議長" ||
@@ -93,11 +98,9 @@ export function classifyKind(speakerRole: string | null): string {
     return "remark";
   }
   if (speakerRole === "議員") return "question";
-  // 行政側の完全一致
-  if (ANSWER_ROLES.has(speakerRole)) return "answer";
   // 行政側の部分一致（"政策担当部長" → "部長" を含む）
-  for (const role of ANSWER_ROLES) {
-    if (speakerRole.endsWith(role)) return "answer";
+  for (const suffix of ANSWER_ROLE_SUFFIXES) {
+    if (speakerRole.endsWith(suffix)) return "answer";
   }
   return "question";
 }
