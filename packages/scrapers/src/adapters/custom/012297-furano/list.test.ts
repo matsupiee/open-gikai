@@ -58,6 +58,14 @@ describe("parseDateText", () => {
     expect(parseDateText("第1号(平成20年3月5日)")).toBe("2008-03-05");
   });
 
+  it("令和元年をパースする", () => {
+    expect(parseDateText("第1号(令和元年5月1日)")).toBe("2019-05-01");
+  });
+
+  it("平成元年をパースする", () => {
+    expect(parseDateText("第1号(平成元年1月15日)")).toBe("1989-01-15");
+  });
+
   it("日付がない場合は null を返す", () => {
     expect(parseDateText("目次")).toBeNull();
   });
