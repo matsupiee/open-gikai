@@ -73,8 +73,16 @@ export function parseStatements(text: string): ParsedStatement[] {
   const meetingSectionStart = text.search(/[５5]\s*会\s*議|①\s*開\s*会/);
   const targetText = meetingSectionStart >= 0 ? text.slice(meetingSectionStart) : text;
 
+  // PDF テキストが改行なしの1行で抽出される場合があるため、
+  // 役職パターンの直前で分割してから行単位で処理する。
+  // 「教 育 長 - 」「議 長 - 」「3 番 委 員 - 」等のパターンの前で改行を挿入
+  const normalized = targetText.replace(
+    /(?=(?:教\s*育\s*長|議\s*長|副\s*議\s*長|課\s*長|主\s*幹|補\s*佐|主\s*査|係\s*長|指\s*導\s*主\s*事|事\s*務\s*局\s*長|事\s*務\s*局\s*次\s*長|教\s*育\s*文\s*化\s*課\s*長|生\s*涯\s*学\s*習\s*係\s*長|課\s*長\s*補\s*佐|\d+\s*番\s*委\s*員)\s*[-－–]\s)/g,
+    "\n"
+  );
+
   // 行ごとに分割
-  const lines = targetText.split("\n");
+  const lines = normalized.split("\n");
 
   // 「役職 - 内容」パターン
   // 役職部分は漢字・数字・スペースで構成され、「 - 」で区切られる
