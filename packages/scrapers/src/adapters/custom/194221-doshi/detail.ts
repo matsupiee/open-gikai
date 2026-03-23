@@ -25,8 +25,8 @@ export interface DoshiDetailParams {
 
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
-  "委員長",
   "副委員長",
+  "委員長",
   "副議長",
   "副村長",
   "教育長",
@@ -217,6 +217,7 @@ export async function buildMeetingData(
   if (!text) return null;
 
   const statements = parseStatements(text);
+  if (statements.length === 0) return null;
 
   return {
     municipalityId,

@@ -27,7 +27,11 @@ export async function fetchPage(url: string): Promise<string | null> {
     });
     if (!res.ok) return null;
     return await res.text();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[194221-doshi] fetchPage 失敗: ${url}`,
+      err instanceof Error ? err.message : err,
+    );
     return null;
   }
 }
@@ -41,7 +45,11 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
     });
     if (!res.ok) return null;
     return await res.arrayBuffer();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[194221-doshi] fetchBinary 失敗: ${url}`,
+      err instanceof Error ? err.message : err,
+    );
     return null;
   }
 }
@@ -87,9 +95,4 @@ export function parseDateText(dateText: string): string | null {
   const day = parseInt(dateMatch[2]!, 10);
 
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-}
-
-/** リクエスト間の待機 */
-export function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }

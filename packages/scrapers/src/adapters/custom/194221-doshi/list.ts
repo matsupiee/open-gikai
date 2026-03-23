@@ -89,7 +89,7 @@ export function parseListPage(html: string): DoshiSessionInfo[] {
 
     // タイトルから会議名を抽出（「会議録（PDF）」「会議録(PDF)」を除去）
     const titleMatch = linkText.match(
-      /^((?:令和|平成)\d+年第\d+回(?:定例会|臨時会))/,
+      /^((?:令和|平成)(?:元|\d+)年第\d+回(?:定例会|臨時会))/,
     );
     const title = titleMatch ? titleMatch[1]! : linkText.replace(/会議録[（(]?PDF[）)]?/g, "").trim();
 
