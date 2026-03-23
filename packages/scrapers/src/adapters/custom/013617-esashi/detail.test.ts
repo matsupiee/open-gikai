@@ -50,6 +50,30 @@ describe("parseSpeaker", () => {
     expect(result.speakerRole).toBe("教育長");
   });
 
+  it("「副議長」パターンを解析する", () => {
+    const result = parseSpeaker("「副議長」");
+    expect(result.speakerName).toBeNull();
+    expect(result.speakerRole).toBe("副議長");
+  });
+
+  it("「副委員長」パターンを解析する", () => {
+    const result = parseSpeaker("「副委員長」");
+    expect(result.speakerName).toBeNull();
+    expect(result.speakerRole).toBe("副委員長");
+  });
+
+  it("「山田副委員長」パターンから名前と役職を抽出する", () => {
+    const result = parseSpeaker("「山田副委員長」");
+    expect(result.speakerName).toBe("山田");
+    expect(result.speakerRole).toBe("副委員長");
+  });
+
+  it("「鈴木副議長」パターンから名前と役職を抽出する", () => {
+    const result = parseSpeaker("「鈴木副議長」");
+    expect(result.speakerName).toBe("鈴木");
+    expect(result.speakerRole).toBe("副議長");
+  });
+
   it("「室井委員長」パターンから名前と役職を抽出する", () => {
     const result = parseSpeaker("「室井委員長」");
     expect(result.speakerName).toBe("室井");

@@ -31,18 +31,18 @@ import {
 
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
-  "委員長",
   "副委員長",
+  "委員長",
   "副議長",
-  "副町長",
-  "教育長",
   "議長",
+  "副町長",
   "町長",
+  "教育長",
   "委員",
   "議員",
   "副部長",
-  "副課長",
   "部長",
+  "副課長",
   "課長",
   "室長",
   "局長",
@@ -78,8 +78,8 @@ const ANSWER_ROLES = new Set([
  *   （議長） -> role=議長, name=null
  *   「町長」 -> role=町長, name=null
  *   「増永議員」 -> role=議員, name=増永
- *   「財政課長」 -> role=課長, name=null（前部分が短すぎるため名前なし）
- *   「まちづくり推進課長」 -> role=課長, name=null
+ *   「財政課長」 -> role=課長, name=財政
+ *   「まちづくり推進課長」 -> role=課長, name=まちづくり推進
  *   「室井委員長」 -> role=委員長, name=室井
  */
 export function parseSpeaker(marker: string): {
@@ -169,7 +169,7 @@ export function parseStatements(text: string): ParsedStatement[] {
       const hasRole = ROLE_SUFFIXES.some(
         (suffix) => inner === suffix || inner.endsWith(suffix),
       );
-      if (!hasRole && !inner.endsWith("議員")) continue;
+      if (!hasRole) continue;
     }
     markers.push({
       index: m.index!,
