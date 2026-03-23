@@ -1,5 +1,9 @@
 import { describe, test, expect } from "vitest";
-import { isProcedural, buildChunksFromStatements } from "./statement-chunking";
+import {
+  isProcedural,
+  isTooShort,
+  buildChunksFromStatements,
+} from "./statement-chunking";
 
 describe("isProcedural", () => {
   test("○ で始まる発言は手続き系", () => {
@@ -40,6 +44,33 @@ describe("isProcedural", () => {
 
   test("通常の発言は手続き系ではない", () => {
     expect(isProcedural("防災対策について質問いたします。")).toBe(false);
+  });
+});
+
+describe("isTooShort", () => {
+  test("4文字以下の発言は短すぎると判定する", () => {
+    expect(isTooShort("はい")).toBe(true);
+    expect(isTooShort("異議なし")).toBe(true);
+    expect(isTooShort("なし")).toBe(true);
+  });
+
+  test("空白のみの発言は短すぎると判定する", () => {
+    expect(isTooShort("   ")).toBe(true);
+    expect(isTooShort("")).toBe(true);
+  });
+
+  test("前後に空白がある場合はトリム後の文字数で判定する", () => {
+    expect(isTooShort("  はい  ")).toBe(true);
+    expect(isTooShort("  12345  ")).toBe(false);
+  });
+
+  test("5文字以上の発言は短すぎないと判定する", () => {
+    expect(isTooShort("お答えします")).toBe(false);
+    expect(isTooShort("12345")).toBe(false);
+  });
+
+  test("ちょうど5文字の発言は短すぎないと判定する", () => {
+    expect(isTooShort("あいうえお")).toBe(false);
   });
 });
 
@@ -144,6 +175,55 @@ describe("buildChunksFromStatements", () => {
 
   test("空の入力は空配列を返す", () => {
     expect(buildChunksFromStatements([])).toEqual([]);
+  });
+
+  test("5文字未満の短い発言をチャンクから除外する", () => {
+    const statements = [
+      {
+        id: "stmt-1",
+        speakerName: "佐藤花子",
+        speakerRole: "議員",
+        content: "はい",
+      },
+      {
+        id: "stmt-2",
+        speakerName: "鈴木一郎",
+        speakerRole: "市長",
+        content: "異議なし",
+      },
+      {
+        id: "stmt-3",
+        speakerName: "田中太郎",
+        speakerRole: "議員",
+        content: "防災対策について質問いたします。",
+      },
+    ];
+
+    const chunks = buildChunksFromStatements(statements);
+
+    // "はい" (2文字) と "異議なし" (4文字) は除外される
+    expect(chunks).toHaveLength(1);
+    expect(chunks[0]!.speakerName).toBe("田中太郎");
+    expect(chunks[0]!.statementIds).toEqual(["stmt-3"]);
+  });
+
+  test("全て短い発言の場合は空配列を返す", () => {
+    const statements = [
+      {
+        id: "stmt-1",
+        speakerName: "佐藤花子",
+        speakerRole: "議員",
+        content: "はい",
+      },
+      {
+        id: "stmt-2",
+        speakerName: "鈴木一郎",
+        speakerRole: "市長",
+        content: "なし",
+      },
+    ];
+
+    expect(buildChunksFromStatements(statements)).toEqual([]);
   });
 
   test("全て手続き系の場合は空配列を返す", () => {
