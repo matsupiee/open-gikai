@@ -55,14 +55,17 @@ function parseDateFromLinkText(
  *     "平成31年第1回定例会" → 2019
  */
 function extractYearFromHeading(heading: string): number | null {
-  const reiwaMatch = heading.match(/令和(\d+)年/);
-  if (reiwaMatch) return parseInt(reiwaMatch[1]!, 10) + 2018;
+  const reiwaMatch = heading.match(/令和(元|\d+)年/);
+  if (reiwaMatch) {
+    const eraYear = reiwaMatch[1] === "元" ? 1 : parseInt(reiwaMatch[1]!, 10);
+    return eraYear + 2018;
+  }
 
-  // 令和元年
-  if (heading.includes("令和元年")) return 2019;
-
-  const heiseiMatch = heading.match(/平成(\d+)年/);
-  if (heiseiMatch) return parseInt(heiseiMatch[1]!, 10) + 1988;
+  const heiseiMatch = heading.match(/平成(元|\d+)年/);
+  if (heiseiMatch) {
+    const eraYear = heiseiMatch[1] === "元" ? 1 : parseInt(heiseiMatch[1]!, 10);
+    return eraYear + 1988;
+  }
 
   return null;
 }
