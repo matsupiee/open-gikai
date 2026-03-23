@@ -1,46 +1,146 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { buildMeetingData } from "./detail";
+import { classifyKind, parseSpeaker, parseStatements } from "./detail";
 
-describe("buildMeetingData", () => {
-  it("detailParams から MeetingData を組み立てる", () => {
-    const result = buildMeetingData(
-      {
-        title: "第1回定例会本会議 第1日",
-        heldOn: "2020-03-09",
-        pdfUrl:
-          "https://www.akaigawa.com/manage/wp-content/themes/akaigawa/asset/file/kurashi/gyosei/meeting.pdf",
-        meetingType: "plenary",
-      },
-      "municipality-id-123"
-    );
-
-    expect(result.municipalityId).toBe("municipality-id-123");
-    expect(result.title).toBe("第1回定例会本会議 第1日");
-    expect(result.meetingType).toBe("plenary");
-    expect(result.heldOn).toBe("2020-03-09");
-    expect(result.sourceUrl).toBe(
-      "https://www.akaigawa.com/manage/wp-content/themes/akaigawa/asset/file/kurashi/gyosei/meeting.pdf"
-    );
-    expect(result.externalId).toBe("akaigawa_2020-03-09");
-    expect(result.statements).toEqual([]);
+describe("parseSpeaker", () => {
+  it("議長パターンを抽出する", () => {
+    const result = parseSpeaker("○議長（田中太郎君）　ただいまから会議を開きます。");
+    expect(result.speakerName).toBe("田中太郎");
+    expect(result.speakerRole).toBe("議長");
+    expect(result.content).toBe("ただいまから会議を開きます。");
   });
 
-  it("臨時会の MeetingData を正しく組み立てる", () => {
-    const result = buildMeetingData(
-      {
-        title: "第2回臨時会本会議 第1日",
-        heldOn: "2022-03-25",
-        pdfUrl:
-          "https://www.akaigawa.com/manage/wp-content/uploads/2022/11/hash.pdf",
-        meetingType: "extraordinary",
-      },
-      "municipality-id-456"
+  it("村長パターンを抽出する", () => {
+    const result = parseSpeaker("○村長（鈴木一郎君）　お答えいたします。");
+    expect(result.speakerName).toBe("鈴木一郎");
+    expect(result.speakerRole).toBe("村長");
+    expect(result.content).toBe("お答えいたします。");
+  });
+
+  it("番号付き議員パターンを抽出する", () => {
+    const result = parseSpeaker("○３番（山田花子君）　質問いたします。");
+    expect(result.speakerName).toBe("山田花子");
+    expect(result.speakerRole).toBe("議員");
+    expect(result.content).toBe("質問いたします。");
+  });
+
+  it("課長パターンを抽出する", () => {
+    const result = parseSpeaker("○総務課長（佐藤次郎君）　お答えいたします。");
+    expect(result.speakerName).toBe("佐藤次郎");
+    expect(result.speakerRole).toBe("課長");
+    expect(result.content).toBe("お答えいたします。");
+  });
+
+  it("名前にスペースが含まれる場合スペースを除去する", () => {
+    const result = parseSpeaker("○村長（鈴木　一郎君）　お答えします。");
+    expect(result.speakerName).toBe("鈴木一郎");
+    expect(result.speakerRole).toBe("村長");
+  });
+
+  it("副議長パターンを抽出する", () => {
+    const result = parseSpeaker("○副議長（高橋二郎君）　議事を進めます。");
+    expect(result.speakerName).toBe("高橋二郎");
+    expect(result.speakerRole).toBe("副議長");
+    expect(result.content).toBe("議事を進めます。");
+  });
+
+  it("マーカーのみで内容がない場合は content が空になる", () => {
+    const result = parseSpeaker("○");
+    expect(result.speakerName).toBeNull();
+    expect(result.speakerRole).toBeNull();
+    expect(result.content).toBe("");
+  });
+});
+
+describe("classifyKind", () => {
+  it("議長は remark に分類する", () => {
+    expect(classifyKind("議長")).toBe("remark");
+  });
+
+  it("副議長は remark に分類する", () => {
+    expect(classifyKind("副議長")).toBe("remark");
+  });
+
+  it("村長は answer に分類する", () => {
+    expect(classifyKind("村長")).toBe("answer");
+  });
+
+  it("課長は answer に分類する", () => {
+    expect(classifyKind("課長")).toBe("answer");
+  });
+
+  it("教育長は answer に分類する", () => {
+    expect(classifyKind("教育長")).toBe("answer");
+  });
+
+  it("議員は question に分類する", () => {
+    expect(classifyKind("議員")).toBe("question");
+  });
+
+  it("null は remark に分類する", () => {
+    expect(classifyKind(null)).toBe("remark");
+  });
+});
+
+describe("parseStatements", () => {
+  it("○マーカーで分割して ParsedStatement 配列を生成する", () => {
+    const text = [
+      "○議長（田中太郎君）　ただいまから会議を開きます。",
+      "○３番（山田花子君）　質問いたします。",
+      "○村長（鈴木一郎君）　お答えいたします。",
+    ].join("\n");
+
+    const result = parseStatements(text);
+
+    expect(result).toHaveLength(3);
+    expect(result[0]!.kind).toBe("remark");
+    expect(result[0]!.speakerName).toBe("田中太郎");
+    expect(result[0]!.speakerRole).toBe("議長");
+    expect(result[0]!.content).toBe("ただいまから会議を開きます。");
+    expect(result[0]!.contentHash).toBe(
+      createHash("sha256").update("ただいまから会議を開きます。").digest("hex")
     );
 
-    expect(result.meetingType).toBe("extraordinary");
-    expect(result.externalId).toBe("akaigawa_2022-03-25");
-    expect(result.sourceUrl).toBe(
-      "https://www.akaigawa.com/manage/wp-content/uploads/2022/11/hash.pdf"
-    );
+    expect(result[1]!.kind).toBe("question");
+    expect(result[1]!.speakerName).toBe("山田花子");
+    expect(result[1]!.speakerRole).toBe("議員");
+
+    expect(result[2]!.kind).toBe("answer");
+    expect(result[2]!.speakerName).toBe("鈴木一郎");
+    expect(result[2]!.speakerRole).toBe("村長");
+  });
+
+  it("ト書き（登壇等）をスキップする", () => {
+    const text = [
+      "○議長（田中太郎君）　質問を許します。",
+      "○（山田花子君登壇）",
+      "○３番（山田花子君）　質問いたします。",
+    ].join("\n");
+
+    const result = parseStatements(text);
+    expect(result).toHaveLength(2);
+    expect(result[0]!.speakerRole).toBe("議長");
+    expect(result[1]!.speakerRole).toBe("議員");
+  });
+
+  it("空テキストでは空配列を返す", () => {
+    expect(parseStatements("")).toEqual([]);
+  });
+
+  it("○マーカーがないテキストでは空配列を返す", () => {
+    expect(parseStatements("ただの説明テキストです。")).toEqual([]);
+  });
+
+  it("startOffset / endOffset が連続している", () => {
+    const text = [
+      "○議長（田中太郎君）　開会します。",
+      "○村長（鈴木一郎君）　答弁します。",
+    ].join("\n");
+
+    const result = parseStatements(text);
+    expect(result).toHaveLength(2);
+    expect(result[0]!.startOffset).toBe(0);
+    expect(result[0]!.endOffset).toBe("開会します。".length);
+    expect(result[1]!.startOffset).toBe(result[0]!.endOffset + 1);
   });
 });

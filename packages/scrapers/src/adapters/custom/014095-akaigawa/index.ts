@@ -16,7 +16,7 @@ import { fetchDocumentList } from "./list";
 import { buildMeetingData, type AkaigawaDetailParams } from "./detail";
 
 export { parseLinkText, parseListPage } from "./list";
-export { buildMeetingData } from "./detail";
+export { buildMeetingData, parseSpeaker, classifyKind, parseStatements } from "./detail";
 
 export const adapter: ScraperAdapter = {
   name: "014095",
@@ -36,6 +36,6 @@ export const adapter: ScraperAdapter = {
 
   async fetchDetail({ detailParams, municipalityId }) {
     const params = detailParams as unknown as AkaigawaDetailParams;
-    return buildMeetingData(params, municipalityId);
+    return await buildMeetingData(params, municipalityId);
   },
 };

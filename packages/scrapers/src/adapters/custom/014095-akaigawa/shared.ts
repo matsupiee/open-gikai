@@ -32,6 +32,20 @@ export async function fetchPage(url: string): Promise<string | null> {
   }
 }
 
+/** fetch してバイナリ（ArrayBuffer）を返す */
+export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(60_000),
+    });
+    if (!res.ok) return null;
+    return await res.arrayBuffer();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * 全角数字を半角に変換する。
  * 例: "１２３" → "123"
