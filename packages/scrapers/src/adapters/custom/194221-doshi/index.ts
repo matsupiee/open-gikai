@@ -19,9 +19,6 @@ import {
   type DoshiDetailParams,
 } from "./detail";
 
-export { parseListPage } from "./list";
-export { buildMeetingData, parseSpeaker, classifyKind, parseStatements } from "./detail";
-
 export const adapter: ScraperAdapter = {
   name: "194221",
 
