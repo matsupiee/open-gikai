@@ -18,8 +18,8 @@ import { detectMeetingType, extractExternalIdKey, fetchBinary } from "./shared";
 
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
-  "委員長",
   "副委員長",
+  "委員長",
   "副議長",
   "副市長",
   "教育長",
@@ -204,6 +204,7 @@ export async function fetchMeetingData(
   if (!text) return null;
 
   const statements = parseStatements(text);
+  if (statements.length === 0) return null;
 
   const idKey = extractExternalIdKey(new URL(meeting.pdfUrl).pathname);
   const externalId = idKey ? `buzen_${idKey}` : null;
@@ -213,7 +214,7 @@ export async function fetchMeetingData(
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
     heldOn: meeting.heldOn,
-    sourceUrl: meeting.pdfUrl,
+    sourceUrl: meeting.detailUrl,
     externalId,
     statements,
   };

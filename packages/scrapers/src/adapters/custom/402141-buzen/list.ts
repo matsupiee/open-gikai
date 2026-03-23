@@ -31,8 +31,8 @@ export interface BuzenMeeting {
   pdfUrl: string;
   /** 会議タイトル（例: "令和7年第1回定例会"） */
   title: string;
-  /** 開催日 YYYY-MM-DD（日付不明の場合は年の1月1日） */
-  heldOn: string;
+  /** 開催日 YYYY-MM-DD（日付不明の場合は null） */
+  heldOn: string | null;
   /** 詳細ページの URL */
   detailUrl: string;
 }
@@ -134,7 +134,7 @@ export function parseDetailPage(
     results.push({
       pdfUrl,
       title,
-      heldOn: heldOn ?? "1970-01-01",
+      heldOn: heldOn ?? null,
       detailUrl,
     });
   }

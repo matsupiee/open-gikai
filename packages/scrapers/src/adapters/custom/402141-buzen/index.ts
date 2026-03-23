@@ -21,14 +21,16 @@ export const adapter: ScraperAdapter = {
   async fetchList({ baseUrl, year }): Promise<ListRecord[]> {
     const meetings = await fetchMeetingList(baseUrl, year);
 
-    return meetings.map((m) => ({
-      detailParams: {
-        pdfUrl: m.pdfUrl,
-        title: m.title,
-        heldOn: m.heldOn,
-        detailUrl: m.detailUrl,
-      },
-    }));
+    return meetings
+      .filter((m) => m.heldOn !== null)
+      .map((m) => ({
+        detailParams: {
+          pdfUrl: m.pdfUrl,
+          title: m.title,
+          heldOn: m.heldOn!,
+          detailUrl: m.detailUrl,
+        },
+      }));
   },
 
   async fetchDetail({ detailParams, municipalityId }) {
