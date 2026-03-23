@@ -527,13 +527,13 @@ function extractStatementsPageText(html: string): ParsedStatement[] {
   let offset = 0;
 
   const voicePattern =
-    /<div[^>]+class="[^"]*page-text__voice[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
+    /<(?:div|li)[^>]+class="[^"]*page-text__voice[^"]*"[^>]*>([\s\S]*?)<\/(?:div|li)>/gi;
 
   let m: RegExpExecArray | null;
   while ((m = voicePattern.exec(html)) !== null) {
-    const divInner = m[1] ?? "";
+    const blockInner = m[1] ?? "";
 
-    const textMatch = divInner.match(
+    const textMatch = blockInner.match(
       /<p[^>]+class="[^"]*page-text__text[^"]*"[^>]*>([\s\S]*?)<\/p>/i
     );
     if (!textMatch?.[1]) continue;
