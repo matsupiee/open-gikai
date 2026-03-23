@@ -28,6 +28,18 @@ import { extractHostPrefix } from "../../utils/url";
 const USER_AGENT =
   "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
 
+function buildCookieHeader(headers: Headers): string {
+  const h = headers as unknown as { getSetCookie?: () => string[] };
+  const cookies: string[] =
+    typeof h.getSetCookie === "function"
+      ? h.getSetCookie()
+      : [headers.get("set-cookie") ?? ""];
+
+  return cookies
+    .map((c) => c.split(";")[0]?.trim() ?? "")
+    .filter(Boolean)
+    .join("; ");
+}
 
 /**
  * 議事録詳細ページを取得し、MeetingData に変換して返す。
@@ -45,7 +57,7 @@ export async function fetchMeetingDetail(
     // 新形式のフレームセットURLの場合、全文表示に変換してからフェッチ
     const fetchUrl = detailUrl
       .replace("Template=doc-one-frame", "Template=doc-all-frame")
-      .replace("VoiceType=onehit", "VoiceType=all");
+      .replace(/VoiceType=onehit/i, "VoiceType=all");
 
     const res = await fetch(fetchUrl, {
       headers: { "User-Agent": USER_AGENT },
@@ -55,8 +67,10 @@ export async function fetchMeetingDetail(
     const html = await res.text();
 
     // フレームセットページの場合はサブフレームから取得
+    // サブフレームのリクエストにはセッション Cookie が必要（新版 dbsearch）
     if (html.includes("<frameset")) {
-      return fetchFromFrameset(html, fetchUrl, municipalityId, meetingId, listTitle, listDate, baseUrl);
+      const cookie = buildCookieHeader(res.headers);
+      return fetchFromFrameset(html, fetchUrl, municipalityId, meetingId, listTitle, listDate, baseUrl, cookie);
     }
 
     // 旧形式・中間形式: 単一ページから直接パース
@@ -97,7 +111,8 @@ async function fetchFromFrameset(
   meetingId: string,
   listTitle?: string,
   listDate?: string,
-  baseUrl?: string
+  baseUrl?: string,
+  cookie?: string
 ): Promise<MeetingData | null> {
   const origin = new URL(detailUrl).origin;
   const pathPrefix = detailUrl.includes("/index.php/") ? "/index.php/" : "/";
@@ -117,8 +132,11 @@ async function fetchFromFrameset(
 
   // command サブフレームからタイトルと日付を取得
   const commandUrl = `${origin}${pathPrefix}${sessionId}?Template=doc-all-command`;
+  const subframeHeaders: Record<string, string> = { "User-Agent": USER_AGENT };
+  if (cookie) subframeHeaders["Cookie"] = cookie;
+
   const commandRes = await fetch(commandUrl, {
-    headers: { "User-Agent": USER_AGENT },
+    headers: subframeHeaders,
   });
   if (!commandRes.ok) return null;
   const commandHtml = await commandRes.text();
@@ -129,7 +147,7 @@ async function fetchFromFrameset(
   // page サブフレームから発言内容を取得
   const pageUrl = `${origin}${pathPrefix}${sessionId}?Template=${pageTemplate}`;
   const pageRes = await fetch(pageUrl, {
-    headers: { "User-Agent": USER_AGENT },
+    headers: subframeHeaders,
   });
   if (!pageRes.ok) return null;
   const pageHtml = await pageRes.text();

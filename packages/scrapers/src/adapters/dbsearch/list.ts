@@ -30,8 +30,8 @@ export async function fetchMeetingList(
 ): Promise<DbsearchMeetingRecord[] | null> {
   try {
     const origin = toHttpsOrigin(baseUrl);
-    // baseUrl に index.php が含まれているかで URL スタイルを判定
-    const pathPrefix = baseUrl.includes("/index.php/") ? "/index.php/" : "/";
+    // baseUrl に index.php が含まれているかで URL スタイルの初期判定
+    let pathPrefix = baseUrl.includes("/index.php/") ? "/index.php/" : "/";
     const topUrl = `${origin}${pathPrefix}`;
 
     // Step 1: トップページ取得 → CSRFトークン・Cookie・検索エンドポイントID
@@ -43,6 +43,13 @@ export async function fetchMeetingList(
     const initHtml = await initRes.text();
     // CSRFトークンがないサイトもあるため、見つからなくても続行する
     const csrfToken = extractCsrfToken(initHtml) ?? "";
+
+    // レスポンスの form action に /index.php/ が含まれていれば pathPrefix を修正する。
+    // baseUrl に /index.php/ がなくても、サイトが実際に /index.php/ を使う場合がある
+    // （例: トップが /index.php/ へリダイレクトされる新バージョンの dbsearch）。
+    if (pathPrefix === "/" && detectIndexPhpFromHtml(initHtml)) {
+      pathPrefix = "/index.php/";
+    }
 
     const cookie = buildCookieHeader(initRes.headers);
     // トップページの form action → baseUrl → ページ内リンクの順にIDを探す
@@ -177,8 +184,18 @@ export function extractEndpointIdFromUrl(url: string): string | null {
  * フォーム action や baseUrl からIDが取れない場合のフォールバック。
  */
 function extractEndpointIdFromLinks(html: string): string | null {
-  const m = html.match(/href="[^"]*\/index\.php\/(\d+)/);
+  const m = html.match(/href="[^"]*\/index\.php\/(\d+)/) ?? html.match(/href="[^"]*\/(\d{5,})(?:\?|")/);
   return m?.[1] ?? null;
+}
+
+/**
+ * HTML の form action やリンクに /index.php/ が含まれているか検出する。
+ * baseUrl に /index.php/ がなくてもサイトが実際に使っている場合を検出するため。
+ */
+/** @internal テスト用にexport */
+export function detectIndexPhpFromHtml(html: string): boolean {
+  return /action="[^"]*\/index\.php\/\d+/.test(html) ||
+    /href="[^"]*\/index\.php\/\d+/.test(html);
 }
 
 /**
@@ -230,14 +247,17 @@ export function parseListHtml(
  *   - <span class="result-document-date">2025-12-19</span>
  *   - <span class="result-title__date">開催日：2025-12-11</span>
  *   - <span class="date">2025年12月19日</span>
+ *   - <div class="date">開催日：2025年12月19日</div>
  */
-function extractListDate(html: string): string | null {
+/** @internal テスト用にexport */
+export function extractListDate(html: string): string | null {
   // ISO 形式 (YYYY-MM-DD)
-  const iso = html.match(/<span[^>]*>(?:[^<]*?)(\d{4}-\d{2}-\d{2})<\/span>/);
+  // ネストされた span/div でも検出できるよう、タグ構造に依存しない汎用パターンを使う
+  const iso = html.match(/(\d{4}-\d{2}-\d{2})/);
   if (iso?.[1]) return iso[1];
 
-  // 日本語形式 (YYYY年MM月DD日)
-  const ja = html.match(/<span[^>]*>(\d{4})年(\d{1,2})月(\d{1,2})日<\/span>/);
+  // 日本語形式 (YYYY年MM月DD日) — 「開催日：」等のプレフィックスを許容
+  const ja = html.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
   if (ja?.[1] && ja[2] && ja[3]) {
     return `${ja[1]}-${ja[2].padStart(2, "0")}-${ja[3].padStart(2, "0")}`;
   }

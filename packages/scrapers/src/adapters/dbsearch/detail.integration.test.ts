@@ -146,6 +146,7 @@ describe("fetchMeetingDetail integration", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       text: () => Promise.resolve(framesetHtml),
+      headers: new Headers({ "set-cookie": "DSNeo=test; path=/" }),
     });
     // 2nd call: GET command subframe
     mockFetch.mockResolvedValueOnce({
@@ -181,6 +182,46 @@ describe("fetchMeetingDetail integration", () => {
     const fetchedUrl = mockFetch.mock.calls[0]![0] as string;
     expect(fetchedUrl).toContain("Template=doc-all-frame");
     expect(fetchedUrl).toContain("VoiceType=all");
+
+    // サブフレームのリクエストに Cookie が渡されていることを確認
+    const commandFetchCall = mockFetch.mock.calls[1];
+    expect((commandFetchCall![1] as RequestInit).headers).toHaveProperty("Cookie");
+    const pageFetchCall = mockFetch.mock.calls[2];
+    expect((pageFetchCall![1] as RequestInit).headers).toHaveProperty("Cookie");
+  });
+
+  test("doc-one-frame: VoiceType=OneHit (大文字) も正しく VoiceType=all に変換される", async () => {
+    const framesetHtml = fixture("doc-one-frame", "frameset.html");
+    const commandHtml = fixture("doc-one-frame", "command.html");
+    const pageHtml = fixture("doc-one-frame", "page.html");
+
+    const mockFetch = vi.fn();
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(framesetHtml),
+      headers: new Headers({ "set-cookie": "DSNeo=test; path=/" }),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(commandHtml),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(pageHtml),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    await fetchMeetingDetail(
+      "https://www.city.miyawaka.fukuoka.dbsr.jp/index.php/1234?Template=doc-one-frame&VoiceType=OneHit&DocumentID=848",
+      "test-municipality-id",
+      "848",
+      "テスト定例会",
+      "2025-02-25",
+    );
+
+    const fetchedUrl = mockFetch.mock.calls[0]![0] as string;
+    expect(fetchedUrl).toContain("VoiceType=all");
+    expect(fetchedUrl).not.toContain("OneHit");
   });
 
   test("document-id: 中間形式の単一ページから MeetingData を取得", async () => {

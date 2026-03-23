@@ -114,7 +114,8 @@ function parseSystemType(): SystemType | undefined {
 }
 
 // 同一ホスト内の並列数。
-const HOST_CONCURRENCY = 20;
+// dbsr.jp 等の共有サービスでは、高すぎるとレート制限で 0 件応答が返るため控えめに設定。
+const HOST_CONCURRENCY = 5;
 
 /**
  * ホスト名からグループ化キーを抽出する。
