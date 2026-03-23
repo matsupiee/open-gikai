@@ -15,9 +15,6 @@ import type { ScraperAdapter, ListRecord } from "../../adapter";
 import { fetchSessionList } from "./list";
 import { buildMeetingData, type AbiraDetailParams } from "./detail";
 
-export { parseListPage, parsePdfLinks, extractHeldOnFromPdfLinkText } from "./list";
-export { buildMeetingData, parseSpeaker, classifyKind, parseStatements } from "./detail";
-
 export const adapter: ScraperAdapter = {
   name: "015857",
 

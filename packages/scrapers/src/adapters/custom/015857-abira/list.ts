@@ -116,11 +116,12 @@ export function extractHeldOnFromPdfLinkText(text: string): string | null {
 
   // 括弧内の日付パターン: （令和N年M月D日）
   const match = normalized.match(
-    /令和(\d+)年(\d{1,2})月(\d{1,2})日/
+    /令和(元|\d+)年(\d{1,2})月(\d{1,2})日/
   );
   if (!match) return null;
 
-  const year = 2018 + parseInt(match[1]!, 10);
+  const eraYear = match[1] === "元" ? 1 : parseInt(match[1]!, 10);
+  const year = 2018 + eraYear;
   const month = parseInt(match[2]!, 10);
   const day = parseInt(match[3]!, 10);
 
@@ -172,8 +173,8 @@ export async function fetchSessionList(
     for (const pdf of pdfLinks) {
       const heldOn =
         extractHeldOnFromPdfLinkText(pdf.linkText) ??
-        extractHeldOnFromTitle(item.title) ??
-        item.publishedDate;
+        extractHeldOnFromTitle(item.title);
+      if (!heldOn) continue;
 
       // 対象年の開催日のみ
       const heldYear = parseInt(heldOn.slice(0, 4), 10);
