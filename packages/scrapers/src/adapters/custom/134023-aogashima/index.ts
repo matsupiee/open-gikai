@@ -13,9 +13,6 @@ import { fetchPdfSessions } from "./list";
 import { fetchMeetingDataFromPdf } from "./detail";
 import type { MeetingData } from "../../../utils/types";
 
-export { parsePressList } from "./list";
-export { parseSessions, parseBills, billsToStatements } from "./detail";
-
 export const adapter: ScraperAdapter = {
   name: "134023",
 
