@@ -16,7 +16,7 @@ import { fetchPdfList } from "./list";
 import { buildMeetingData, type AmiDetailParams } from "./detail";
 
 export { parseIndexPage, splitByHeading, extractPdfLinks } from "./list";
-export { buildMeetingData } from "./detail";
+export { buildMeetingData, parseSpeaker, classifyKind, parseStatements } from "./detail";
 
 export const adapter: ScraperAdapter = {
   name: "084433",
@@ -37,6 +37,6 @@ export const adapter: ScraperAdapter = {
 
   async fetchDetail({ detailParams, municipalityId }) {
     const params = detailParams as unknown as AmiDetailParams;
-    return buildMeetingData(params, municipalityId);
+    return await buildMeetingData(params, municipalityId);
   },
 };
