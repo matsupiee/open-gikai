@@ -1,7 +1,7 @@
 ---
 name: debug-bulk-scraper
 description: local-bulk-scraper を実行し、取得0件の自治体を洗い出して原因調査・修正する
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Bulk Scraper デバッグスキル
@@ -26,6 +26,7 @@ version: 1.1.0
 - `--year 2025` — 対象年度（デフォルト: 2025）
 - `--meeting-limit 1` — 会議数上限（デフォルト: 1）
 - `--council-limit 2` — 議会数上限、discussnet_ssp 専用（デフォルト: 指定なし）
+- `--target 011002,012025` — 対象自治体コードをカンマ区切りで指定（省略時は全自治体）
 - `--fix` — 原因調査だけでなく修正まで行う（デフォルト: 調査のみ）
 
 引数が不足している場合はユーザーに確認する。
@@ -188,9 +189,35 @@ Agent 起動パラメータ:
 
 1. **コード修正**（カテゴリ A）: スクレイパーのコードを修正する
 2. **CSV 更新**（カテゴリ B）: `packages/db/src/seeds/municipalities.csv` を更新する
-3. **5 件修正したら Step 1 に戻る**: 全件を一度に修正しない。5 件修正した時点で修正作業を止め、**Step 1 に戻って `scrape:ndjson` を再実行する**。再実行の結果まだ 0 件の自治体があれば、再度 Step 2〜5 を繰り返す。
+3. **5 件修正したら Step 5a・5b で動作確認する**
 
-この「実行 → 調査 → 5 件修正 → 再実行」のループを、0 件の自治体がなくなるか、残りがすべてカテゴリ C（対処不要）になるまで繰り返す。
+#### Step 5a: 修正した自治体を `--target` で再実行して確認する
+
+修正した自治体だけを `--target` で指定して再実行し、データが取得できるようになったか確認する:
+
+```bash
+bun run --cwd {worktree_root}/apps/local-bulk-scraper scrape:ndjson -- --system-type {system_type} --year {year} --meeting-limit 1 --target {code1},{code2},{code3}
+```
+
+- `--target` にはカンマ区切りで修正した自治体の自治体コードを指定する
+- まだ 0 件の自治体があれば修正を見直す
+
+#### Step 5b: デグレチェック — 修正していない自治体もサンプル確認する (CRITICAL)
+
+修正が他の自治体に影響していないか確認するため、**修正していない自治体から 3〜5 件をランダムに選んで `--target` で実行する**:
+
+```bash
+bun run --cwd {worktree_root}/apps/local-bulk-scraper scrape:ndjson -- --system-type {system_type} --year {year} --meeting-limit 1 --target {未修正の自治体コード3〜5件}
+```
+
+- Step 1 で正常に取得できていた自治体を選ぶこと
+- もしデグレが見つかった場合は修正をロールバックし、影響範囲を再調査する
+
+#### Step 5c: まだ未修正の自治体があれば Step 1 に戻る
+
+全件を一度に修正しない。5 件修正・確認した時点で修正作業を止め、**Step 1 に戻って `scrape:ndjson` を再実行する**。再実行の結果まだ 0 件の自治体があれば、再度 Step 2〜5 を繰り返す。
+
+この「実行 → 調査 → 5 件修正 → 確認 → 再実行」のループを、0 件の自治体がなくなるか、残りがすべてカテゴリ C（対処不要）になるまで繰り返す。
 
 ### Step 6: worktree の場合は PR を作成する
 
