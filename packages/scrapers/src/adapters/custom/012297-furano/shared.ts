@@ -27,21 +27,32 @@ export async function fetchPage(url: string): Promise<string | null> {
     });
     if (!res.ok) return null;
     return await res.text();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[012297-furano] fetchPage 失敗: ${url}`,
+      err instanceof Error ? err.message : err
+    );
     return null;
   }
 }
+
+/** PDF ダウンロード用タイムアウト（大きい PDF に対応するため HTML 取得より長めに設定） */
+const PDF_FETCH_TIMEOUT_MS = 60_000;
 
 /** fetch して ArrayBuffer を返す（PDF ダウンロード用） */
 export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": USER_AGENT },
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(PDF_FETCH_TIMEOUT_MS),
     });
     if (!res.ok) return null;
     return await res.arrayBuffer();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[012297-furano] fetchBinary 失敗: ${url}`,
+      err instanceof Error ? err.message : err
+    );
     return null;
   }
 }

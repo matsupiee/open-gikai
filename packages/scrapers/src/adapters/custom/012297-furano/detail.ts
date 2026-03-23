@@ -147,26 +147,26 @@ export function classifyKind(speakerRole: string | null): string {
  * PDF から抽出したテキストを ParsedStatement 配列に変換する。
  */
 export function parseStatements(text: string): ParsedStatement[] {
-  const blocks = text.split(/(?=○)/);
+  const blocks = text.split(/(?=[○◯◎●])/);
   const statements: ParsedStatement[] = [];
   let offset = 0;
 
   for (const block of blocks) {
     const trimmed = block.trim();
-    if (!trimmed || !/^○/.test(trimmed)) continue;
+    if (!trimmed || !/^[○◯◎●]/.test(trimmed)) continue;
 
-    // -登壇- のみのブロックはスキップ
-    if (/^○[^（(]+[（(][^）)]+[）)]\s*-登壇-\s*$/.test(trimmed)) continue;
+    // -登壇- のみのブロックはスキップ（ASCII・全角ハイフン等に対応）
+    if (/^[○◯◎●][^（(]+[（(][^）)]+[）)]\s*[-－—‐]登壇[-－—‐]\s*$/.test(trimmed)) continue;
 
     // ト書き（登壇等）をスキップ
-    if (/^○\s*[（(].+?(?:登壇|退席|退場|着席)[）)]$/.test(trimmed)) continue;
+    if (/^[○◯◎●]\s*[（(].+?(?:登壇|退席|退場|着席)[）)]$/.test(trimmed)) continue;
 
     const normalized = trimmed.replace(/\s+/g, " ");
     const { speakerName, speakerRole, content } = parseSpeaker(normalized);
     if (!content) continue;
 
-    // -登壇- を含むコンテンツからは除去
-    const cleanContent = content.replace(/^-登壇-\s*/, "").trim();
+    // -登壇- を含むコンテンツからは除去（ASCII・全角ハイフン等に対応）
+    const cleanContent = content.replace(/^[-－—‐]登壇[-－—‐]\s*/, "").trim();
     if (!cleanContent) continue;
 
     const contentHash = createHash("sha256")
@@ -215,8 +215,13 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 function extractExternalIdKey(pdfPath: string): string | null {
   const match = pdfPath.match(/\/fs\/([\d/]+)\/_\//);
-  if (!match) return null;
-  return match[1]!.replace(/\//g, "");
+  if (match) return match[1]!.replace(/\//g, "");
+
+  // フォールバック: ファイル名ベースで抽出
+  const fileMatch = pdfPath.match(/([^/]+)\.pdf$/i);
+  if (fileMatch) return fileMatch[1]!;
+
+  return null;
 }
 
 /**

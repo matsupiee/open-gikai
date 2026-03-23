@@ -190,6 +190,32 @@ describe("parseStatements", () => {
     expect(statements[0]!.content).toBe("おはようございます。");
   });
 
+  it("◯（白丸）マーカーでも分割できる", () => {
+    const text = `◯議長（渋谷正文） ただいまから会議を開きます。
+◯３番（橋詰亜咲美） 質問です。`;
+    const statements = parseStatements(text);
+    expect(statements).toHaveLength(2);
+    expect(statements[0]!.speakerRole).toBe("議長");
+    expect(statements[1]!.speakerRole).toBe("議員");
+  });
+
+  it("全角ハイフンの－登壇－のみのブロックはスキップする", () => {
+    const text = `○議長（渋谷正文） ただいまから会議を開きます。
+○市長（北猛俊） －登壇－
+○市長（北猛俊） お答えいたします。`;
+    const statements = parseStatements(text);
+    expect(statements).toHaveLength(2);
+    expect(statements[0]!.speakerRole).toBe("議長");
+    expect(statements[1]!.speakerRole).toBe("市長");
+  });
+
+  it("全角ハイフンの－登壇－の後に発言が続く場合は登壇部分を除去する", () => {
+    const text = `○市長（北猛俊） －登壇－ おはようございます。`;
+    const statements = parseStatements(text);
+    expect(statements).toHaveLength(1);
+    expect(statements[0]!.content).toBe("おはようございます。");
+  });
+
   it("空テキストは空配列を返す", () => {
     expect(parseStatements("")).toEqual([]);
   });
