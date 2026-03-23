@@ -17,7 +17,7 @@ import { fetchSessionList } from "./list";
 import { buildMeetingData, type AridaDetailParams } from "./detail";
 
 export { parseYearPages, parseMeetingLinks, extractSessionRecords } from "./list";
-export { buildMeetingData } from "./detail";
+export { buildMeetingData, parseSpeaker, classifyKind, parseStatements } from "./detail";
 
 export const adapter: ScraperAdapter = {
   name: "302040",

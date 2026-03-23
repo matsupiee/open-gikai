@@ -80,6 +80,20 @@ export function buildMeetingPageUrl(nendoId: string, meetingId: string): string 
   return `${BASE_ORIGIN}/shigikai/honkaigiroku/${nendoId}/${meetingId}.html`;
 }
 
+/** fetch して ArrayBuffer を返す（PDF ダウンロード用） */
+export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(60_000),
+    });
+    if (!res.ok) return null;
+    return await res.arrayBuffer();
+  } catch {
+    return null;
+  }
+}
+
 /** リクエスト間の待機 */
 export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
