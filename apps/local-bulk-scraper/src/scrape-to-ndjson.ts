@@ -113,8 +113,8 @@ function parseSystemType(): SystemType | undefined {
   return val as SystemType;
 }
 
-// 同一ホスト内の並列数。SaaS系サーバーへの過負荷を避けつつ高速化するため 3 に設定。
-const HOST_CONCURRENCY = 3;
+// 同一ホスト内の並列数。
+const HOST_CONCURRENCY = 20;
 
 /**
  * ホスト名からグループ化キーを抽出する。
