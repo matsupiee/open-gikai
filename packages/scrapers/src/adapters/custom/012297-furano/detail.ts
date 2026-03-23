@@ -19,19 +19,18 @@ import { detectMeetingType, fetchBinary } from "./shared";
 
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
-  "事務局長",
-  "委員長",
   "副委員長",
+  "委員長",
   "副議長",
-  "副市長",
-  "教育長",
   "議長",
+  "事務局長",
+  "副市長",
   "市長",
-  "委員",
-  "議員",
+  "副教育長",
+  "教育長",
   "副部長",
-  "副課長",
   "部長",
+  "副課長",
   "課長",
   "室長",
   "局長",
@@ -42,12 +41,15 @@ const ROLE_SUFFIXES = [
   "補佐",
   "所長",
   "校長",
+  "議員",
+  "委員",
 ];
 
 // 行政側の役職（答弁者として分類する）
 const ANSWER_ROLES = new Set([
   "市長",
   "副市長",
+  "副教育長",
   "教育長",
   "部長",
   "副部長",
@@ -126,7 +128,7 @@ export function parseSpeaker(text: string): {
 }
 
 /** 役職から発言種別を分類 */
-export function classifyKind(speakerRole: string | null): string {
+export function classifyKind(speakerRole: string | null): "remark" | "question" | "answer" {
   if (!speakerRole) return "remark";
   if (ANSWER_ROLES.has(speakerRole)) return "answer";
   if (
@@ -235,6 +237,7 @@ export async function fetchMeetingData(
   if (!text) return null;
 
   const statements = parseStatements(text);
+  if (statements.length === 0) return null;
 
   const idKey = extractExternalIdKey(new URL(meeting.pdfUrl).pathname);
   const externalId = idKey ? `furano_${idKey}` : null;
