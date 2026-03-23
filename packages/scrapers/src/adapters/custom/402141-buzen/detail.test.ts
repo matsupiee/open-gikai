@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { parseSpeaker, classifyKind, parseStatements } from "./detail";
+import {
+  parseSpeaker,
+  classifyKind,
+  parseStatements,
+  extractHeldOn,
+} from "./detail";
 
 describe("parseSpeaker", () => {
   it("議長（名前君）パターンを解析する", () => {
@@ -152,5 +157,26 @@ describe("parseStatements", () => {
 
   it("空テキストは空配列を返す", () => {
     expect(parseStatements("")).toEqual([]);
+  });
+});
+
+describe("extractHeldOn", () => {
+  it("令和の日付を抽出する", () => {
+    const text = "令和７年３月２日　午前10時開議";
+    expect(extractHeldOn(text)).toBe("2025-03-02");
+  });
+
+  it("平成の日付を抽出する", () => {
+    const text = "平成22年3月2日（火曜日）午前10時開議";
+    expect(extractHeldOn(text)).toBe("2010-03-02");
+  });
+
+  it("令和元年を正しく処理する", () => {
+    const text = "令和元年12月10日　午前10時開議";
+    expect(extractHeldOn(text)).toBe("2019-12-10");
+  });
+
+  it("日付がない場合は null を返す", () => {
+    expect(extractHeldOn("会議録本文のみ")).toBeNull();
   });
 });

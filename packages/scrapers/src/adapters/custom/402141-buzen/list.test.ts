@@ -80,7 +80,7 @@ describe("parseDetailPage", () => {
       "https://www.city.buzen.lg.jp/senkyo-gikai/gikai/documents/r7-2kaigiroku.pdf",
     );
     expect(meetings[0]!.title).toBe("令和7年第1回定例会");
-    expect(meetings[0]!.heldOn).toBe("2025-01-01");
+    expect(meetings[0]!.heldOn).toBeNull();
   });
 
   it("古い年度の日付別 PDF リンクを正しく抽出する", () => {

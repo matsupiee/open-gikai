@@ -14,7 +14,12 @@ import { createHash } from "node:crypto";
 import { extractText, getDocumentProxy } from "unpdf";
 import type { MeetingData, ParsedStatement } from "../../../utils/types";
 import type { BuzenMeeting } from "./list";
-import { detectMeetingType, extractExternalIdKey, fetchBinary } from "./shared";
+import {
+  detectMeetingType,
+  eraToWesternYear,
+  extractExternalIdKey,
+  fetchBinary,
+} from "./shared";
 
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
@@ -119,7 +124,9 @@ export function parseSpeaker(text: string): {
 }
 
 /** 役職から発言種別を分類 */
-export function classifyKind(speakerRole: string | null): string {
+export function classifyKind(
+  speakerRole: string | null,
+): "remark" | "question" | "answer" {
   if (!speakerRole) return "remark";
   if (ANSWER_ROLES.has(speakerRole)) return "answer";
   if (
@@ -174,6 +181,33 @@ export function parseStatements(text: string): ParsedStatement[] {
 }
 
 /**
+ * PDF テキストから開催日（YYYY-MM-DD）を抽出する。
+ * 典型パターン: "令和７年３月２日" や "平成22年3月2日"
+ */
+export function extractHeldOn(text: string): string | null {
+  // 和暦パターン: 令和○年○月○日 / 平成○年○月○日（全角・半角数字に対応）
+  const m = text.match(
+    /(令和|平成)(元|[0-9０-９]+)年\s*([0-9０-９]+)月\s*([0-9０-９]+)日/,
+  );
+  if (!m) return null;
+
+  const toHalf = (s: string) =>
+    s.replace(/[０-９]/g, (c) =>
+      String.fromCharCode(c.charCodeAt(0) - 0xfee0),
+    );
+
+  // eraToWesternYear は半角数字を期待するので変換
+  const eraStr = `${m[1]}${toHalf(m[2]!)}年`;
+  const westernYear = eraToWesternYear(eraStr);
+  if (!westernYear) return null;
+
+  const month = parseInt(toHalf(m[3]!), 10);
+  const day = parseInt(toHalf(m[4]!), 10);
+
+  return `${westernYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/**
  * PDF URL からテキストを取得する。
  */
 async function fetchPdfText(pdfUrl: string): Promise<string | null> {
@@ -206,6 +240,10 @@ export async function fetchMeetingData(
   const statements = parseStatements(text);
   if (statements.length === 0) return null;
 
+  // heldOn が未確定の場合は PDF テキストから抽出を試みる
+  const heldOn = meeting.heldOn ?? extractHeldOn(text);
+  if (!heldOn) return null;
+
   const idKey = extractExternalIdKey(new URL(meeting.pdfUrl).pathname);
   const externalId = idKey ? `buzen_${idKey}` : null;
 
@@ -213,7 +251,7 @@ export async function fetchMeetingData(
     municipalityId,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
-    heldOn: meeting.heldOn,
+    heldOn,
     sourceUrl: meeting.detailUrl,
     externalId,
     statements,
