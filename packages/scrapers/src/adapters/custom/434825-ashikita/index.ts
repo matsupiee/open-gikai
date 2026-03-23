@@ -17,7 +17,13 @@ import { fetchPdfList } from "./list";
 import { buildMeetingData, type AshikitaDetailParams } from "./detail";
 
 export { parseYearIndexLinks, parseListPageUrl, parsePdfLinks } from "./list";
-export { buildMeetingData, estimateHeldOn } from "./detail";
+export {
+  buildMeetingData,
+  estimateHeldOn,
+  parseSpeaker,
+  classifyKind,
+  parseStatements,
+} from "./detail";
 
 export const adapter: ScraperAdapter = {
   name: "434825",
