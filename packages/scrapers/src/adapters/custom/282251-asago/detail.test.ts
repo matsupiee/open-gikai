@@ -6,7 +6,7 @@ describe("parseSpeaker", () => {
     const result = parseSpeaker(
       "○議長（森田　龍司君）　ただいまから本日の会議を開きます。",
     );
-    expect(result.speakerName).toBe("森田 龍司");
+    expect(result.speakerName).toBe("森田龍司");
     expect(result.speakerRole).toBe("議長");
     expect(result.content).toBe("ただいまから本日の会議を開きます。");
   });
@@ -15,7 +15,7 @@ describe("parseSpeaker", () => {
     const result = parseSpeaker(
       "○議員（17番　渕本　　稔君）　質問いたします。",
     );
-    expect(result.speakerName).toBe("渕本 稔");
+    expect(result.speakerName).toBe("渕本稔");
     expect(result.speakerRole).toBe("議員");
     expect(result.content).toBe("質問いたします。");
   });
@@ -24,7 +24,7 @@ describe("parseSpeaker", () => {
     const result = parseSpeaker(
       "○市長（藤岡　　勇君）　お答えいたします。",
     );
-    expect(result.speakerName).toBe("藤岡 勇");
+    expect(result.speakerName).toBe("藤岡勇");
     expect(result.speakerRole).toBe("市長");
     expect(result.content).toBe("お答えいたします。");
   });
@@ -33,7 +33,7 @@ describe("parseSpeaker", () => {
     const result = parseSpeaker(
       "○政策担当部長（掃部　直樹君）　ご説明いたします。",
     );
-    expect(result.speakerName).toBe("掃部 直樹");
+    expect(result.speakerName).toBe("掃部直樹");
     expect(result.speakerRole).toBe("政策担当部長");
     expect(result.content).toBe("ご説明いたします。");
   });
@@ -146,18 +146,18 @@ describe("parseStatements", () => {
 
     expect(statements).toHaveLength(3);
 
-    expect(statements[0]!.speakerName).toBe("森田 龍司");
+    expect(statements[0]!.speakerName).toBe("森田龍司");
     expect(statements[0]!.speakerRole).toBe("議長");
     expect(statements[0]!.kind).toBe("remark");
     expect(statements[0]!.content).toBe(
       "ただいまから本日の会議を開きます。",
     );
 
-    expect(statements[1]!.speakerName).toBe("渕本 稔");
+    expect(statements[1]!.speakerName).toBe("渕本稔");
     expect(statements[1]!.speakerRole).toBe("議員");
     expect(statements[1]!.kind).toBe("question");
 
-    expect(statements[2]!.speakerName).toBe("藤岡 勇");
+    expect(statements[2]!.speakerName).toBe("藤岡勇");
     expect(statements[2]!.speakerRole).toBe("市長");
     expect(statements[2]!.kind).toBe("answer");
   });

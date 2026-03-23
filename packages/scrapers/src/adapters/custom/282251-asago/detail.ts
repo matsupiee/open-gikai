@@ -75,8 +75,8 @@ export function parseSpeaker(text: string): {
   // 名前から議席番号を除去: "17番　渕本　　稔" → "渕本　稔"
   name = name.replace(/^\d+番[\s　]+/, "");
 
-  // 名前中の余分な空白を正規化
-  name = name.replace(/[\s　]+/g, " ").trim();
+  // 名前中の空白を完全除去（他のアダプターと統一）
+  name = name.replace(/[\s　]+/g, "").trim();
 
   return { speakerName: name, speakerRole: role, content };
 }

@@ -62,7 +62,19 @@ export async function fetchDocumentList(
     kindItems.length > 0 ? kindItems : [...MEETING_KINDS];
 
   for (const kind of kindsToProcess) {
+    // 種別ごとに年度ポストバックをやり直して最新の ViewState を取得する。
+    // 前の種別選択でサーバー側の状態が変わるため、htmlAfterYear の
+    // __VIEWSTATE を再利用すると 2 番目以降の種別で失敗する可能性がある。
     fields = extractAspNetFields(htmlAfterYear);
+    await delay(DELAY_MS);
+    const freshHtmlAfterYear = await postBack(
+      sessionCookie,
+      fields,
+      "ASPxPageControl$ASPxComboBYearL",
+      { "ASPxPageControl$ASPxComboBYearL": yearLabel },
+    );
+
+    fields = extractAspNetFields(freshHtmlAfterYear);
     await delay(DELAY_MS);
     const htmlAfterKind = await postBack(
       sessionCookie,
