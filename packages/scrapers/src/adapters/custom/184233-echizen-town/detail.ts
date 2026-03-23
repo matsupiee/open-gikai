@@ -30,8 +30,8 @@ export interface EchizenDetailParams {
 
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
-  "委員長",
   "副委員長",
+  "委員長",
   "副議長",
   "副町長",
   "教育長",
@@ -192,7 +192,6 @@ export function parseStatements(text: string): ParsedStatement[] {
  */
 export function parsePdfLinks(
   html: string,
-  pageId: string,
 ): { pdfUrl: string; linkText: string }[] {
   const results: { pdfUrl: string; linkText: string }[] = [];
   const seen = new Set<string>();
@@ -203,7 +202,7 @@ export function parsePdfLinks(
     const href = match[1]!;
     const linkText = match[2]!.replace(/<[^>]*>/g, "").trim();
 
-    const pdfUrl = resolveUrl(href, pageId);
+    const pdfUrl = resolveUrl(href);
 
     if (seen.has(pdfUrl)) continue;
     seen.add(pdfUrl);
@@ -263,17 +262,19 @@ export async function buildMeetingData(
     };
   }
 
-  const pdfLinks = parsePdfLinks(html, params.pageId);
+  const pdfLinks = parsePdfLinks(html);
 
   // 全 PDF のテキストを取得して結合
   const allStatements: ParsedStatement[] = [];
-  for (const { pdfUrl } of pdfLinks) {
-    const text = await fetchPdfText(pdfUrl);
+  for (let i = 0; i < pdfLinks.length; i++) {
+    const text = await fetchPdfText(pdfLinks[i]!.pdfUrl);
     if (text) {
       const stmts = parseStatements(text);
       allStatements.push(...stmts);
     }
-    await delay(1000);
+    if (i < pdfLinks.length - 1) {
+      await delay(1000);
+    }
   }
 
   return {

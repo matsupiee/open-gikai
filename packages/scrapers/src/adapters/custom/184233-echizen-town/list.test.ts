@@ -73,8 +73,8 @@ describe("extractYearMonth", () => {
 
   it("令和元年を正しく変換する", () => {
     expect(extractYearMonth("令和元年12月 越前町議会定例会 議事録")).toEqual({
-      year: 0,
-      month: null,
+      year: 2019,
+      month: 12,
     });
   });
 });

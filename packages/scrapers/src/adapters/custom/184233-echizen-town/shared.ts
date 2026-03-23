@@ -45,17 +45,19 @@ export function isGeneralQuestion(title: string): boolean {
  */
 export function extractYearMonth(title: string): { year: number; month: number | null } {
   // 令和
-  const reiwaMatch = title.match(/令和(\d+)年(\d+)月/);
+  const reiwaMatch = title.match(/令和(元|\d+)年(\d+)月/);
   if (reiwaMatch) {
-    const year = 2018 + parseInt(reiwaMatch[1]!, 10);
+    const nengo = reiwaMatch[1] === "元" ? 1 : parseInt(reiwaMatch[1]!, 10);
+    const year = 2018 + nengo;
     const month = parseInt(reiwaMatch[2]!, 10);
     return { year, month };
   }
 
   // 令和 臨時会 (月なし, 第N回のみ)
-  const reiwaNoMonthMatch = title.match(/令和(\d+)年/);
+  const reiwaNoMonthMatch = title.match(/令和(元|\d+)年/);
   if (reiwaNoMonthMatch) {
-    const year = 2018 + parseInt(reiwaNoMonthMatch[1]!, 10);
+    const nengo = reiwaNoMonthMatch[1] === "元" ? 1 : parseInt(reiwaNoMonthMatch[1]!, 10);
+    const year = 2018 + nengo;
     return { year, month: null };
   }
 
@@ -90,7 +92,7 @@ export function buildHeldOn(year: number, month: number | null): string {
 /**
  * 相対パスを絶対 URL に変換する。
  */
-export function resolveUrl(href: string, _pageId?: string): string {
+export function resolveUrl(href: string): string {
   if (href.startsWith("http")) return href;
   if (href.startsWith("/")) return `${BASE_ORIGIN}${href}`;
   // 相対パス: p009573_d/fil/070903_first.pdf
@@ -106,7 +108,11 @@ export async function fetchPage(url: string): Promise<string | null> {
     });
     if (!res.ok) return null;
     return await res.text();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[184233-echizen-town] fetchPage 失敗: ${url}`,
+      err instanceof Error ? err.message : err,
+    );
     return null;
   }
 }
@@ -120,7 +126,11 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
     });
     if (!res.ok) return null;
     return await res.arrayBuffer();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[184233-echizen-town] fetchBinary 失敗: ${url}`,
+      err instanceof Error ? err.message : err,
+    );
     return null;
   }
 }

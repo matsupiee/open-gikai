@@ -181,7 +181,7 @@ describe("parsePdfLinks", () => {
       <a href="p009573_d/fil/070912_last.pdf">令和7年9月越前町議会定例会本会議議事録_9月12日(第3号)（PDF形式 474キロバイト）</a>
     `;
 
-    const result = parsePdfLinks(html, "p009573");
+    const result = parsePdfLinks(html);
 
     expect(result).toHaveLength(3);
     expect(result[0]).toEqual({
@@ -201,7 +201,7 @@ describe("parsePdfLinks", () => {
       <a href="p005179_d/fil/20170316_teireikai_01.pdf">3月16日_初日_(開会・議案上程)（PDF形式 585キロバイト）</a>
     `;
 
-    const result = parsePdfLinks(html, "p005179");
+    const result = parsePdfLinks(html);
 
     expect(result).toHaveLength(1);
     expect(result[0]!.pdfUrl).toBe(
@@ -215,7 +215,7 @@ describe("parsePdfLinks", () => {
       <a href="p009544_d/fil/R0709_saitou.pdf">議事録（PDF形式 171キロバイト）</a>
     `;
 
-    const result = parsePdfLinks(html, "p009544");
+    const result = parsePdfLinks(html);
 
     expect(result).toHaveLength(2);
     expect(result[0]!.pdfUrl).toBe(
@@ -232,7 +232,7 @@ describe("parsePdfLinks", () => {
       <a href="p009573_d/fil/070903_first.pdf">リンク1（重複）</a>
     `;
 
-    const result = parsePdfLinks(html, "p009573");
+    const result = parsePdfLinks(html);
 
     expect(result).toHaveLength(1);
   });
@@ -240,7 +240,7 @@ describe("parsePdfLinks", () => {
   it("PDF リンクがない場合は空配列を返す", () => {
     const html = "<p>会議録はありません。</p>";
 
-    const result = parsePdfLinks(html, "p009573");
+    const result = parsePdfLinks(html);
 
     expect(result).toEqual([]);
   });
@@ -250,7 +250,7 @@ describe("parsePdfLinks", () => {
       <a href="https://www.town.echizen.fukui.jp/chousei/04/06/p009573_d/fil/070903_first.pdf">リンク</a>
     `;
 
-    const result = parsePdfLinks(html, "p009573");
+    const result = parsePdfLinks(html);
 
     expect(result).toHaveLength(1);
     expect(result[0]!.pdfUrl).toBe(
