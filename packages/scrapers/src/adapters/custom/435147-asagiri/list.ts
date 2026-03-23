@@ -146,13 +146,13 @@ export async function fetchMeetingList(
     if (!detailHtml) continue;
 
     const { pdfUrl, heldOn } = parseDetailPage(detailHtml);
-    if (!pdfUrl) continue;
+    if (!pdfUrl || !heldOn) continue;
 
     meetings.push({
       kijiId: link.kijiId,
       title: link.title,
       pdfUrl,
-      heldOn: heldOn ?? "",
+      heldOn,
     });
   }
 
