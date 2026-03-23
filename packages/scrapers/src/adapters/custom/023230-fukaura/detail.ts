@@ -39,7 +39,7 @@ const ANSWERER_ROLES = [
 const ANSWERER_ROLE_SET = new Set<string>(ANSWERER_ROLES);
 
 /**
- * 発言ブロックの境界を検出する正規表現。
+ * 発言ブロックの境界を検出する正規表現のソース。
  *
  * negative lookbehind (?<![CJK]) で部分マッチを防ぐ。
  * これにより「副町長」が「町長」として誤マッチすることを防ぐ。
@@ -47,17 +47,9 @@ const ANSWERER_ROLE_SET = new Set<string>(ANSWERER_ROLES);
  * グループ1: 議員名（「○○議員」）
  * グループ2: 答弁者の役職名
  */
-function buildSpeakerPattern(): RegExp {
-  const roleAlts = ANSWERER_ROLES.join("|");
-  return new RegExp(
-    `(?<![\\u4E00-\\u9FFF\\u3400-\\u4DBF])(?:([\\u4E00-\\u9FFF\\u3400-\\u4DBF]{1,5}議員)|(${roleAlts}))\\s`,
-    "g",
-  );
-}
+const SPEAKER_PATTERN_SOURCE = `(?<![\\u4E00-\\u9FFF\\u3400-\\u4DBF])(?:([\\u4E00-\\u9FFF\\u3400-\\u4DBF]{1,5}議員)|(${ANSWERER_ROLES.join("|")}))\\s`;
 
 /** 議員パターン: 「○○議員 内容」（parseSpeaker で使用） */
-
-/** 議員パターン: 「○○議員 内容」 */
 const QUESTIONER_PATTERN = /^([\u4E00-\u9FFF\u3400-\u4DBF]{1,5}議員)\s+([\s\S]*)/;
 
 /**
@@ -153,8 +145,8 @@ function cleanContent(content: string): string {
 export function parseStatements(text: string): ParsedStatement[] {
   const statements: ParsedStatement[] = [];
 
-  // パターンの lastIndex をリセット（グローバルフラグのため）
-  const pattern = buildSpeakerPattern();
+  // グローバルフラグ付きなので毎回新しい RegExp を生成
+  const pattern = new RegExp(SPEAKER_PATTERN_SOURCE, "g");
   const matches = [...text.matchAll(pattern)];
 
   if (matches.length === 0) return [];
@@ -241,15 +233,18 @@ export async function fetchMeetingData(
 ): Promise<MeetingData | null> {
   const allStatements: ParsedStatement[] = [];
 
-  for (const pdfUrl of params.questionPdfUrls) {
+  for (let i = 0; i < params.questionPdfUrls.length; i++) {
+    const pdfUrl = params.questionPdfUrls[i]!;
     const text = await fetchPdfText(pdfUrl);
     if (!text) continue;
 
     const statements = parseStatements(text);
     allStatements.push(...statements);
 
-    // レート制限: PDF 間に 1 秒待機
-    await new Promise((r) => setTimeout(r, 1000));
+    // レート制限: PDF 間に 1 秒待機（最後の1件では不要）
+    if (i < params.questionPdfUrls.length - 1) {
+      await new Promise((r) => setTimeout(r, 1000));
+    }
   }
 
   // 一般質問 PDF がない場合は null を返す

@@ -17,6 +17,14 @@ import {
   extractDocId,
 } from "./shared";
 
+/** PDF href を絶対 URL に変換する */
+function resolveHref(href: string, articleUrl: string): string {
+  if (href.startsWith("http")) return href;
+  if (href.startsWith("/")) return `${BASE_ORIGIN}${href}`;
+  const baseDir = articleUrl.endsWith("/") ? articleUrl : `${articleUrl}/`;
+  return `${baseDir}${href}`;
+}
+
 export interface FukauraMeeting {
   /** 定例会・臨時会の名称 */
   title: string;
@@ -56,7 +64,7 @@ export function parseIndexPage(
 
   for (const match of html.matchAll(h2Pattern)) {
     const headingText = match[1]!.replace(/<[^>]+>/g, "").trim();
-    const yearMatch = headingText.match(/令和[（(]?(\d+|[０-９]+)[）)]?年/);
+    const yearMatch = headingText.match(/令和(\d+|[０-９]+)年/);
     if (yearMatch) {
       const ry = parseInt(
         yearMatch[1]!.replace(/[０-９]/g, (c) =>
@@ -179,12 +187,7 @@ export function parseArticlePdfLinks(
     if (!linkText.includes("議員")) continue;
 
     // 絶対 URL 構築
-    const baseDir = articleUrl.endsWith("/")
-      ? articleUrl
-      : `${articleUrl}/`;
-    const pdfUrl = href.startsWith("http")
-      ? href
-      : `${baseDir}${href}`;
+    const pdfUrl = resolveHref(href, articleUrl);
 
     pdfUrls.push(pdfUrl);
   }
@@ -207,7 +210,10 @@ export async function fetchMeetingList(
   year: number,
 ): Promise<FukauraMeeting[]> {
   const html = await fetchPage(INDEX_URL);
-  if (!html) return [];
+  if (!html) {
+    console.warn(`[023230-fukaura] インデックスページ取得失敗: ${INDEX_URL}`);
+    return [];
+  }
 
   const entries = parseIndexPage(html, year);
   const meetings: FukauraMeeting[] = [];

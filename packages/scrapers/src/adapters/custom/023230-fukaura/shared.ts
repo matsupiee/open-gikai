@@ -64,25 +64,6 @@ export function toReiwaYear(year: number): number {
 }
 
 /**
- * 年度の範囲を返す。
- * 日本の会計年度は 4月〜翌年3月。
- * e.g., year=2025 → { start: 2025-04-01, end: 2026-03-31 }
- */
-export function fiscalYearRange(year: number): {
-  startYear: number;
-  startMonth: number;
-  endYear: number;
-  endMonth: number;
-} {
-  return {
-    startYear: year,
-    startMonth: 4,
-    endYear: year + 1,
-    endMonth: 3,
-  };
-}
-
-/**
  * 記事 URL からドキュメント ID を抽出する。
  * e.g., "/doc/2026031800110/" → "2026031800110"
  */
