@@ -36,6 +36,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "コード変更がない会話ならこのまま終了してください。PRを作成・更新した場合は以下を実行：\n1. git diff main...HEAD で差分全体をレビュー（バグ、ルール違反、テスト漏れ）\n2. 問題があれば gh pr review --request-changes -b '指摘内容' で投稿し、修正→コミット→プッシュ→ gh pr review --approve\n3. 問題なければ gh pr review --approve -b 'レビュー通過'"
+          }
+        ]
+      }
     ]
   }
 }
