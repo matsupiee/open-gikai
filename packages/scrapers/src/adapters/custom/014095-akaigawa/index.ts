@@ -15,9 +15,6 @@ import type { ScraperAdapter, ListRecord } from "../../adapter";
 import { fetchDocumentList } from "./list";
 import { buildMeetingData, type AkaigawaDetailParams } from "./detail";
 
-export { parseLinkText, parseListPage } from "./list";
-export { buildMeetingData, parseSpeaker, classifyKind, parseStatements } from "./detail";
-
 export const adapter: ScraperAdapter = {
   name: "014095",
 

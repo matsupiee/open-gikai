@@ -31,6 +31,10 @@ describe("convertWarekiDateToISO", () => {
     expect(convertWarekiDateToISO("令和6年12月10日")).toBe("2024-12-10");
   });
 
+  it("令和元年に対応する", () => {
+    expect(convertWarekiDateToISO("令和元年６月１０日")).toBe("2019-06-10");
+  });
+
   it("マッチしない場合はnullを返す", () => {
     expect(convertWarekiDateToISO("2024年3月1日")).toBeNull();
   });
@@ -44,6 +48,10 @@ describe("convertWarekiToWesternYear", () => {
 
   it("全角数字に対応する", () => {
     expect(convertWarekiToWesternYear("令和２年")).toBe(2020);
+  });
+
+  it("令和元年に対応する", () => {
+    expect(convertWarekiToWesternYear("令和元年")).toBe(2019);
   });
 
   it("マッチしない場合はnullを返す", () => {
@@ -96,6 +104,17 @@ describe("parseLinkText", () => {
     expect(result).not.toBeNull();
     expect(result!.title).toBe("第4回定例会本会議 第1日");
     expect(result!.heldOn).toBe("2024-12-10");
+    expect(result!.meetingType).toBe("plenary");
+  });
+
+  it("令和元年のリンクテキストをパースする", () => {
+    const result = parseLinkText(
+      "第１回定例会本会議 第１日(令和元年６月１０日開催)"
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.title).toBe("第1回定例会本会議 第1日");
+    expect(result!.heldOn).toBe("2019-06-10");
     expect(result!.meetingType).toBe("plenary");
   });
 
