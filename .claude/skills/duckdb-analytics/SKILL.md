@@ -1,7 +1,7 @@
 ---
 name: duckdb-analytics
 description: DuckDB を使って local-bulk-scraper の NDJSON 出力を分析し、スクレイピング結果の問題を検出する
-version: 1.0.0
+version: 1.1.0
 ---
 
 # DuckDB スクレイピング分析スキル
@@ -244,7 +244,104 @@ ORDER BY heldOn;
 
 ---
 
-#### チェック 10: meetingType の分布（meeting-type-distribution）
+#### チェック 10: speaker 情報の欠落（missing-speaker-info）
+
+statements の `speakerName` や `speakerRole` が NULL のレコードの割合を確認する。
+
+```sql
+SELECT
+  count(*) AS total,
+  count(*) FILTER (WHERE speakerName IS NULL) AS null_speaker_name,
+  count(*) FILTER (WHERE speakerRole IS NULL) AS null_speaker_role,
+  count(*) FILTER (WHERE speakerName IS NULL AND speakerRole IS NULL) AS both_null,
+  round(100.0 * count(*) FILTER (WHERE speakerName IS NULL) / count(*), 1) AS pct_null_name,
+  round(100.0 * count(*) FILTER (WHERE speakerRole IS NULL) / count(*), 1) AS pct_null_role
+FROM read_ndjson_auto('{OUTDIR}/statements.ndjson');
+```
+
+自治体別に speakerName NULL 率が高い自治体を特定する:
+
+```sql
+SELECT
+  s.meetingId,
+  m.municipalityId,
+  m.title,
+  count(*) AS total_statements,
+  count(*) FILTER (WHERE s.speakerName IS NULL) AS null_name_count,
+  round(100.0 * count(*) FILTER (WHERE s.speakerName IS NULL) / count(*), 1) AS pct_null_name
+FROM read_ndjson_auto('{OUTDIR}/statements.ndjson') AS s
+JOIN read_ndjson_auto('{OUTDIR}/meetings.ndjson') AS m
+  ON s.meetingId = m.id
+GROUP BY s.meetingId, m.municipalityId, m.title
+HAVING count(*) FILTER (WHERE s.speakerName IS NULL) > 0
+ORDER BY pct_null_name DESC
+LIMIT 50;
+```
+
+**注目ポイント:**
+- `speakerName` が NULL の発言は `kind = 'remark'`（議事日程等の定型文）であれば正常
+- `kind` が `'speech'` や `'question'` で `speakerName` が NULL → パーサーの発言者抽出に問題
+- 特定の自治体だけ NULL 率が高い → そのアダプター固有の問題
+
+---
+
+#### チェック 11: 議長の定型発言・開閉会宣言の検出（ceremonial-chunks）
+
+statement_chunks に議長による意味のない定型発言（開会・閉会宣言、休憩宣告など）が含まれていないか検出する。これらは検索品質を下げるノイズになりうる。
+
+```sql
+SELECT
+  c.id,
+  c.meetingId,
+  c.speakerName,
+  c.speakerRole,
+  length(c.content) AS content_length,
+  left(replace(c.content, chr(10), ' '), 100) AS content_preview
+FROM read_ndjson_auto('{OUTDIR}/statement_chunks.ndjson') AS c
+WHERE
+  -- 開会・閉会・休憩の定型パターン
+  c.content SIMILAR TO '.*(ただいまから.{0,10}(開会|開議|再開)|これにて.{0,10}(閉会|散会|休憩)|暫時休憩|休憩前に引き続き|午前.{0,5}時.{0,5}分.{0,5}(開議|開会|再開)|午後.{0,5}時.{0,5}分.{0,5}(開議|開会|再開)).*'
+  -- 短い定型文（100文字以下で議長ロール）
+  OR (
+    length(trim(c.content)) < 100
+    AND (
+      c.speakerRole SIMILAR TO '.*(議長|委員長|副議長|議事).*'
+      OR c.speakerName SIMILAR TO '.*(議長|委員長).*'
+    )
+  )
+ORDER BY c.meetingId, c.chunkIndex
+LIMIT 100;
+```
+
+定型発言の件数と全体に占める割合:
+
+```sql
+SELECT
+  count(*) AS total_chunks,
+  count(*) FILTER (
+    WHERE content SIMILAR TO '.*(ただいまから.{0,10}(開会|開議|再開)|これにて.{0,10}(閉会|散会|休憩)|暫時休憩|休憩前に引き続き).*'
+  ) AS ceremonial_count,
+  count(*) FILTER (
+    WHERE length(trim(content)) < 100
+    AND (
+      speakerRole SIMILAR TO '.*(議長|委員長|副議長|議事).*'
+      OR speakerName SIMILAR TO '.*(議長|委員長).*'
+    )
+  ) AS short_chair_count,
+  round(100.0 * count(*) FILTER (
+    WHERE content SIMILAR TO '.*(ただいまから.{0,10}(開会|開議|再開)|これにて.{0,10}(閉会|散会|休憩)|暫時休憩|休憩前に引き続き).*'
+  ) / count(*), 2) AS pct_ceremonial
+FROM read_ndjson_auto('{OUTDIR}/statement_chunks.ndjson');
+```
+
+**注目ポイント:**
+- 開閉会宣言や休憩宣告は検索結果のノイズになるため、フィルタリング対象として把握しておく
+- `speakerRole` に「議長」を含み 100 文字未満の chunk → 形式的な進行発言の可能性が高い
+- 定型発言の割合が高すぎる場合 → chunk 分割ロジックの見直しを検討
+
+---
+
+#### チェック 12: meetingType の分布（meeting-type-distribution）
 
 想定外の meetingType が混入していないか確認する。
 
@@ -272,6 +369,8 @@ ORDER BY cnt DESC;
 | 基本統計 | ... | - | info |
 | 自治体別会議数 | ... | N 件 | ... |
 | 発言のない会議 | ... | N 件 | ... |
+| speaker 情報欠落 | ... | N 件 | ... |
+| 議長定型発言 | ... | N 件 | ... |
 | ... | ... | ... | ... |
 
 **重要度の基準:**
