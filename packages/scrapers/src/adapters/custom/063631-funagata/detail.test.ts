@@ -110,7 +110,7 @@ describe("classifyKind", () => {
 describe("parseStatements", () => {
   it("役職名でテキストを分割する", () => {
     const text =
-      "午前１０時開会。 議長 ただいまから本日の会議を開きます。 ３番 質問があります。 町長 お答えします。";
+      "午前１０時００分開会。 議長 ただいまから本日の会議を開きます。 ３番 質問があります。 町長 お答えします。";
     const statements = parseStatements(text);
 
     expect(statements).toHaveLength(3);

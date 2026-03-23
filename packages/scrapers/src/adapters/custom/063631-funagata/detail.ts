@@ -106,14 +106,14 @@ export function classifyKind(speakerRole: string | null): string {
 }
 
 /**
- * 発言者パターンの正規表現を構築する。
+ * 発言者パターンの正規表現。
  *
  * 舟形町の PDF テキストでは、発言者の切り替わりは以下のパターンで現れる:
  *   "。 議長 " / "） 町長 " / "。 ３番 " / "。 健康福祉課長 "
  *
  * 直前の文末（。）の後にスペースがあり、役職名、またスペースが続く。
  */
-function buildSpeakerPattern(): RegExp {
+const SPEAKER_PATTERN = (() => {
   const directRoles = DIRECT_ROLES.join("|");
   const suffixRoles = ROLE_SUFFIXES.map((s) => `[^\\s。、]{1,10}${s}`).join("|");
   const numberRole = "[０-９\\d]+番";
@@ -122,7 +122,7 @@ function buildSpeakerPattern(): RegExp {
     `(?<=[。）)] )((?:${directRoles}|${numberRole}|${suffixRoles}) )`,
     "g"
   );
-}
+})();
 
 /**
  * PDF テキストからヘッダー部分（名簿等）をスキップし、
@@ -133,7 +133,7 @@ function buildSpeakerPattern(): RegExp {
  */
 export function findProceedingsStart(text: string): number {
   // "午前/午後 + 時分 + 開会/開議/再開" パターンを探す
-  const match = text.match(/[午前後]+[０-９\d]+時[０-９\d]+分\s*(開会|開議|再開)/);
+  const match = text.match(/(?:午前|午後)[０-９\d]+時[０-９\d]*分?\s*(開会|開議|再開)/);
   if (match) return match.index!;
   return 0;
 }
@@ -151,15 +151,17 @@ export function parseStatements(text: string): ParsedStatement[] {
   const startPos = findProceedingsStart(text);
   const bodyText = startPos > 0 ? text.substring(startPos) : text;
 
-  const speakerPattern = buildSpeakerPattern();
+  // lastIndex をリセットして再利用可能にする
+  SPEAKER_PATTERN.lastIndex = 0;
   const statements: ParsedStatement[] = [];
 
   // 発言者の切り替わり位置を収集
-  const splits: { pos: number; role: string }[] = [];
-  for (const m of bodyText.matchAll(speakerPattern)) {
+  const splits: { pos: number; role: string; matchLen: number }[] = [];
+  for (const m of bodyText.matchAll(SPEAKER_PATTERN)) {
     splits.push({
       pos: m.index!,
       role: m[1]!.trim(),
+      matchLen: m[0].length,
     });
   }
 
@@ -173,7 +175,7 @@ export function parseStatements(text: string): ParsedStatement[] {
     const speakerRole = normalizeRole(roleText);
 
     // 発言内容: 役職名の後から次の発言者の前まで
-    const contentStart = split.pos + roleText.length + 1; // +1 for space after role
+    const contentStart = split.pos + split.matchLen;
     const contentEnd =
       i + 1 < splits.length ? splits[i + 1]!.pos : bodyText.length;
 
@@ -235,6 +237,7 @@ export async function fetchMeetingData(
   if (!text) return null;
 
   const statements = parseStatements(text);
+  if (statements.length === 0) return null;
 
   const idKey = extractExternalIdKey(new URL(meeting.pdfUrl).pathname);
   const externalId = idKey ? `funagata_${idKey}` : null;
