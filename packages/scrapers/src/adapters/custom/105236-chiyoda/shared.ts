@@ -25,7 +25,10 @@ export async function fetchPage(url: string): Promise<string | null> {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`[105236-chiyoda] fetchPage failed: ${url} status=${res.status}`);
+      return null;
+    }
     return await res.text();
   } catch (err) {
     console.warn(
@@ -43,9 +46,16 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(60_000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`[105236-chiyoda] fetchBinary failed: ${url} status=${res.status}`);
+      return null;
+    }
     return await res.arrayBuffer();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[105236-chiyoda] PDF 取得失敗: ${url}`,
+      err instanceof Error ? err.message : err
+    );
     return null;
   }
 }
