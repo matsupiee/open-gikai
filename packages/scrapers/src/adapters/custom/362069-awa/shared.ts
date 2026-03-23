@@ -26,9 +26,13 @@ export async function fetchPage(url: string): Promise<string | null> {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`fetchPage failed: ${url} status=${res.status}`);
+      return null;
+    }
     return await res.text();
-  } catch {
+  } catch (e) {
+    console.warn(`fetchPage error: ${url}`, e instanceof Error ? e.message : e);
     return null;
   }
 }
@@ -40,9 +44,13 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(60_000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`fetchBinary failed: ${url} status=${res.status}`);
+      return null;
+    }
     return await res.arrayBuffer();
-  } catch {
+  } catch (e) {
+    console.warn(`fetchBinary error: ${url}`, e instanceof Error ? e.message : e);
     return null;
   }
 }
@@ -65,16 +73,6 @@ export function parseWarekiYear(text: string): number | null {
   }
 
   return null;
-}
-
-/**
- * 和暦の年を西暦の年度（nendo）に変換する。
- * 「令和7年第4回定例会」→ 年度は和暦年から判定。
- * 定例会は第1回が通常 3月、第4回が通常 12月なので、
- * 年度判定は和暦の年をそのまま使う。
- */
-export function warekiToNendo(warekiYear: number, eraBase: number): number {
-  return eraBase + warekiYear;
 }
 
 /** リクエスト間の待機 */
