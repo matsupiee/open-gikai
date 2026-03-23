@@ -43,7 +43,7 @@ const FETCH_TIMEOUT_MS = 30_000;
  * 年度別一覧ページの URL マッピング。
  * トップページからのリンク抽出では ID が連番でないため、既知のマッピングを使用する。
  */
-export const YEAR_PAGE_MAP: Record<number, string> = {
+const YEAR_PAGE_MAP: Record<number, string> = {
   2026: "/site/assembly/list158-1652.html", // 令和8年
   2025: "/site/assembly/list158-1604.html", // 令和7年
   2024: "/site/assembly/list158-1557.html", // 令和6年
@@ -74,13 +74,13 @@ export async function fetchPage(url: string): Promise<string | null> {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`fetchPage failed: ${url} status=${res.status}`);
+      return null;
+    }
     return await res.text();
-  } catch (err) {
-    console.warn(
-      `[343021-fuchu-town] fetchPage 失敗: ${url}`,
-      err instanceof Error ? err.message : err
-    );
+  } catch (e) {
+    console.warn(`fetchPage error: ${url}`, e instanceof Error ? e.message : e);
     return null;
   }
 }
@@ -92,13 +92,13 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(60_000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`fetchBinary failed: ${url} status=${res.status}`);
+      return null;
+    }
     return await res.arrayBuffer();
-  } catch (err) {
-    console.warn(
-      `[343021-fuchu-town] fetchBinary 失敗: ${url}`,
-      err instanceof Error ? err.message : err
-    );
+  } catch (e) {
+    console.warn(`fetchBinary error: ${url}`, e instanceof Error ? e.message : e);
     return null;
   }
 }
