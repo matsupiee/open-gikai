@@ -13,6 +13,7 @@
 import {
   BASE_ORIGIN,
   YEAR_PAGE_MAP,
+  buildHeldOn,
   buildPdfBaseUrl,
   detectMeetingType,
   fetchPage,
@@ -25,6 +26,8 @@ export interface AwaraMeeting {
   pdfUrl: string;
   /** 会議種別 */
   meetingType: string;
+  /** 開催日（YYYY-MM-DD 形式、日は月初固定） */
+  heldOn: string;
   /** 年度ページパス（externalId 用） */
   pagePath: string;
 }
@@ -41,6 +44,7 @@ export interface AwaraMeeting {
 export function parseYearPage(
   html: string,
   pagePath: string,
+  year: number,
 ): AwaraMeeting[] {
   const results: AwaraMeeting[] = [];
   const pdfBaseUrl = buildPdfBaseUrl(pagePath);
@@ -102,11 +106,13 @@ export function parseYearPage(
       const sessionNum = sessionNums[i] ?? null;
       const meetingType = detectMeetingType(linkText);
       const title = sessionNum ? `第${sessionNum}回 ${linkText}` : linkText;
+      const heldOn = buildHeldOn(linkText, year);
 
       results.push({
         title,
         pdfUrl,
         meetingType,
+        heldOn,
         pagePath,
       });
     }
@@ -135,6 +141,7 @@ export function parseYearPage(
         title: linkText,
         pdfUrl,
         meetingType: detectMeetingType(linkText),
+        heldOn: buildHeldOn(linkText, year),
         pagePath,
       });
     }
@@ -169,5 +176,5 @@ export async function fetchMeetingList(
   const html = await fetchPage(url);
   if (!html) return [];
 
-  return parseYearPage(html, pagePath);
+  return parseYearPage(html, pagePath, year);
 }

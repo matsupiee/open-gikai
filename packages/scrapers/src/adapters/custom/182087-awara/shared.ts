@@ -80,13 +80,26 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": USER_AGENT },
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(60_000),
     });
     if (!res.ok) return null;
     return await res.arrayBuffer();
   } catch {
     return null;
   }
+}
+
+/**
+ * リンクテキスト（例: "3月定例会"）から月を抽出し、
+ * 年と組み合わせて YYYY-MM-01 形式の日付文字列を返す。
+ * 月が抽出できない場合は空文字列を返す。
+ */
+export function buildHeldOn(linkText: string, year: number): string {
+  const m = linkText.match(/(\d{1,2})月/);
+  if (!m) return "";
+  const month = parseInt(m[1]!, 10);
+  if (month < 1 || month > 12) return "";
+  return `${year}-${String(month).padStart(2, "0")}-01`;
 }
 
 /** リクエスト間の待機 */

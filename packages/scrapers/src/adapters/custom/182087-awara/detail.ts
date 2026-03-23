@@ -20,6 +20,7 @@ export interface AwaraDetailParams {
   title: string;
   pdfUrl: string;
   meetingType: string;
+  heldOn: string;
   pagePath: string;
 }
 
@@ -223,7 +224,7 @@ export async function buildMeetingData(
     municipalityId,
     title: params.title,
     meetingType: params.meetingType,
-    heldOn: "",
+    heldOn: params.heldOn,
     sourceUrl: params.pdfUrl,
     externalId,
     statements,

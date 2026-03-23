@@ -29,6 +29,7 @@ export const adapter: ScraperAdapter = {
         title: m.title,
         pdfUrl: m.pdfUrl,
         meetingType: m.meetingType,
+        heldOn: m.heldOn,
         pagePath: m.pagePath,
       } satisfies AwaraDetailParams,
     }));
