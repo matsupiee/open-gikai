@@ -33,8 +33,6 @@ cd /path/to/worktree/apps/scraper-worker && bun run src/index.ts
 cd /path/to/worktree && bun run apps/scraper-worker/src/index.ts
 ```
 
-### 3. .claude/ ディレクトリは worktree 間で共有される
+### 3. .claude/ 配下のファイルも worktree で変更・コミットできる
 
-`.claude/` は git の共有ディレクトリ（メインリポジトリの実体）を参照するため、worktree 側で `.claude/skills/` 等を変更しても **worktree の `git status` には表示されない**。
-
-`.claude/` 配下のファイルをコミットする必要がある場合は、**メインリポジトリ側で別ブランチを切ってコミットする**。
+`.claude/` 配下のファイル（skills, rules 等）は git で追跡されており、worktree 内で変更すると通常通り `git status` に表示される。他のファイルと同様に worktree 内でコミット・PR 作成が可能。
