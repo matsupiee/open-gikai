@@ -204,6 +204,7 @@ export async function fetchMeetingData(
   if (!text) return null;
 
   const statements = parseStatements(text);
+  if (statements.length === 0) return null;
 
   const idKey = extractExternalIdKey(new URL(meeting.pdfUrl).pathname);
   const externalId = idKey ? `etajima_${idKey}` : null;

@@ -36,7 +36,7 @@ export function parseTopPage(
     const label = match[2]!.replace(/<[^>]+>/g, "").trim();
 
     // 会議録関連のリンクのみ（年度リンクは「会議録」「年」を含む）
-    if (!label.includes("会議録") && !label.includes("年")) continue;
+    if (!label.includes("会議録") && !/(令和|平成).+年/.test(label)) continue;
 
     const url = href.startsWith("http")
       ? href
