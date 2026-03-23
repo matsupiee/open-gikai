@@ -1,7 +1,7 @@
 ---
 name: batch-create-adapters
 description: docs/custom-scraping のファイルを読み取り、create-custom-adapter を10件ずつ並列実行する
-version: 1.0.0
+version: 2.0.0
 ---
 
 # バッチ カスタムアダプター作成
@@ -40,6 +40,44 @@ wc -l docs/custom-scraping/*.md | awk '$1 <= 20 && $2 != "total" { print $2 }'
 ```
 
 スキップしたファイル名は進捗報告時にまとめて表示する。スキップしたファイルは削除しない。
+
+### Step 1.7: 既存アダプターのスキップ（CRITICAL）
+
+**アダプターが既に存在する自治体はバッチ対象から除外する。** 過去に `/create-custom-adapter` で個別作成されたアダプターの `docs/custom-scraping/*.md` が残っている場合があるため、必ずこのチェックを行う。
+
+手順:
+
+1. `packages/db/src/seeds/municipalities.csv` から自治体名→自治体コードのマッピングを取得
+2. 各 `.md` ファイルのファイル名（拡張子なし）に対応する自治体コードを特定
+3. `packages/scrapers/src/adapters/custom/` 配下に `{コード}-*` ディレクトリが既に存在するか確認
+4. **既に存在する自治体は「既存スキップ」リストに追加し、バッチ対象から除外する**
+
+```bash
+# 既存アダプターのディレクトリ一覧を取得
+ls -d packages/scrapers/src/adapters/custom/*/
+
+# 各 .md ファイルに対して、対応するアダプターが既にあるか確認
+# 例: abashiri.md → municipalities.csv で 012114 を特定 → 012114-abashiri/ が存在するか
+```
+
+5. 既存スキップリストの全 `.md` ファイルを削除する PR を **最初に** 作成してマージする
+
+```bash
+# 新しいブランチを作成
+git checkout -b chore/cleanup-existing-adapter-docs
+
+# 既存アダプターの .md ファイルを削除
+rm docs/custom-scraping/{既存スキップリストのファイル}.md
+
+# コミット・プッシュ・PR 作成・マージ
+git add -A docs/custom-scraping/
+git commit -m "chore: 既存アダプター対応済みの調査ドキュメントを削除"
+git push -u origin chore/cleanup-existing-adapter-docs
+gh pr create --title "chore: 既存アダプター対応済みの調査ドキュメントを削除" --body "..."
+gh pr merge --merge --auto
+```
+
+6. PR がマージされたら `main` に戻り、残りの（未作成の）自治体のみでバッチ処理を続行する
 
 ### Step 2: 10件ずつバッチ分割して並列実行
 
