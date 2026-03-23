@@ -16,7 +16,7 @@ import { fetchSessionList } from "./list";
 import { buildMeetingData, type AizumiDetailParams } from "./detail";
 
 export { parseYearPage, parseSessionFromLinkText } from "./list";
-export { buildMeetingData } from "./detail";
+export { buildMeetingData, parseSpeaker, classifyKind, parseStatements } from "./detail";
 
 export const adapter: ScraperAdapter = {
   name: "364037",
