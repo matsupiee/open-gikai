@@ -26,9 +26,13 @@ export async function fetchPage(url: string): Promise<string | null> {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`fetchPage failed: ${url} status=${res.status}`);
+      return null;
+    }
     return await res.text();
-  } catch {
+  } catch (e) {
+    console.warn(`fetchPage error: ${url}`, e instanceof Error ? e.message : e);
     return null;
   }
 }
@@ -78,9 +82,13 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(60_000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`fetchBinary failed: ${url} status=${res.status}`);
+      return null;
+    }
     return await res.arrayBuffer();
-  } catch {
+  } catch (e) {
+    console.warn(`fetchBinary error: ${url}`, e instanceof Error ? e.message : e);
     return null;
   }
 }
