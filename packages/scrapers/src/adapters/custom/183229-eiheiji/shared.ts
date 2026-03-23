@@ -60,11 +60,11 @@ export function extractWesternYear(title: string): number | null {
     String.fromCharCode(c.charCodeAt(0) - 0xfee0)
   );
 
-  const match = normalized.match(/(令和|平成)(\d+)年/);
+  const match = normalized.match(/(令和|平成)(元|\d+)年/);
   if (!match) return null;
 
   const [, era, eraYearStr] = match;
-  const eraYear = parseInt(eraYearStr!, 10);
+  const eraYear = eraYearStr === "元" ? 1 : parseInt(eraYearStr!, 10);
 
   if (era === "令和") return eraYear + 2018;
   if (era === "平成") return eraYear + 1988;
