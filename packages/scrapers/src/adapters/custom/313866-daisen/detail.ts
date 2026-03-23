@@ -112,7 +112,7 @@ export function parseSpeaker(text: string): {
 }
 
 /** 役職から発言種別を分類 */
-export function classifyKind(speakerRole: string | null): string {
+export function classifyKind(speakerRole: string | null): "remark" | "question" | "answer" {
   if (!speakerRole) return "remark";
   if (
     speakerRole === "議長" ||
