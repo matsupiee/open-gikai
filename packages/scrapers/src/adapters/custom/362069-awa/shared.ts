@@ -33,6 +33,20 @@ export async function fetchPage(url: string): Promise<string | null> {
   }
 }
 
+/** fetch して ArrayBuffer を返す（PDF ダウンロード用） */
+export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(60_000),
+    });
+    if (!res.ok) return null;
+    return await res.arrayBuffer();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * 和暦の年表記から西暦を返す。
  * 例: "令和7年" -> 2025, "令和元年" -> 2019

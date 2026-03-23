@@ -9,15 +9,19 @@
  *
  * list フェーズで一覧ページからページネーションを辿り、
  * 各会期ページの PDF リンクを収集する。
- * detail フェーズでは収集済みパラメータから MeetingData を組み立てる。
+ * detail フェーズでは PDF をダウンロード・テキスト抽出し、
+ * ○マーカーで発言を分割して MeetingData を組み立てる。
  */
 
 import type { ScraperAdapter, ListRecord } from "../../adapter";
 import { fetchSessionList } from "./list";
-import { buildMeetingData, type AwaDetailParams } from "./detail";
+import {
+  buildMeetingData,
+  type AwaDetailParams,
+} from "./detail";
 
 export { parseSessionLinks, extractPdfRecords } from "./list";
-export { buildMeetingData } from "./detail";
+export { buildMeetingData, parseSpeaker, classifyKind, parseStatements } from "./detail";
 
 export const adapter: ScraperAdapter = {
   name: "362069",
