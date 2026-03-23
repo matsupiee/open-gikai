@@ -27,6 +27,12 @@ export interface BetsukaiMeeting {
   section: string;
 }
 
+/** 和暦（令和/平成）の元号と年数から西暦を返す */
+function eraToWesternYear(era: string, eraYearStr: string): number {
+  const eraYear = eraYearStr === "元" ? 1 : parseInt(eraYearStr, 10);
+  return era === "令和" ? eraYear + 2018 : eraYear + 1988;
+}
+
 /**
  * h3 見出しテキストから会議情報を抽出する。
  */
@@ -44,9 +50,7 @@ export function parseHeadingDate(heading: string): {
     const sessionNum = match1[3]!;
     const sessionType = match1[4]!;
 
-    const eraYear = eraYearStr === "元" ? 1 : parseInt(eraYearStr, 10);
-    const westernYear =
-      era === "令和" ? eraYear + 2018 : eraYear + 1988;
+    const westernYear = eraToWesternYear(era, eraYearStr);
 
     const sessionLabel = `第${sessionNum}回${sessionType}`;
     return { westernYear, sessionLabel };
@@ -62,9 +66,7 @@ export function parseHeadingDate(heading: string): {
     const era = match2[3]!;
     const eraYearStr = match2[4]!;
 
-    const eraYear = eraYearStr === "元" ? 1 : parseInt(eraYearStr, 10);
-    const westernYear =
-      era === "令和" ? eraYear + 2018 : eraYear + 1988;
+    const westernYear = eraToWesternYear(era, eraYearStr);
 
     const sessionLabel = `第${sessionNum}回${sessionType}`;
     return { westernYear, sessionLabel };
@@ -98,10 +100,7 @@ export function extractDateFromLinkText(
     /(令和|平成)(元|\d+)年(\d{1,2})月(\d{1,2})日/
   );
   if (fullMatch) {
-    const era = fullMatch[1]!;
-    const eraYearStr = fullMatch[2]!;
-    const eraYear = eraYearStr === "元" ? 1 : parseInt(eraYearStr, 10);
-    const year = era === "令和" ? eraYear + 2018 : eraYear + 1988;
+    const year = eraToWesternYear(fullMatch[1]!, fullMatch[2]!);
     const month = parseInt(fullMatch[3]!, 10);
     const day = parseInt(fullMatch[4]!, 10);
     return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -121,10 +120,7 @@ export function extractDateFromHeading(heading: string): string | null {
   );
   if (!match) return null;
 
-  const era = match[1]!;
-  const eraYearStr = match[2]!;
-  const eraYear = eraYearStr === "元" ? 1 : parseInt(eraYearStr, 10);
-  const year = era === "令和" ? eraYear + 2018 : eraYear + 1988;
+  const year = eraToWesternYear(match[1]!, match[2]!);
   const month = parseInt(match[3]!, 10);
   const day = parseInt(match[4]!, 10);
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;

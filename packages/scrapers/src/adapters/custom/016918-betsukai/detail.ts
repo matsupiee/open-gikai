@@ -16,20 +16,18 @@ import type { MeetingData, ParsedStatement } from "../../../utils/types";
 import type { BetsukaiMeeting } from "./list";
 import { detectMeetingType, extractExternalIdKey, fetchBinary } from "./shared";
 
-// 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
+// 役職サフィックス（副○○を○○より前に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
-  "委員長",
   "副委員長",
+  "委員長",
   "副議長",
-  "副町長",
-  "教育長",
   "議長",
+  "副町長",
   "町長",
-  "委員",
-  "議員",
+  "教育長",
   "副部長",
-  "副課長",
   "部長",
+  "副課長",
   "課長",
   "室長",
   "局長",
@@ -38,6 +36,8 @@ const ROLE_SUFFIXES = [
   "主幹",
   "主査",
   "補佐",
+  "委員",
+  "議員",
 ];
 
 // 行政側の役職（答弁者として分類する）
@@ -203,6 +203,7 @@ export async function fetchMeetingData(
   if (!text) return null;
 
   const statements = parseStatements(text);
+  if (statements.length === 0) return null;
 
   const idKey = extractExternalIdKey(new URL(meeting.pdfUrl).pathname);
   const externalId = idKey ? `betsukai_${idKey}` : null;
