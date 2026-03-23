@@ -113,9 +113,21 @@ function parseSystemType(): SystemType | undefined {
   return val as SystemType;
 }
 
-// 同一ホスト内の並列数。
+// 同一ホスト内のデフォルト並列数。
 // dbsr.jp 等の共有サービスでは、高すぎるとレート制限で 0 件応答が返るため控えめに設定。
-const HOST_CONCURRENCY = 5;
+const DEFAULT_HOST_CONCURRENCY = 5;
+
+/**
+ * グループキー単位の並列数オーバーライド。
+ * サイトの耐性に応じて個別に設定する。キーは extractGroupKey() の戻り値に対応。
+ */
+const HOST_CONCURRENCY_OVERRIDES: Record<string, number> = {
+  "kaigiroku.net": 20, // discussnet-ssp: 十分な耐性あり
+};
+
+function getHostConcurrency(groupKey: string): number {
+  return HOST_CONCURRENCY_OVERRIDES[groupKey] ?? DEFAULT_HOST_CONCURRENCY;
+}
 
 /**
  * ホスト名からグループ化キーを抽出する。
@@ -149,20 +161,21 @@ function runGroupedByHost(
   targets: { baseUrl: string | null }[],
   tasks: (() => Promise<void>)[]
 ): Promise<void> {
-  const hostGroups = new Map<string, (() => Promise<void>)[]>();
+  const hostGroups = new Map<string, { groupKey: string; tasks: (() => Promise<void>)[] }>();
 
   for (let i = 0; i < targets.length; i++) {
-    const host = extractGroupKey(new URL(targets[i]!.baseUrl!).hostname);
-    if (!hostGroups.has(host)) hostGroups.set(host, []);
-    hostGroups.get(host)!.push(tasks[i]!);
+    const groupKey = extractGroupKey(new URL(targets[i]!.baseUrl!).hostname);
+    if (!hostGroups.has(groupKey)) hostGroups.set(groupKey, { groupKey, tasks: [] });
+    hostGroups.get(groupKey)!.tasks.push(tasks[i]!);
   }
 
-  const hostTasks = [...hostGroups.values()].map((groupTasks) => async () => {
+  const hostTasks = [...hostGroups.values()].map(({ groupKey, tasks: groupTasks }) => async () => {
+    const concurrency = getHostConcurrency(groupKey);
     const executing = new Set<Promise<void>>();
     for (const task of groupTasks) {
       const p: Promise<void> = task().finally(() => executing.delete(p));
       executing.add(p);
-      if (executing.size >= HOST_CONCURRENCY) {
+      if (executing.size >= concurrency) {
         await Promise.race(executing);
       }
     }
