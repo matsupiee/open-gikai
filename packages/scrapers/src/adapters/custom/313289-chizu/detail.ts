@@ -23,6 +23,7 @@ const ROLE_SUFFIXES = [
   "副委員長",
   "副議長",
   "副町長",
+  "副教育長",
   "事務局次長",
   "事務局長",
   "議長",
@@ -47,6 +48,7 @@ const ROLE_SUFFIXES = [
 const ANSWER_ROLES = new Set([
   "町長",
   "副町長",
+  "副教育長",
   "教育長",
   "部長",
   "副部長",
@@ -111,7 +113,9 @@ export function parseSpeaker(text: string): {
 }
 
 /** 役職から発言種別を分類 */
-export function classifyKind(speakerRole: string | null): string {
+export function classifyKind(
+  speakerRole: string | null,
+): "remark" | "question" | "answer" {
   if (!speakerRole) return "remark";
   if (ANSWER_ROLES.has(speakerRole)) return "answer";
   if (

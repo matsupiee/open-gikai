@@ -40,7 +40,7 @@ export interface ChizuMeeting {
  * /gijiroku/ 配下のサブページリンクを抽出し、リンクテキストから年度を判定する。
  */
 export function parseTopPage(html: string): { year: number; url: string }[] {
-  const results: { year: number; url: string }[] = [];
+  const seen = new Map<number, { year: number; url: string }>();
 
   // /gijiroku/ 配下のサブページへのリンクを抽出（PDF リンクやトップページ自体を除外）
   const linkPattern =
@@ -68,10 +68,13 @@ export function parseTopPage(html: string): { year: number; url: string }[] {
       ? href
       : `${BASE_ORIGIN}${href.startsWith("/") ? "" : "/"}${href}`;
 
-    results.push({ year, url });
+    // 同じ year が既に登録されていれば最初のものを優先する
+    if (!seen.has(year)) {
+      seen.set(year, { year, url });
+    }
   }
 
-  return results;
+  return [...seen.values()];
 }
 
 /**
@@ -250,8 +253,7 @@ export function parseDirectPdfLinks(
 export async function fetchMeetingList(
   year: number,
 ): Promise<ChizuMeeting[]> {
-  const wareki = toWareki(year);
-  if (!wareki) return [];
+  if (!toWareki(year)) return [];
 
   // Step 1: トップページを取得
   const indexUrl = `${BASE_ORIGIN}${INDEX_PATH}`;
