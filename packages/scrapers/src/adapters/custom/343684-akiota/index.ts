@@ -17,7 +17,7 @@ import { fetchSessionList } from "./list";
 import { buildMeetingData, type AkiotaDetailParams } from "./detail";
 
 export { parseYearPageLinks, parsePdfLinks } from "./list";
-export { buildMeetingData } from "./detail";
+export { buildMeetingData, parseSpeaker, classifyKind, parseStatements } from "./detail";
 
 export const adapter: ScraperAdapter = {
   name: "343684",
