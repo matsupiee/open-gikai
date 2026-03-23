@@ -12,9 +12,6 @@ import type { ScraperAdapter, ListRecord } from "../../adapter";
 import { fetchMeetingList } from "./list";
 import { fetchMeetingData } from "./detail";
 
-export { parseListPage, parseDetailPage } from "./list";
-export { parseStatements, parseSpeaker, classifyKind } from "./detail";
-
 export const adapter: ScraperAdapter = {
   name: "435147",
 

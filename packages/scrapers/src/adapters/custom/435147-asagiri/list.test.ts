@@ -124,12 +124,20 @@ describe("parseJapaneseDate", () => {
     expect(parseJapaneseDate("平成３０年３月１５日（木曜日）")).toBe("2018-03-15");
   });
 
-  it("平成元年を正しく変換する", () => {
+  it("平成元年（数字）を正しく変換する", () => {
     expect(parseJapaneseDate("平成１年４月１日（土曜日）")).toBe("1989-04-01");
   });
 
-  it("令和元年を正しく変換する", () => {
+  it("令和元年（数字）を正しく変換する", () => {
     expect(parseJapaneseDate("令和１年５月１日（水曜日）")).toBe("2019-05-01");
+  });
+
+  it("令和元年（漢字「元」）を正しく変換する", () => {
+    expect(parseJapaneseDate("令和元年５月１日（水曜日）")).toBe("2019-05-01");
+  });
+
+  it("平成元年（漢字「元」）を正しく変換する", () => {
+    expect(parseJapaneseDate("平成元年４月１日（土曜日）")).toBe("1989-04-01");
   });
 
   it("日付パターンがない場合は null を返す", () => {
