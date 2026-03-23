@@ -13,10 +13,6 @@ import type { ScraperAdapter, ListRecord } from "../../adapter";
 import { fetchMeetingList } from "./list";
 import { fetchMeetingData } from "./detail";
 
-export { parseListPage, parseDetailPage, parseMeetingText } from "./list";
-export { parseStatements, parseSpeaker, classifyKind } from "./detail";
-export { yearFromDirName, eraToWesternYear } from "./shared";
-
 export const adapter: ScraperAdapter = {
   name: "013617",
 
