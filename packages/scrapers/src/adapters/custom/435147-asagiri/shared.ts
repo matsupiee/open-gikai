@@ -90,12 +90,13 @@ export function parseJapaneseDate(text: string): string | null {
   );
   if (!match) return null;
 
+  const era = normalized.match(/(?:令和|平成)/)?.[0];
   const eraYear = parseInt(match[1]!, 10);
   const month = parseInt(match[2]!, 10);
   const day = parseInt(match[3]!, 10);
 
-  // 令和元年 = 2019
-  const westernYear = eraYear + 2018;
+  // 令和元年 = 2019, 平成元年 = 1989
+  const westernYear = eraYear + (era === "平成" ? 1988 : 2018);
 
   return `${westernYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }

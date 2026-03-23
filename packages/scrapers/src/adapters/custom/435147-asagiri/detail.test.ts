@@ -152,4 +152,31 @@ describe("parseStatements", () => {
     const statements = parseStatements("議事日程が配布されました。");
     expect(statements.length).toBe(0);
   });
+
+  it("ト書き（登壇）はスキップする", () => {
+    const text = `
+○議長（山田太郎君）　発言を許します。
+○（３番　高橋次郎君登壇）
+○３番（高橋次郎君）　質問します。
+`;
+    const statements = parseStatements(text);
+
+    expect(statements.length).toBe(2);
+    expect(statements[0]!.speakerRole).toBe("議長");
+    expect(statements[1]!.speakerRole).toBe("議員");
+  });
+
+  it("ト書き（退席・退場・着席）もスキップする", () => {
+    const text = `
+○議長（山田太郎君）　休憩します。
+○（町長退席）
+○（町長着席）
+○議長（山田太郎君）　再開します。
+`;
+    const statements = parseStatements(text);
+
+    expect(statements.length).toBe(2);
+    expect(statements[0]!.content).toBe("休憩します。");
+    expect(statements[1]!.content).toBe("再開します。");
+  });
 });

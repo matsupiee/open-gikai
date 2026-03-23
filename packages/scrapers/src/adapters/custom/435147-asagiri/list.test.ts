@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseListPage, parseDetailPage } from "./list";
+import { parseJapaneseDate } from "./shared";
 
 describe("parseListPage", () => {
   it("kiji リンクからエントリを抽出する", () => {
@@ -101,5 +102,37 @@ describe("parseDetailPage", () => {
 
     const { heldOn } = parseDetailPage(html);
     expect(heldOn).toBeNull();
+  });
+
+  it("平成の開催日を正しく変換する", () => {
+    const html = `
+      <a href="/kiji0030000/test.pdf">PDF</a>
+      <p>平成３０年６月１２日（火曜日）</p>
+    `;
+
+    const { heldOn } = parseDetailPage(html);
+    expect(heldOn).toBe("2018-06-12");
+  });
+});
+
+describe("parseJapaneseDate", () => {
+  it("令和の日付を正しく変換する", () => {
+    expect(parseJapaneseDate("令和７年６月１０日（火曜日）")).toBe("2025-06-10");
+  });
+
+  it("平成の日付を正しく変換する", () => {
+    expect(parseJapaneseDate("平成３０年３月１５日（木曜日）")).toBe("2018-03-15");
+  });
+
+  it("平成元年を正しく変換する", () => {
+    expect(parseJapaneseDate("平成１年４月１日（土曜日）")).toBe("1989-04-01");
+  });
+
+  it("令和元年を正しく変換する", () => {
+    expect(parseJapaneseDate("令和１年５月１日（水曜日）")).toBe("2019-05-01");
+  });
+
+  it("日付パターンがない場合は null を返す", () => {
+    expect(parseJapaneseDate("日付情報なし")).toBeNull();
   });
 });

@@ -103,8 +103,9 @@ async function fetchAllKijiLinks(): Promise<
     }
   }
 
-  // AJAX ページネーション（pg=1 から空になるまで）
-  for (let pg = 1; ; pg++) {
+  // AJAX ページネーション（pg=1 から空になるまで、最大 100 ページ）
+  const MAX_PAGES = 100;
+  for (let pg = 1; pg <= MAX_PAGES; pg++) {
     const url = buildAjaxUrl(pg);
     const html = await fetchPage(url);
     if (!html || html.trim().length === 0) break;

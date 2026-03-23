@@ -167,6 +167,10 @@ export function parseStatements(text: string): ParsedStatement[] {
     const trimmed = block.trim();
     if (!trimmed || !/^[○◯◎●]/.test(trimmed)) continue;
 
+    // ト書き（登壇等）をスキップ
+    if (/^[○◯◎●]\s*[（(].+?(?:登壇|退席|退場|着席)[）)]$/.test(trimmed))
+      continue;
+
     const normalized = trimmed.replace(/\s+/g, " ");
     const { speakerName, speakerRole, content } = parseSpeaker(normalized);
     if (!content) continue;
