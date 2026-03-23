@@ -62,16 +62,17 @@ export function normalizeNumbers(text: string): string {
 
 /**
  * 和暦テキストから西暦年を返す。
- * 全角数字にも対応する。
+ * 全角数字にも対応する。「元年」表記にも対応する。
  * e.g., "令和7年" → 2025, "令和７年" → 2025, "平成29年" → 2017
+ *       "令和元年" → 2019, "平成元年" → 1989
  */
 export function eraToWesternYear(eraText: string): number | null {
   const normalized = normalizeNumbers(eraText);
-  const match = normalized.match(/(令和|平成)(\d+)年/);
+  const match = normalized.match(/(令和|平成)(元|\d+)年/);
   if (!match) return null;
 
   const [, era, yearStr] = match;
-  const eraYear = parseInt(yearStr!, 10);
+  const eraYear = yearStr === "元" ? 1 : parseInt(yearStr!, 10);
 
   if (era === "令和") return eraYear + 2018;
   if (era === "平成") return eraYear + 1988;

@@ -22,6 +22,14 @@ describe("buildDate", () => {
     expect(buildDate("令和６年", "3月 5日")).toBe("2024-03-05");
   });
 
+  it("令和元年を正しく変換する", () => {
+    expect(buildDate("令和元年", "5月1日")).toBe("2019-05-01");
+  });
+
+  it("平成元年を正しく変換する", () => {
+    expect(buildDate("平成元年", "1月8日")).toBe("1989-01-08");
+  });
+
   it("年号が不正な場合は null を返す", () => {
     expect(buildDate("不明な年", "3月4日")).toBeNull();
   });
