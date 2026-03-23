@@ -1,5 +1,5 @@
 /**
- * 芦北町議会 — detail フェーズ
+ * 芦北町議会 -- detail フェーズ
  *
  * PDF をダウンロードしてテキストを抽出し、○ マーカーで発言を分割して
  * ParsedStatement 配列を生成する。
@@ -26,18 +26,18 @@ export interface AshikitaDetailParams {
 
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
-  "委員長",
   "副委員長",
+  "委員長",
   "副議長",
-  "副町長",
-  "教育長",
   "議長",
+  "副町長",
   "町長",
-  "委員",
-  "議員",
+  "副教育長",
+  "教育長",
+  "事務局長",
   "副部長",
-  "副課長",
   "部長",
+  "副課長",
   "課長",
   "室長",
   "局長",
@@ -46,6 +46,8 @@ const ROLE_SUFFIXES = [
   "主幹",
   "主査",
   "補佐",
+  "議員",
+  "委員",
 ];
 
 // 行政側の役職（答弁者として分類する）
@@ -53,12 +55,14 @@ const ANSWER_ROLES = new Set([
   "町長",
   "副町長",
   "教育長",
+  "副教育長",
   "部長",
   "副部長",
   "課長",
   "副課長",
   "室長",
   "局長",
+  "事務局長",
   "係長",
   "参事",
   "主幹",
@@ -127,7 +131,9 @@ export function parseSpeaker(text: string): {
 }
 
 /** 役職から発言種別を分類 */
-export function classifyKind(speakerRole: string | null): string {
+export function classifyKind(
+  speakerRole: string | null,
+): "remark" | "question" | "answer" {
   if (!speakerRole) return "remark";
   if (ANSWER_ROLES.has(speakerRole)) return "answer";
   if (
@@ -185,9 +191,11 @@ export function parseStatements(text: string): ParsedStatement[] {
  * リンクテキストから開催日を推定する。
  * 芦北町の PDF は1会議ごとに1ファイルで、具体的な開催日はリンクテキストに含まれないため、
  * 年度と回次から推定する。
- * 具体的な日付が不明な場合は年の1月1日をデフォルトとする。
  */
-export function estimateHeldOn(title: string, year: number): string {
+export function estimateHeldOn(
+  title: string,
+  year: number,
+): string | null {
   // タイトルに「第N回定例会」を含む場合、四半期の中心月を推定
   const sessionMatch = title.match(/第(\d+)回/);
   if (sessionMatch?.[1]) {
@@ -205,7 +213,7 @@ export function estimateHeldOn(title: string, year: number): string {
       return `${year}-${monthDay}`;
     }
   }
-  return `${year}-01-01`;
+  return null;
 }
 
 /**
@@ -237,9 +245,12 @@ export async function buildMeetingData(
   municipalityId: string,
 ): Promise<MeetingData | null> {
   const heldOn = estimateHeldOn(params.title, params.year);
+  if (!heldOn) return null;
 
   const text = await fetchPdfText(params.pdfUrl);
-  const statements = text ? parseStatements(text) : [];
+  if (!text) return null;
+
+  const statements = parseStatements(text);
   if (statements.length === 0) return null;
 
   return {

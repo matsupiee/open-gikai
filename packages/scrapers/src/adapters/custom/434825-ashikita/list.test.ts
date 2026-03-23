@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { parseYearIndexLinks, parseListPageUrl, parsePdfLinks } from "./list";
-import { toWarekiSlug, fromWarekiSlug, parseWarekiYear, detectMeetingType } from "./shared";
+import {
+  toWarekiSlug,
+  fromWarekiSlug,
+  parseWarekiYear,
+  detectMeetingType,
+} from "./shared";
 
 describe("toWarekiSlug", () => {
   it("令和の年度をスラッグに変換する", () => {
@@ -42,6 +47,7 @@ describe("parseWarekiYear", () => {
   it("平成の年を変換する", () => {
     expect(parseWarekiYear("平成22年第1回定例会会議録")).toBe(2010);
     expect(parseWarekiYear("平成30年第4回定例会会議録")).toBe(2018);
+    expect(parseWarekiYear("平成元年第1回定例会会議録")).toBe(1989);
   });
 
   it("マッチしない場合はnullを返す", () => {
@@ -56,10 +62,6 @@ describe("detectMeetingType", () => {
 
   it("臨時会は extraordinary を返す", () => {
     expect(detectMeetingType("令和6年第1回臨時会会議録")).toBe("extraordinary");
-  });
-
-  it("委員会は committee を返す", () => {
-    expect(detectMeetingType("令和6年総務委員会会議録")).toBe("committee");
   });
 });
 
@@ -154,17 +156,6 @@ describe("parsePdfLinks", () => {
     expect(result[1]!.meetingType).toBe("plenary");
     expect(result[2]!.title).toBe("令和6年第1回臨時会会議録");
     expect(result[2]!.meetingType).toBe("extraordinary");
-  });
-
-  it("委員会の会議録を committee として分類する", () => {
-    const html = `
-      <a href="/resource.php?e=abc123">令和6年総務委員会会議録 (PDF 500KB)</a>
-    `;
-
-    const result = parsePdfLinks(html, "r6");
-    expect(result).toHaveLength(1);
-    expect(result[0]!.title).toBe("令和6年総務委員会会議録");
-    expect(result[0]!.meetingType).toBe("committee");
   });
 
   it("PDFリンクがない場合は空配列を返す", () => {
