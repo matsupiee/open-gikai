@@ -27,10 +27,10 @@ export interface AjigasawaMeeting {
  *   令和7年第1回定例会本会議（令和7年2月28日から3月10日まで）
  */
 export function parseDateFromLinkText(text: string): string | null {
-  const match = text.match(/令和(\d+)年(\d+)月(\d+)日/);
+  const match = text.match(/令和(元|\d+)年(\d+)月(\d+)日/);
   if (!match) return null;
 
-  const reiwaYear = parseInt(match[1]!, 10);
+  const reiwaYear = match[1] === "元" ? 1 : parseInt(match[1]!, 10);
   const month = parseInt(match[2]!, 10);
   const day = parseInt(match[3]!, 10);
   const westernYear = reiwaYear + 2018;
@@ -57,10 +57,14 @@ export function parseListPage(
 
   for (const match of html.matchAll(h2Pattern)) {
     const headingText = match[1]!;
-    const yearMatch = headingText.match(/令和(\d+)年/);
+    const yearMatch = headingText.match(/令和(元|\d+)年/);
     sections.push({
       index: match.index!,
-      reiwaYear: yearMatch ? parseInt(yearMatch[1]!, 10) : null,
+      reiwaYear: yearMatch
+        ? yearMatch[1] === "元"
+          ? 1
+          : parseInt(yearMatch[1]!, 10)
+        : null,
     });
   }
 
