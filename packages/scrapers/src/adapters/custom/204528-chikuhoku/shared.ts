@@ -40,7 +40,11 @@ export async function fetchJson<T>(
     });
     if (!res.ok) return null;
     return (await res.json()) as T;
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[204528-chikuhoku] fetchJson failed: ${url.toString()}`,
+      err instanceof Error ? err.message : err,
+    );
     return null;
   }
 }

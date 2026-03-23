@@ -16,6 +16,7 @@ import { createHash } from "node:crypto";
 import type { MeetingData, ParsedStatement } from "../../../utils/types";
 import type { PlaylistItem } from "./list";
 import {
+  TENANT_ID,
   VIEW_BASE,
   detectMeetingType,
   extractDateFromScheduleLabel,
@@ -117,7 +118,7 @@ export function buildMeetingData(
   if (statements.length === 0) return null;
 
   const title = `${params.councilLabel} ${params.scheduleLabel}`;
-  const externalId = `dvsmart_516_${params.councilId}_${params.scheduleId}`;
+  const externalId = `dvsmart_${TENANT_ID}_${params.councilId}_${params.scheduleId}`;
   const sourceUrl = `${VIEW_BASE}/rd/council_${params.councilId}.html`;
 
   return {
