@@ -29,13 +29,13 @@ export const adapter: ScraperAdapter = {
   },
 
   async fetchDetail({ detailParams, municipalityId }) {
-    const { detailUrl, meetingId, listTitle, listDate } = detailParams as {
+    const { detailUrl, meetingId, listTitle, listDate, baseUrl } = detailParams as {
       detailUrl: string;
       meetingId: string;
       listTitle?: string;
       listDate?: string;
       baseUrl: string;
     };
-    return fetchMeetingDetail(detailUrl, municipalityId, meetingId, listTitle, listDate);
+    return fetchMeetingDetail(detailUrl, municipalityId, meetingId, listTitle, listDate, baseUrl);
   },
 };

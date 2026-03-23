@@ -28,6 +28,20 @@ const USER_AGENT =
   "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
 
 /**
+ * baseUrl またはdetailUrl からホスト名を抽出し、externalId のプレフィックスとして使う。
+ * 例: "https://foo.dbsr.jp/index.php/12345" → "foo.dbsr.jp"
+ */
+function extractHostPrefix(baseUrl?: string, detailUrl?: string): string {
+  try {
+    const url = baseUrl ?? detailUrl;
+    if (!url) return "unknown";
+    return new URL(url).hostname;
+  } catch {
+    return "unknown";
+  }
+}
+
+/**
  * 議事録詳細ページを取得し、MeetingData に変換して返す。
  * 本文が空の場合は null を返す。
  */
@@ -36,7 +50,8 @@ export async function fetchMeetingDetail(
   municipalityId: string,
   meetingId: string,
   listTitle?: string,
-  listDate?: string
+  listDate?: string,
+  baseUrl?: string
 ): Promise<MeetingData | null> {
   try {
     // 新形式のフレームセットURLの場合、全文表示に変換してからフェッチ
@@ -53,7 +68,7 @@ export async function fetchMeetingDetail(
 
     // フレームセットページの場合はサブフレームから取得
     if (html.includes("<frameset")) {
-      return fetchFromFrameset(html, fetchUrl, municipalityId, meetingId, listTitle, listDate);
+      return fetchFromFrameset(html, fetchUrl, municipalityId, meetingId, listTitle, listDate, baseUrl);
     }
 
     // 旧形式・中間形式: 単一ページから直接パース
@@ -66,7 +81,8 @@ export async function fetchMeetingDetail(
     if (!heldOn) return null;
 
     const meetingType = detectMeetingType(title);
-    const externalId = `dbsearch_${meetingId}`;
+    const hostPrefix = extractHostPrefix(baseUrl, detailUrl);
+    const externalId = `dbsearch_${hostPrefix}_${meetingId}`;
 
     return {
       municipalityId,
@@ -92,7 +108,8 @@ async function fetchFromFrameset(
   municipalityId: string,
   meetingId: string,
   listTitle?: string,
-  listDate?: string
+  listDate?: string,
+  baseUrl?: string
 ): Promise<MeetingData | null> {
   const origin = new URL(detailUrl).origin;
   const pathPrefix = detailUrl.includes("/index.php/") ? "/index.php/" : "/";
@@ -166,7 +183,8 @@ async function fetchFromFrameset(
   const statements = extractStatements(pageHtml);
 
   const meetingType = detectMeetingType(title);
-  const externalId = `dbsearch_${meetingId}`;
+  const hostPrefix = extractHostPrefix(baseUrl, detailUrl);
+  const externalId = `dbsearch_${hostPrefix}_${meetingId}`;
 
   return {
     municipalityId,
