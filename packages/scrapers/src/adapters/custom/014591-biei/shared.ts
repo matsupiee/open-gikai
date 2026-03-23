@@ -28,7 +28,11 @@ export async function fetchPage(url: string): Promise<string | null> {
     });
     if (!res.ok) return null;
     return await res.text();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[014591-biei] fetchPage 失敗: ${url}`,
+      err instanceof Error ? err.message : err
+    );
     return null;
   }
 }
@@ -42,7 +46,11 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
     });
     if (!res.ok) return null;
     return await res.arrayBuffer();
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[014591-biei] fetchBinary 失敗: ${url}`,
+      err instanceof Error ? err.message : err
+    );
     return null;
   }
 }
