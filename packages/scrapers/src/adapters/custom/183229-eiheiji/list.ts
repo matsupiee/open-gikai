@@ -104,11 +104,11 @@ export function extractDateFromText(text: string): string | null {
     String.fromCharCode(c.charCodeAt(0) - 0xfee0)
   );
 
-  const match = normalized.match(/(令和|平成)(\d+)年(\d+)月(\d+)日/);
+  const match = normalized.match(/(令和|平成)(元|\d+)年(\d+)月(\d+)日/);
   if (!match) return null;
 
   const [, era, eraYearStr, monthStr, dayStr] = match;
-  const eraYear = parseInt(eraYearStr!, 10);
+  const eraYear = eraYearStr === "元" ? 1 : parseInt(eraYearStr!, 10);
   const month = parseInt(monthStr!, 10);
   const day = parseInt(dayStr!, 10);
 

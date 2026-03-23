@@ -57,6 +57,14 @@ describe("extractDateFromText", () => {
     expect(extractDateFromText("平成28年3月15日")).toBe("2016-03-15");
   });
 
+  it("令和元年をパースする", () => {
+    expect(extractDateFromText("令和元年５月１日")).toBe("2019-05-01");
+  });
+
+  it("平成元年をパースする", () => {
+    expect(extractDateFromText("平成元年３月１５日")).toBe("1989-03-15");
+  });
+
   it("日付がないテキストは null を返す", () => {
     expect(extractDateFromText("表紙")).toBeNull();
   });
