@@ -183,15 +183,15 @@ export function eraToWesternYear(eraText: string): number | null {
     String.fromCharCode(c.charCodeAt(0) - 0xfee0)
   );
 
-  const reiwaMatch = normalized.match(/令和(\d+)年/);
-  if (reiwaMatch) return parseInt(reiwaMatch[1]!, 10) + 2018;
+  const reiwaMatch = normalized.match(/令和(元|\d+)年/);
+  if (reiwaMatch) {
+    return reiwaMatch[1] === "元" ? 2019 : parseInt(reiwaMatch[1]!, 10) + 2018;
+  }
 
-  if (normalized.includes("令和元年")) return 2019;
-
-  const heiseiMatch = normalized.match(/平成(\d+)年/);
-  if (heiseiMatch) return parseInt(heiseiMatch[1]!, 10) + 1988;
-
-  if (normalized.includes("平成元年")) return 1989;
+  const heiseiMatch = normalized.match(/平成(元|\d+)年/);
+  if (heiseiMatch) {
+    return heiseiMatch[1] === "元" ? 1989 : parseInt(heiseiMatch[1]!, 10) + 1988;
+  }
 
   return null;
 }
