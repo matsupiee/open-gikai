@@ -12,21 +12,6 @@ const USER_AGENT =
 
 const FETCH_TIMEOUT_MS = 30_000;
 
-/**
- * 年度別ページ URL マッピング。
- * 一覧ページ list26-80.html のリンクから取得した年度 → ページ ID の対応表。
- * 新年度が追加された場合は一覧ページから動的に取得する。
- */
-export const YEAR_PAGE_MAP: Record<number, string> = {
-  2026: "17653",
-  2025: "14987",
-  2024: "12064",
-  2023: "8069",
-  2022: "8068",
-  2021: "1374",
-  2020: "1372",
-};
-
 /** 会議タイプを検出 */
 export function detectMeetingType(title: string): string {
   if (title.includes("委員会")) return "committee";
@@ -41,9 +26,13 @@ export async function fetchPage(url: string): Promise<string | null> {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`fetchPage failed: ${url} status=${res.status}`);
+      return null;
+    }
     return await res.text();
-  } catch {
+  } catch (e) {
+    console.warn(`fetchPage error: ${url}`, e instanceof Error ? e.message : e);
     return null;
   }
 }
@@ -86,9 +75,13 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(60_000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`fetchBinary failed: ${url} status=${res.status}`);
+      return null;
+    }
     return await res.arrayBuffer();
-  } catch {
+  } catch (e) {
+    console.warn(`fetchBinary error: ${url}`, e instanceof Error ? e.message : e);
     return null;
   }
 }

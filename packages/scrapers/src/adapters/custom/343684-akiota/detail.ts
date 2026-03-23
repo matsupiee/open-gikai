@@ -25,13 +25,14 @@ export interface AkiotaDetailParams {
 
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
-  "委員長",
   "副委員長",
+  "委員長",
   "副議長",
-  "副町長",
-  "教育長",
   "議長",
+  "副町長",
   "町長",
+  "副教育長",
+  "教育長",
   "委員",
   "議員",
   "副部長",
@@ -126,7 +127,9 @@ export function parseSpeaker(text: string): {
 }
 
 /** 役職から発言種別を分類 */
-export function classifyKind(speakerRole: string | null): string {
+export function classifyKind(
+  speakerRole: string | null,
+): "remark" | "question" | "answer" {
   if (!speakerRole) return "remark";
   if (ANSWER_ROLES.has(speakerRole)) return "answer";
   if (
@@ -207,9 +210,18 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
 export async function buildMeetingData(
   params: AkiotaDetailParams,
   municipalityId: string,
-): Promise<MeetingData> {
+): Promise<MeetingData | null> {
   const text = await fetchPdfText(params.pdfUrl);
-  const statements = text ? parseStatements(text) : [];
+  if (!text) return null;
+
+  const statements = parseStatements(text);
+  if (statements.length === 0) return null;
+
+  // externalId: PDF パスからユニークキーを抽出
+  const idMatch = params.pdfUrl.match(/\/(\d+)_(\d+)_misc\.pdf$/i);
+  const externalId = idMatch
+    ? `akiota_${idMatch[1]}_${idMatch[2]}`
+    : `akiota_${params.heldOn}`;
 
   return {
     municipalityId,
@@ -217,7 +229,7 @@ export async function buildMeetingData(
     meetingType: params.meetingType,
     heldOn: params.heldOn,
     sourceUrl: params.pdfUrl,
-    externalId: `akiota_${params.heldOn}`,
+    externalId,
     statements,
   };
 }
