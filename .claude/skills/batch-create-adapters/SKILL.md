@@ -108,6 +108,15 @@ gh pr merge --merge --auto
 5. 型チェックを通す
 6. NDJSON 出力で動作確認
 7. コミット → プッシュ → PR 作成（worktree ルールに従う）
+
+**重要（CRITICAL）**: コミット・PR 作成前に、必ず `main` ブランチから新しいブランチを切ること。
+他の自治体のブランチを起点にしてはいけない。
+
+```bash
+# PR 作成前に必ずこの手順でブランチを作成する
+git fetch origin
+git checkout -b feat/adapter-{自治体コード}-{名前} origin/main
+```
 ```
 
 ### Step 3: バッチ完了後にドキュメント削除
