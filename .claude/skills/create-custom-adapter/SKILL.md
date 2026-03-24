@@ -359,6 +359,15 @@ cd apps/scraper-worker && bun run scrape:ndjson -- --target {自治体コード}
 
 worktree ルールに従い、PR まで自動で作成する。
 
+**ブランチは必ず `main` から切る（CRITICAL）:**
+
+他の自治体のブランチや現在の HEAD ではなく、必ず `origin/main` を起点にすること。バッチ並列実行時に複数ブランチが連鎖するのを防ぐ。
+
+```bash
+git fetch origin
+git checkout -b feat/adapter-{自治体コード}-{名前} origin/main
+```
+
 ## 変更ファイル一覧
 
 新規アダプター追加時に変更するファイル:
