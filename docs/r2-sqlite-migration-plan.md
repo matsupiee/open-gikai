@@ -1,4 +1,4 @@
-# R2 + SQLite アーキテクチャ移行計画
+# R2 + SQLite + D1 アーキテクチャ移行計画
 
 ## 背景と課題
 
@@ -9,46 +9,82 @@
 - **クエリ遅延**: フルテキスト検索・ベクター検索が大規模データでスケールしにくい
 - **運用複雑度**: pgvector 拡張・tsvector 生成カラムなど PostgreSQL 固有機能への依存
 
+## 初期投入の前提
+
+初回移行は Cloudflare Worker ベースではなく、既存の **`apps/local-bulk-scraper` を使ったローカル一括処理** を前提にする。
+
+- 過去データはローカルで全件スクレイピングし、`meetings.ndjson` / `statements.ndjson` / `statement_chunks.ndjson` を生成する
+- SQLite 変換もローカル CLI で実行し、完成した SQLite ファイルだけを R2 にアップロードする
+- **まだサービス未リリースなので、PostgreSQL と新構成を長期間共存させる必要はない**
+- **`apps/scraper-worker` は初期投入には使わない**。必要なら移行完了後の差分更新フェーズで活用する
+
 ## 提案アーキテクチャ
 
 ### 概要
 
-スクレイパーが自治体ごと（または都道府県単位）に **SQLite ファイルを生成** し、**Cloudflare R2 にアップロード**する。Web アプリはリクエスト時に R2 から SQLite ファイルを取得してクエリを実行する。
+初期移行では、`apps/local-bulk-scraper` が出力した NDJSON を入力に、ローカルのビルダー CLI が **SQLite シャードを生成して Cloudflare R2 にアップロード**する。ランタイムでは、議会コンテンツを R2 上の SQLite から読み、認証やジョブ管理のような小さなトランザクショナルデータは D1 に置く。
 
 ```
-[scraper-worker]
-    ↓ 議会データをスクレイプ
-[SQLite ファイル生成]
+[apps/local-bulk-scraper]
+    ↓ 過去データをローカルで一括スクレイプ
+[NDJSON 出力]
+    ↓ ローカルの builder CLI で SQLite 生成
+[upload CLI]
     ↓ アップロード
-[Cloudflare R2]
-    ↓ ダウンロード（オンデマンドまたはキャッシュ）
-[apps/web / API Worker]
-    ↓ SQLite クエリ
-[ユーザーへレスポンス]
+[Cloudflare R2 (SQLite shards)] ←→ [apps/web / API Worker] ←→ [Cloudflare D1]
+    議会コンテンツ検索             認証 / セッション / ジョブ管理
+                ↓
+          [ユーザーへレスポンス]
 ```
+
+### データ配置
+
+- **R2 + SQLite**: `index.sqlite`, `municipalities`, `system_types`, `meetings`, `statements`, `statement_chunks`
+- **Cloudflare D1**: `users`, `sessions`, `accounts`, `verifications`, `scraper_jobs`, `scraper_job_logs`
+- **PostgreSQL**: 移行元データソースとしてのみ扱い、カットオーバー後はランタイム依存を残さない
 
 ### R2 上のファイル構成
 
 ```
 r2://open-gikai-db/
+├── manifests/
+│   ├── latest.json           # 現在参照すべきシャード一覧
+│   └── 2026-03-24.json       # リリースごとの固定 manifest
 ├── index.sqlite              # 自治体マスタ・system_types（軽量、全体共通）
-├── municipalities/
-│   ├── 011001.sqlite         # 札幌市の全議事録
-│   ├── 011002.sqlite         # 函館市の全議事録
-│   └── ...
-├── prefectures/
-│   ├── 01.sqlite             # 北海道全体（小規模自治体をまとめる場合）
-│   └── ...
-└── search/
-    └── fts_index.sqlite      # 全文検索用インデックス（定期再ビルド）
+└── prefectures/
+    ├── 01.sqlite             # 北海道の10年分スナップショット
+    ├── 02.sqlite             # 青森県の10年分スナップショット
+    ├── 13_2016_2020.sqlite   # 例外的にサイズが大きい県だけ 5 年単位で分割
+    ├── 13_2021_2025.sqlite
+    └── ...
 ```
 
 **分割戦略の選択肢**:
-- **自治体単位**: 検索範囲を絞り込める。大規模自治体は大きくなりすぎる可能性
-- **都道府県単位**: バランスが良い。クロス市区町村検索も対応しやすい
-- **年度単位**: `011001_2024.sqlite` のように年度で分割し、差分更新を容易にする
+- **自治体単位**: 約 1,700 ファイル規模になり、初期投入や manifest 管理が重い
+- **都道府県 + 年度単位**: 10 年分で `47 × 10 = 470` ファイルになり、アップロード・キャッシュ・整合性管理のコストが高い
+- **都道府県単位スナップショット**: まず 47 ファイルで公開でき、初期投入がもっとも単純
+- **都道府県単位 + 5 年バケット**: サイズが大きい県だけ `13_2016_2020.sqlite` のように例外分割できる
 
-→ **推奨: 都道府県単位 + 年度サフィックス** (`01_2024.sqlite`)
+→ **推奨: 都道府県単位スナップショットを基本にし、サイズ超過時だけ 5 年バケットで例外分割する**
+
+この方式なら、初期投入時のファイル数は原則 **47 + index + manifest** で済む。仮に全都道府県で 5 年バケット分割が必要になっても、10 年分で **94 ファイル** に収まり、年度単位の 470 ファイルより運用しやすい。
+
+`manifests/latest.json` のイメージ:
+
+```json
+{
+  "version": "2026-03-24",
+  "prefectures": {
+    "01": ["prefectures/01.sqlite"],
+    "13": [
+      "prefectures/13_2016_2020.sqlite",
+      "prefectures/13_2021_2025.sqlite"
+    ]
+  }
+}
+```
+
+Web アプリはこの manifest を見て、都道府県ごとに 1 ファイル読むか、複数ファイルを順に検索するかを決める。全国横断検索用の専用インデックスは、必要性が確認できるまで後回しにする。
 
 ### SQLite スキーマ（変更点）
 
@@ -172,7 +208,7 @@ const ranked = chunks
 
 ## 実装フェーズ
 
-### フェーズ 1: SQLite ファイル生成パイプライン
+### フェーズ 1: ローカル一括ビルド + R2 初期投入
 
 1. **`packages/db-sqlite`** パッケージを新規作成
    - SQLite スキーマ定義（Drizzle ORM の `better-sqlite3` dialect）
@@ -180,55 +216,75 @@ const ranked = chunks
    - FTS5 インデックス構築ロジック（2-gram トークナイズ）
 
 2. **`apps/db-builder`** スクリプトを作成
-   - PostgreSQL から都道府県単位でデータを読み込み
-   - SQLite ファイルを生成・FTS5 インデックスを構築
-   - R2 にアップロード（`wrangler r2 object put` または AWS SDK）
+   - `apps/local-bulk-scraper` の NDJSON 出力を読み込む
+   - `index.sqlite` と都道府県シャードを生成・FTS5 インデックスを構築する
+   - シャードサイズを見て、必要な県だけ 5 年バケットに分割する
+   - `manifests/latest.json` を生成し、R2 にアップロードする（`wrangler r2 object put` または AWS SDK）
 
-3. **CI/CD**: GitHub Actions で定期実行（週 1 回 or スクレイプ完了後）
+3. **初期公開手順を手動で固定**
+   - ローカルで `scrape -> build sqlite -> upload` を通しで実行する
+   - まずは手動実行で再現性を固め、安定後に GitHub Actions への移行を検討する
 
-### フェーズ 2: Web アプリの R2 対応
+### フェーズ 2: Web アプリの R2 / D1 対応
 
 1. **`packages/r2-client`** パッケージ（または `packages/api` 内に追加）
    - R2 からSQLiteファイルをダウンロードする関数
+   - `manifests/latest.json` を取得して対象シャードを解決する関数
    - インメモリキャッシュ（Workers の `caches` API or KV）
 
-2. **API ルーターの更新**
+2. **D1 向け DB 層を追加**
+   - `packages/db` を multi-dialect 化するか、`packages/db-d1` を追加する
+   - `users`, `sessions`, `accounts`, `verifications`, `scraper_jobs`, `scraper_job_logs` を D1 スキーマとして定義する
+   - `packages/auth` の Better Auth adapter を D1 backed な Drizzle インスタンスに切り替える
+
+3. **API ルーターの更新**
    - `statements.service.ts` を PostgreSQL クエリ → SQLite クエリに変更
    - 検索ロジックを FTS5 ベースに書き換え
+   - 例外分割された都道府県では複数 SQLite を順に検索してマージする
 
-3. **キャッシュ戦略**
+4. **キャッシュ戦略**
    - Cloudflare Workers のメモリキャッシュ（同一リクエスト内）
    - Cache API でリクエスト間キャッシュ（TTL: 1 時間）
-   - ファイルサイズが大きい場合はストリーミング + Range リクエストを検討
+   - 大きい県だけ 5 年バケット分割してダウンロードサイズを抑える
 
-### フェーズ 3: PostgreSQL の段階的廃止
+### フェーズ 3: 差分更新の自動化
 
-1. 認証・セッションデータ（`users`, `sessions`）は PostgreSQL に残す
-2. スクレイパージョブ管理（`scraper_jobs`, `scraper_job_logs`）は PostgreSQL に残す
-3. 議会コンテンツ（`meetings`, `statements`, `statement_chunks`）を R2/SQLite に移行
-4. `municipalities`, `system_types` を `index.sqlite` に移行
+1. `apps/scraper-worker` は引き続き最新データ収集に使うが、ジョブ状態とログは D1 に保存する
+2. 差分更新単位は「都道府県全体」または「5 年バケット」に限定し、年度単位分割は採らない
+3. SQLite 生成は別ジョブとして扱い、R2 の該当 shard だけを再ビルドする
+4. 安定後に GitHub Actions あるいは定期バッチで再ビルドを自動化する
+
+### フェーズ 4: PostgreSQL の一括撤去
+
+1. D1 と R2 を参照する実装へ切り替え、アプリから `DATABASE_URL` 依存を外す
+2. 認証・ジョブ管理・議会コンテンツをそれぞれ D1 / R2 に移し、PostgreSQL への書き込みを停止する
+3. 検証後、`users`, `sessions`, `accounts`, `verifications`, `scraper_jobs`, `scraper_job_logs`, `municipalities`, `system_types`, `meetings`, `statements`, `statement_chunks` を **一括で drop** する
+4. Supabase / Hyperdrive / PostgreSQL 用の運用設定を削除する
 
 ## 技術的なトレードオフ
 
-| 観点 | 現在（PostgreSQL） | 移行後（R2 + SQLite） |
+| 観点 | 現在（PostgreSQL） | 移行後（R2 + SQLite + D1） |
 |------|-------------------|----------------------|
 | 全文検索精度 | tsvector（日本語対応） | FTS5 + 2-gram（精度やや低下） |
 | ベクター検索 | pgvector（高速） | アプリ層コサイン計算（低速だが絞り込みで緩和） |
 | スケール | DB スケールアップ必要 | ファイル分割で水平スケール可能 |
 | コスト | Supabase 従量課金 | R2 は読み取り無料、保存コストのみ |
+| 認証・運用メタデータ | PostgreSQL に集約 | D1 に集約 |
 | リアルタイム性 | 即時反映 | SQLite 再生成 + アップロードまでラグあり |
-| 更新複雑度 | INSERT/UPDATE | ファイル全体の再ビルドが基本 |
+| 更新複雑度 | INSERT/UPDATE | 都道府県 or 5 年バケット単位の再ビルドが基本 |
 | 読み取り一貫性 | トランザクション保証 | スナップショット読み取り（ファイル単位） |
 
 ## 未解決事項（要検討）
 
-1. **SQLite ファイルの最大サイズ**: 都道府県単位でどの程度になるか見積もりが必要
+1. **SQLite ファイルの最大サイズ**: 都道府県 1 ファイルでどの程度になるか、どの県から 5 年バケット分割が必要か見積もりが必要
 2. **Workers でのSQLite実行方法**: `@cloudflare/workers-types` での better-sqlite3 利用可否 → Durable Objects の SQLite API または `@sqlite.org/sqlite-wasm` の WASM 版を利用
-3. **差分更新**: ファイル全体の再ビルドかスクレイプ済みデータのみ追記かの戦略
-4. **認証が必要なAPIとの統合**: 認証は引き続き PostgreSQL で管理し、コンテンツのみ R2 から取得するハイブリッド構成
+3. **差分更新**: 都道府県全体の再ビルドと 5 年バケット再ビルドのどちらを標準にするか
+4. **全国横断検索**: 全 prefecture shard への fan-out で十分か、専用 search shard を別途持つか
+5. **D1 スキーマ設計**: `users`, `sessions`, `accounts`, `verifications`, `scraper_jobs`, `scraper_job_logs` を 1 DB にまとめるか、用途別に分けるか
 
 ## 参考
 
+- [Cloudflare D1 ドキュメント](https://developers.cloudflare.com/d1/)
 - [Cloudflare R2 ドキュメント](https://developers.cloudflare.com/r2/)
 - [SQLite FTS5](https://www.sqlite.org/fts5.html)
 - [Drizzle ORM - LibSQL/SQLite](https://orm.drizzle.team/docs/get-started-sqlite)
