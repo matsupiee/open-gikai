@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "コード変更がない会話、またはこのStopフックによるレビュー修正を既に行った後ならこのまま終了してください。\n\nPRを作成・更新した場合は以下を実行：\n1. gh pr view でこのPRに自分のレビューが既に投稿済みか確認。投稿済みならそのまま終了\n2. git diff main...HEAD で差分全体をレビュー（バグ、ルール違反、テスト漏れ）\n3. 問題があれば gh pr review --request-changes -b '指摘内容' で投稿し、修正→コミット→プッシュ→ gh pr review --approve -b '指摘を修正済み'\n4. 問題なければ gh pr review --approve -b 'レビュー通過'"
+            "prompt": "Evaluate if Claude made PR: $ARGUMENTS. If so, post review comment to the PR, fix, verify behavior and merge it."
           }
         ]
       }
