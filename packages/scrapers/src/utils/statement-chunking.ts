@@ -61,6 +61,21 @@ export function isTooShort(content: string): boolean {
 }
 
 /**
+ * 話者ラベル行かどうかを判定する。
+ *
+ * 議事録で発言者名が「副 町 長 山 下 宗 人」のように1文字ずつスペース区切りで
+ * 記載されるケースを検出する。3トークン以上かつ全トークンが1文字のCJK文字の場合、
+ * 実質的な発言内容ではなく話者ラベルとして除外する。
+ */
+export function isSpeakerLabel(content: string): boolean {
+  const trimmed = content.trim();
+  const tokens = trimmed.split(/\s+/);
+  if (tokens.length < 3) return false;
+  // 全トークンが1文字のCJK文字（漢字・ひらがな・カタカナ）であれば話者ラベルと判定
+  return tokens.every((t) => /^[\u3040-\u9FFF]$/.test(t));
+}
+
+/**
  * ステートメント列からスピーカーグループのチャンクを構築する。
  *
  * 処理手順:
@@ -71,13 +86,15 @@ export function isTooShort(content: string): boolean {
 export function buildChunksFromStatements(
   statements: StatementRecord[]
 ): ChunkInput[] {
-  // 2段階のフィルタリングで検索ノイズを除去する:
+  // 3段階のフィルタリングで検索ノイズを除去する:
   // - isProcedural: ○/△ 開始の議事進行や、◆/◎ 開始の短い応答・アクション記録を除外
   // - isTooShort: 上記に該当しない発言のうち、内容が MIN_CONTENT_CHARS 文字未満のものを除外
-  // 両フィルタは補完的に機能し、isProcedural は記号パターンに基づく除外、
-  // isTooShort は記号に依存しない汎用的な最小文字数チェックを担う。
+  // - isSpeakerLabel: 「副 町 長 山 下 宗 人」のようなCJK1文字スペース区切りの話者ラベルを除外
   const substantive = statements.filter(
-    (s) => !isProcedural(s.content) && !isTooShort(s.content),
+    (s) =>
+      !isProcedural(s.content) &&
+      !isTooShort(s.content) &&
+      !isSpeakerLabel(s.content),
   );
   const groups = groupBySpeaker(substantive);
   const chunks: ChunkInput[] = [];

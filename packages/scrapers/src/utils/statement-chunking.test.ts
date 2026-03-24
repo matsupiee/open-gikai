@@ -2,6 +2,7 @@ import { describe, test, expect } from "vitest";
 import {
   isProcedural,
   isTooShort,
+  isSpeakerLabel,
   buildChunksFromStatements,
 } from "./statement-chunking";
 
@@ -71,6 +72,36 @@ describe("isTooShort", () => {
 
   test("ちょうど5文字の発言は短すぎないと判定する", () => {
     expect(isTooShort("あいうえお")).toBe(false);
+  });
+});
+
+describe("isSpeakerLabel", () => {
+  test("CJK1文字をスペースで区切った話者ラベルを検出する", () => {
+    expect(isSpeakerLabel("副 町 長 山 下 宗 人")).toBe(true);
+  });
+
+  test("役職+氏名のスペース区切りも検出する", () => {
+    expect(isSpeakerLabel("市 長 田 中 太 郎")).toBe(true);
+    expect(isSpeakerLabel("議 員 佐 藤 花 子")).toBe(true);
+  });
+
+  test("2トークン以下は話者ラベルと判定しない", () => {
+    expect(isSpeakerLabel("市 長")).toBe(false);
+    expect(isSpeakerLabel("副町長")).toBe(false);
+  });
+
+  test("実質的な発言内容は話者ラベルと判定しない", () => {
+    expect(isSpeakerLabel("防災対策について質問いたします。")).toBe(false);
+  });
+
+  test("アルファベット・数字混じりは話者ラベルと判定しない", () => {
+    expect(isSpeakerLabel("A B C")).toBe(false);
+    expect(isSpeakerLabel("1 2 3")).toBe(false);
+  });
+
+  test("複数文字トークンが混じる場合は話者ラベルと判定しない", () => {
+    // 「副町長」のように複数文字のトークンが含まれる場合
+    expect(isSpeakerLabel("副町長 山 下 宗 人")).toBe(false);
   });
 });
 
@@ -224,6 +255,30 @@ describe("buildChunksFromStatements", () => {
     ];
 
     expect(buildChunksFromStatements(statements)).toEqual([]);
+  });
+
+  test("話者ラベル行をチャンクから除外する", () => {
+    const statements = [
+      {
+        id: "stmt-1",
+        speakerName: null,
+        speakerRole: null,
+        content: "副 町 長 山 下 宗 人",
+      },
+      {
+        id: "stmt-2",
+        speakerName: "山下宗人",
+        speakerRole: "副町長",
+        content: "ご質問にお答えします。本町の防災計画については予算を確保しております。",
+      },
+    ];
+
+    const chunks = buildChunksFromStatements(statements);
+
+    // 話者ラベル行（stmt-1）は除外される
+    expect(chunks).toHaveLength(1);
+    expect(chunks[0]!.speakerName).toBe("山下宗人");
+    expect(chunks[0]!.statementIds).toEqual(["stmt-2"]);
   });
 
   test("全て手続き系の場合は空配列を返す", () => {
