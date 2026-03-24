@@ -460,7 +460,8 @@ async function scrapeMunicipality(
   targetYear?: number,
   meetingLimit?: number
 ): Promise<MeetingData[]> {
-  const adapter = (systemTypeName && getAdapter(systemTypeName)) || getAdapter(municipalityCode);
+  // カスタムアダプター（自治体コード）を優先し、なければ汎用アダプター（systemType）を使う
+  const adapter = getAdapter(municipalityCode) || (systemTypeName && getAdapter(systemTypeName));
   if (adapter) {
     return scrapeWithAdapter(adapter, municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
   }
