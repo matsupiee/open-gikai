@@ -1,0 +1,273 @@
+/**
+ * 河内町議会（茨城県）— detail フェーズ
+ *
+ * PDF をダウンロードしてテキストを抽出し、○ マーカーで発言を分割して
+ * ParsedStatement 配列を生成する。
+ *
+ * 発言フォーマット（PDF から抽出されるテキスト）:
+ *   ○議長（田中義雄君）　ただいまから会議を開きます。
+ *   ○町長（川又英雄君）　お答えいたします。
+ *   ○１番（山本豊君）　質問いたします。
+ *   ○総務課長（佐藤一郎君）　ご説明いたします。
+ */
+
+import { createHash } from "node:crypto";
+import { extractText, getDocumentProxy } from "unpdf";
+import type { MeetingData, ParsedStatement } from "../../../utils/types";
+import { fetchBinary, parseJapaneseDate } from "./shared";
+import type { KawachiIbarakiPdfInfo } from "./list";
+
+export interface KawachiIbarakiDetailParams {
+  title: string;
+  meetingType: string;
+  pdfUrl: string;
+  pdfFileName: string;
+  year: number;
+}
+
+// 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
+const ROLE_SUFFIXES = [
+  "副委員長",
+  "委員長",
+  "副議長",
+  "副町長",
+  "教育長",
+  "副教育長",
+  "議長",
+  "町長",
+  "事務局長",
+  "副部長",
+  "部長",
+  "副課長",
+  "課長",
+  "室長",
+  "局長",
+  "係長",
+  "参事",
+  "主幹",
+  "主査",
+  "補佐",
+  "議員",
+  "委員",
+];
+
+// 行政側の役職（答弁者として分類する）
+const ANSWER_ROLES = new Set([
+  "町長",
+  "副町長",
+  "教育長",
+  "副教育長",
+  "事務局長",
+  "部長",
+  "副部長",
+  "課長",
+  "副課長",
+  "室長",
+  "局長",
+  "係長",
+  "参事",
+  "主幹",
+  "主査",
+  "補佐",
+]);
+
+/**
+ * ○ マーカー付きの発言ヘッダーから発言者情報を抽出する。
+ *
+ * 対応パターン:
+ *   ○議長（田中義雄君）    → role=議長, name=田中義雄
+ *   ○町長（川又英雄君）    → role=町長, name=川又英雄
+ *   ○１番（山本豊君）      → role=議員, name=山本豊
+ *   ○総務課長（佐藤一郎君）→ role=課長, name=佐藤一郎
+ */
+export function parseSpeaker(text: string): {
+  speakerName: string | null;
+  speakerRole: string | null;
+  content: string;
+} {
+  const stripped = text.replace(/^[○◯◎●]\s*/, "");
+
+  // パターン: role（name + 君|様|議員）content
+  const match = stripped.match(
+    /^(.+?)[（(](.+?)(?:君|様|議員)[）)]\s*([\s\S]*)/
+  );
+  if (match) {
+    const rolePart = match[1]!.trim();
+    const rawName = match[2]!.replace(/[\s　]+/g, "").trim();
+    const content = match[3]!.trim();
+
+    // 番号付き議員: ○１番（山本豊君）
+    if (/^[\d０-９]+番$/.test(rolePart)) {
+      return { speakerName: rawName, speakerRole: "議員", content };
+    }
+
+    // 役職マッチ
+    for (const suffix of ROLE_SUFFIXES) {
+      if (rolePart === suffix || rolePart.endsWith(suffix)) {
+        return { speakerName: rawName, speakerRole: suffix, content };
+      }
+    }
+
+    return { speakerName: rawName, speakerRole: rolePart || null, content };
+  }
+
+  // ○ マーカーはあるがカッコパターンに合致しない場合
+  const headerMatch = stripped.match(/^([^\s　]{1,30})[\s　]+([\s\S]*)/);
+  if (headerMatch) {
+    const header = headerMatch[1]!;
+    const content = headerMatch[2]!.trim();
+
+    for (const suffix of ROLE_SUFFIXES) {
+      if (header.endsWith(suffix)) {
+        const name =
+          header.length > suffix.length
+            ? header.slice(0, -suffix.length)
+            : null;
+        return { speakerName: name, speakerRole: suffix, content };
+      }
+    }
+  }
+
+  return { speakerName: null, speakerRole: null, content: stripped.trim() };
+}
+
+/** 役職から発言種別を分類 */
+export function classifyKind(
+  speakerRole: string | null
+): "remark" | "question" | "answer" {
+  if (!speakerRole) return "remark";
+  if (ANSWER_ROLES.has(speakerRole)) return "answer";
+  if (
+    speakerRole === "議長" ||
+    speakerRole === "副議長" ||
+    speakerRole === "委員長" ||
+    speakerRole === "副委員長"
+  )
+    return "remark";
+  for (const role of ANSWER_ROLES) {
+    if (speakerRole.endsWith(role)) return "answer";
+  }
+  return "question";
+}
+
+/**
+ * PDF から抽出したテキストを ParsedStatement 配列に変換する。
+ */
+export function parseStatements(text: string): ParsedStatement[] {
+  const blocks = text.split(/(?=[○◯◎●])/);
+  const statements: ParsedStatement[] = [];
+  let offset = 0;
+
+  for (const block of blocks) {
+    const trimmed = block.trim();
+    if (!trimmed || !/^[○◯◎●]/.test(trimmed)) continue;
+
+    // ト書き（登壇等）をスキップ
+    if (/^[○◯◎●]\s*[（(].+?(?:登壇|退席|退場|着席)[）)]$/.test(trimmed))
+      continue;
+
+    const normalized = trimmed.replace(/\s+/g, " ");
+    const { speakerName, speakerRole, content } = parseSpeaker(normalized);
+    if (!content) continue;
+
+    const contentHash = createHash("sha256").update(content).digest("hex");
+    const startOffset = offset;
+    const endOffset = offset + content.length;
+    statements.push({
+      kind: classifyKind(speakerRole),
+      speakerName,
+      speakerRole,
+      content,
+      contentHash,
+      startOffset,
+      endOffset,
+    });
+    offset = endOffset + 1;
+  }
+
+  return statements;
+}
+
+/**
+ * PDF テキストから開催日（YYYY-MM-DD）を抽出する。
+ * 冒頭の「令和X年X月X日」形式を探す。
+ * 解析できない場合は null を返す（フォールバック値禁止）。
+ */
+export function extractHeldOnFromText(text: string): string | null {
+  // 全角数字を半角に変換
+  const normalized = text.replace(/[０-９]/g, (c) =>
+    String.fromCharCode(c.charCodeAt(0) - 0xfee0)
+  );
+
+  // 冒頭1000文字から検索（パフォーマンス考慮）
+  const head = normalized.slice(0, 1000);
+  const dateMatch = head.match(/(令和|平成)(元|\d+)年(\d+)月(\d+)日/);
+  if (!dateMatch) return null;
+
+  return parseJapaneseDate(dateMatch[0]);
+}
+
+/**
+ * PDF URL からテキストを取得する。
+ */
+async function fetchPdfText(pdfUrl: string): Promise<string | null> {
+  try {
+    const buffer = await fetchBinary(pdfUrl);
+    if (!buffer) return null;
+
+    const pdf = await getDocumentProxy(new Uint8Array(buffer));
+    const { text } = await extractText(pdf, { mergePages: true });
+    return text;
+  } catch (err) {
+    console.warn(
+      `[084476-kawachi-ibaraki] PDF テキスト抽出失敗: ${pdfUrl}`,
+      err instanceof Error ? err.message : err
+    );
+    return null;
+  }
+}
+
+/**
+ * PDF をダウンロード・テキスト抽出し、MeetingData に変換する。
+ */
+export async function buildMeetingData(
+  params: KawachiIbarakiDetailParams,
+  municipalityId: string
+): Promise<MeetingData | null> {
+  const text = await fetchPdfText(params.pdfUrl);
+  if (!text) return null;
+
+  const statements = parseStatements(text);
+  if (statements.length === 0) return null;
+
+  // PDF テキストから開催日を抽出
+  const heldOn = extractHeldOnFromText(text);
+  if (!heldOn) return null;
+
+  return {
+    municipalityId,
+    title: params.title,
+    meetingType: params.meetingType,
+    heldOn,
+    sourceUrl: params.pdfUrl,
+    externalId: `kawachi_ibaraki_${params.pdfFileName}`,
+    statements,
+  };
+}
+
+// fetchMeetingData は list フェーズの型を受け取るオーバーロード
+export async function fetchMeetingData(
+  pdfInfo: KawachiIbarakiPdfInfo,
+  municipalityId: string
+): Promise<MeetingData | null> {
+  return buildMeetingData(
+    {
+      title: pdfInfo.title,
+      meetingType: pdfInfo.meetingType,
+      pdfUrl: pdfInfo.pdfUrl,
+      pdfFileName: pdfInfo.pdfFileName,
+      year: pdfInfo.year,
+    },
+    municipalityId
+  );
+}
