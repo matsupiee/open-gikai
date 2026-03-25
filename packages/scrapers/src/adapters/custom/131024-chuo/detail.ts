@@ -26,7 +26,7 @@ import { fetchPage, detectMeetingType } from "./shared";
  */
 export async function fetchMeetingData(
   params: { detailUrl: string; title: string; heldOn: string },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const html = await fetchPage(params.detailUrl);
   if (!html) return null;
@@ -37,7 +37,7 @@ export async function fetchMeetingData(
   const externalId = `chuo_cgi_${createHash("sha256").update(params.detailUrl).digest("hex").slice(0, 16)}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: detectMeetingType(params.title),
     heldOn: params.heldOn,

@@ -312,13 +312,13 @@ export async function fetchDocumentStatements(
  */
 export async function fetchMeetingData(
   doc: { gijirokuId: string; title: string; heldOn: string },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const statements = await fetchDocumentStatements(doc.gijirokuId, doc.title);
   if (!statements) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: doc.title,
     meetingType: detectMeetingType(doc.title),
     heldOn: doc.heldOn,

@@ -200,7 +200,7 @@ export async function fetchMeetingData(
     heldOn: string;
     path: string;
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const url = `${BASE_ORIGIN}${doc.path}`;
   const html = await fetchPage(url);
@@ -214,7 +214,7 @@ export async function fetchMeetingData(
   if (statements.length === 0) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(doc.sessionTitle),
     heldOn: doc.heldOn,

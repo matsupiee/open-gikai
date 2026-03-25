@@ -88,7 +88,7 @@ export const adapter: ScraperAdapter = {
     return records;
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const {
       tenantId,
       tenantSlug,
@@ -119,7 +119,7 @@ export const adapter: ScraperAdapter = {
       councilId,
       councilName,
       { scheduleId, name: scheduleName, memberList },
-      municipalityId,
+      municipalityCode,
       { apiBase, host, viewYear }
     );
   },

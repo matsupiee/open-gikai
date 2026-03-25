@@ -22,7 +22,7 @@ export interface KosakaDetailParams {
  */
 export function buildMeetingData(
   params: KosakaDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): MeetingData | null {
   if (params.heldOn === null) return null;
 
@@ -30,7 +30,7 @@ export function buildMeetingData(
   const externalId = `kosaka_${encodeURIComponent(params.detailUrl)}_${encodeURIComponent(params.pdfLabel)}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

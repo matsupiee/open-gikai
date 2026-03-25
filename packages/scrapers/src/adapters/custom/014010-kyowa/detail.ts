@@ -214,7 +214,7 @@ export async function fetchMeetingData(
     heldOn: string | null;
     meetingType: string;
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   if (!doc.heldOn) return null;
 
@@ -222,7 +222,7 @@ export async function fetchMeetingData(
   if (!statements) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: doc.title,
     meetingType: doc.meetingType,
     heldOn: doc.heldOn,

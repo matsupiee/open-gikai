@@ -35,9 +35,9 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const item = detailParams as unknown as SusakiListItem;
-    const meetings = await fetchAllMeetingData(item, municipalityId);
+    const meetings = await fetchAllMeetingData(item, municipalityCode);
 
     // ScraperAdapter は MeetingData | null を返す仕様のため、最初の1件を返す
     // 委員会の複数 PDF 対応は将来的な拡張として保留

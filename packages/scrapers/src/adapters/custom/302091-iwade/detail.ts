@@ -314,7 +314,7 @@ export async function fetchMeetingData(
     sessionTitle: string;
     pdfUrl: string;
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const result = await fetchPdfStatements(params.pdfUrl);
   if (!result) return null;
@@ -327,7 +327,7 @@ export async function fetchMeetingData(
   const externalId = `iwade_${encodeURIComponent(params.pdfUrl.split("/").pop() ?? params.sessionUrl)}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.sessionTitle,
     meetingType: detectMeetingType(params.sessionTitle),
     heldOn,

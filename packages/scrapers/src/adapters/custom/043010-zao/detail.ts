@@ -256,7 +256,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: ZaoMeeting,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   if (meeting.type === "pdf") {
     const text = await fetchPdfText(meeting.pdfUrl);
@@ -270,7 +270,7 @@ export async function fetchMeetingData(
     const externalId = fileName ? `zao_${fileName}` : null;
 
     return {
-      municipalityId,
+      municipalityCode,
       title: meeting.title,
       meetingType: detectMeetingType(meeting.sessionTitle),
       heldOn: meeting.heldOn,
@@ -302,7 +302,7 @@ export async function fetchMeetingData(
     const externalId = dirName ? `zao_${dirName}` : null;
 
     return {
-      municipalityId,
+      municipalityCode,
       title: meeting.title,
       meetingType: detectMeetingType(meeting.title),
       heldOn: meeting.heldOn,

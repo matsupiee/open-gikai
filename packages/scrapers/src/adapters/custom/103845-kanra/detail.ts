@@ -23,12 +23,12 @@ export interface KanraDetailParams {
  */
 export function buildMeetingData(
   params: KanraDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
 ): MeetingData | null {
   if (params.heldOn === null) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: detectMeetingType(params.title),
     heldOn: params.heldOn,

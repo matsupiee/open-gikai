@@ -54,8 +54,8 @@ export const adapter: ScraperAdapter = {
     return records;
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as unknown as ObusePdfDetailParams;
-    return fetchMeetingData(params, municipalityId);
+    return fetchMeetingData(params, municipalityCode);
   },
 };

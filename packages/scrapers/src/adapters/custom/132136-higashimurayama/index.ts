@@ -32,7 +32,7 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as {
       pdfUrl: string;
       title: string;
@@ -40,6 +40,6 @@ export const adapter: ScraperAdapter = {
       section: string;
       category: "honkaigi" | "iinkai";
     };
-    return fetchMeetingData(params, municipalityId);
+    return fetchMeetingData(params, municipalityCode);
   },
 };

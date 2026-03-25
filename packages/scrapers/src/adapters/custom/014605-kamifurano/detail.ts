@@ -210,7 +210,7 @@ export async function fetchMeetingData(
     rawDate: string | null;
     meetingType: string;
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const statements = await fetchPdfStatements(doc.pdfUrl);
   if (!statements) return null;
@@ -219,7 +219,7 @@ export async function fetchMeetingData(
   if (!heldOn) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: doc.title,
     meetingType: doc.meetingType,
     heldOn,

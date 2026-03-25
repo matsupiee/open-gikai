@@ -127,7 +127,7 @@ describe("fetchMinuteData integration", () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.municipalityId).toBe("test-municipality-id");
+    expect(result!.municipalityCode).toBe("test-municipality-id");
     expect(result!.heldOn).toBe("2024-02-22");
     expect(result!.meetingType).toBe("plenary");
     expect(result!.statements.length).toBe(20);

@@ -33,8 +33,8 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const meeting = detailParams as unknown as OgimiMeeting;
-    return fetchMeetingData(meeting, municipalityId);
+    return fetchMeetingData(meeting, municipalityCode);
   },
 };

@@ -194,7 +194,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   params: MifuneDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   if (!params.heldOn) return null;
 
@@ -213,7 +213,7 @@ export async function fetchMeetingData(
       : `mifune_${encodeURIComponent(params.pdfUrl)}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: detectMeetingType(params.title),
     heldOn: params.heldOn,

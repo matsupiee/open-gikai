@@ -356,7 +356,7 @@ export async function fetchMeetingStatements(
  */
 export async function fetchMeetingDataFromSchedule(
   schedule: KensakusystemDetailSchedule,
-  municipalityId: string,
+  municipalityCode: string,
   slug: string
 ): Promise<MeetingData | null> {
   const statements = await fetchMeetingStatements(schedule.url);
@@ -375,7 +375,7 @@ export async function fetchMeetingDataFromSchedule(
     : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: schedule.title,
     meetingType,
     heldOn: schedule.heldOn,

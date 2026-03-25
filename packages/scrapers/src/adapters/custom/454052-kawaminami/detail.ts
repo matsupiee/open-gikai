@@ -259,7 +259,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   record: KawaminamiPdfRecord,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(record.pdfUrl);
   if (!text) return null;
@@ -280,7 +280,7 @@ export async function buildMeetingData(
     : record.title;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: record.meetingType,
     heldOn,

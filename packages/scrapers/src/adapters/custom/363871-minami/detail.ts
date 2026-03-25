@@ -15,7 +15,7 @@ import type { MinamiListRecord } from "./list";
  */
 export async function fetchMeetingData(
   params: MinamiListRecord,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   return fetchMinuteData(
     params.tenantId,
@@ -27,7 +27,7 @@ export async function fetchMeetingData(
       name: params.scheduleName,
       memberList: params.memberList,
     },
-    municipalityId,
+    municipalityCode,
     { viewYear: params.viewYear },
   );
 }

@@ -403,7 +403,7 @@ export async function fetchHtmlMeetingData(
   framesetUrl: string,
   title: string,
   sessionName: string,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   // フレームセット HTML を取得（Shift_JIS）
   const framesetHtml = await fetchShiftJisPage(framesetUrl);
@@ -464,7 +464,7 @@ export async function fetchHtmlMeetingData(
   if (!heldOn) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(sessionName),
     heldOn,
@@ -482,7 +482,7 @@ export async function fetchPdfMeetingData(
   pdfUrl: string,
   title: string,
   sessionName: string,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const buffer = await fetchBinary(pdfUrl);
   if (!buffer) return null;
@@ -511,7 +511,7 @@ export async function fetchPdfMeetingData(
   const pdfId = pdfUrl.split("/").pop()?.replace(/\.pdf$/i, "") ?? "unknown";
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(sessionName),
     heldOn,
@@ -581,20 +581,20 @@ export async function fetchMeetingData(
     title: string;
     sessionName: string;
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   if (params.format === "html") {
     return fetchHtmlMeetingData(
       params.url,
       params.title,
       params.sessionName,
-      municipalityId,
+      municipalityCode,
     );
   }
   return fetchPdfMeetingData(
     params.url,
     params.title,
     params.sessionName,
-    municipalityId,
+    municipalityCode,
   );
 }

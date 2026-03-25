@@ -361,7 +361,7 @@ async function fetchDocText(docUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   file: ShinanoFile,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   let text: string | null;
 
@@ -391,7 +391,7 @@ export async function fetchMeetingData(
   const externalId = fileName ? `shinano_${decodeURIComponent(fileName)}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: file.title,
     meetingType: file.meetingType,
     heldOn: file.heldOn,

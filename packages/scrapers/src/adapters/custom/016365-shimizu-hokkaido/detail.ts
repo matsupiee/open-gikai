@@ -257,7 +257,7 @@ export function parseStatements(text: string): ParsedStatement[] {
  */
 export async function fetchMeetingData(
   meeting: ShimizuHokkaidoMeeting,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const html = await fetchPage(meeting.pageUrl);
   if (!html) return null;
@@ -283,7 +283,7 @@ export async function fetchMeetingData(
   if (statements.length === 0) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(title),
     heldOn,

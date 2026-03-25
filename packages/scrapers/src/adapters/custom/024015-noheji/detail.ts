@@ -251,7 +251,7 @@ export function extractHeldOnFromLinkText(
  */
 export async function fetchMeetingData(
   doc: NohejiDocument,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(doc.downloadUrl);
   if (!text) return null;
@@ -275,7 +275,7 @@ export async function fetchMeetingData(
   const title = `${doc.sessionTitle} ${doc.linkText}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(doc.sessionTitle),
     heldOn,

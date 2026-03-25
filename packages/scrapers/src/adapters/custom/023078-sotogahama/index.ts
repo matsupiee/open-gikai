@@ -30,8 +30,8 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const doc = detailParams as unknown as SotogahamaDocument;
-    return fetchMeetingData(doc, municipalityId);
+    return fetchMeetingData(doc, municipalityCode);
   },
 };

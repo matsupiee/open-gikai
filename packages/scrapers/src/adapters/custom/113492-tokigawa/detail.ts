@@ -295,7 +295,7 @@ export function parseStatements(text: string): ParsedStatement[] {
  */
 export async function fetchMeetingData(
   meeting: TokigawaMeeting,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const html = await fetchPage(meeting.fileUrl);
   if (!html) return null;
@@ -307,7 +307,7 @@ export async function fetchMeetingData(
   const externalId = `tokigawa_${baseName}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.meetingTitle,
     meetingType: detectMeetingType(meeting.meetingTitle),
     heldOn: meeting.heldOn,

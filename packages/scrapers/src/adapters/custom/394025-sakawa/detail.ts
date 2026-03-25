@@ -324,7 +324,7 @@ function buildExternalId(meeting: SakawaMeeting): string {
  */
 export async function fetchMeetingData(
   meeting: SakawaMeeting,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(meeting.pdfUrl);
   if (!text) return null;
@@ -345,7 +345,7 @@ export async function fetchMeetingData(
   const meetingType = title.includes("臨時") ? "extraordinary" : "plenary";
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType,
     heldOn,

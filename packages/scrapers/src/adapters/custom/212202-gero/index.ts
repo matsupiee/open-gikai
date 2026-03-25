@@ -50,7 +50,7 @@ export const adapter: ScraperAdapter = {
     return records;
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as {
       pdfUrl: string;
       title: string;
@@ -93,7 +93,7 @@ export const adapter: ScraperAdapter = {
     const title = `${params.title} ${cleanLinkText}`;
 
     return {
-      municipalityId,
+      municipalityCode,
       title,
       meetingType: detectMeetingType(params.title, params.section),
       heldOn: params.heldOn,

@@ -19,7 +19,7 @@ export const adapter: ScraperAdapter = {
     return fetchMeetingList(baseUrl, year);
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
-    return fetchMeetingData(detailParams, municipalityId);
+  async fetchDetail({ detailParams, municipalityCode }) {
+    return fetchMeetingData(detailParams, municipalityCode);
   },
 };

@@ -233,7 +233,7 @@ export function parseStatements(text: string): ParsedStatement[] {
  */
 export async function fetchMeetingData(
   params: ShimonitaDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   if (!params.heldOn) return null;
 
@@ -257,7 +257,7 @@ export async function fetchMeetingData(
   if (statements.length === 0) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

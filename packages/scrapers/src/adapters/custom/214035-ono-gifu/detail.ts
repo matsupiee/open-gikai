@@ -212,7 +212,7 @@ export function extractHeldOn(text: string): string | null {
  */
 export async function fetchMeetingData(
   meeting: OnoGifuMeeting,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(meeting.pdfUrl);
   if (!text) return null;
@@ -230,7 +230,7 @@ export async function fetchMeetingData(
   const externalId = fileName ? `ono-gifu_${fileName}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: meeting.meetingType,
     heldOn,

@@ -233,7 +233,7 @@ async function extractPdfContent(
 export async function fetchHtmlDetailMeetingData(
   detailUrl: string,
   title: string,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const html = await fetchPage(detailUrl);
   if (!html) return null;
@@ -281,7 +281,7 @@ export async function fetchHtmlDetailMeetingData(
     pdfUrls[0]?.split("/").pop()?.replace(/\.pdf$/i, "") ?? "unknown";
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(title),
     heldOn,
@@ -297,7 +297,7 @@ export async function fetchHtmlDetailMeetingData(
 export async function fetchDirectPdfMeetingData(
   pdfUrl: string,
   title: string,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const result = await extractPdfContent(pdfUrl);
   if (!result) return null;
@@ -312,7 +312,7 @@ export async function fetchDirectPdfMeetingData(
   const pdfId = pdfUrl.split("/").pop()?.replace(/\.pdf$/i, "") ?? "unknown";
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(title),
     heldOn,
@@ -331,10 +331,10 @@ export async function fetchMeetingData(
     format: "html" | "pdf";
     title: string;
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   if (params.format === "html") {
-    return fetchHtmlDetailMeetingData(params.url, params.title, municipalityId);
+    return fetchHtmlDetailMeetingData(params.url, params.title, municipalityCode);
   }
-  return fetchDirectPdfMeetingData(params.url, params.title, municipalityId);
+  return fetchDirectPdfMeetingData(params.url, params.title, municipalityCode);
 }

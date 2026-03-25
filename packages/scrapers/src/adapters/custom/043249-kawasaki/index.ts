@@ -36,11 +36,11 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as
       | { type: "pdf"; pdfUrl: string; title: string; sessionTitle: string; heldOn: string }
       | { type: "html"; pageUrl: string; title: string; heldOn: string | null };
 
-    return fetchMeetingData(params, municipalityId);
+    return fetchMeetingData(params, municipalityCode);
   },
 };

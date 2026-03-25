@@ -36,7 +36,7 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const { baseUrl, fino, unid, title, dateLabel } = detailParams as {
       baseUrl: string;
       fino: string;
@@ -45,6 +45,6 @@ export const adapter: ScraperAdapter = {
       title: string;
       dateLabel: string;
     };
-    return fetchMeetingDetail(baseUrl, fino, municipalityId, unid, title, dateLabel);
+    return fetchMeetingDetail(baseUrl, fino, municipalityCode, unid, title, dateLabel);
   },
 };

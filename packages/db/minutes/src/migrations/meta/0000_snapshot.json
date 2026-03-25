@@ -1,14 +1,14 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "649c792a-1d4e-4cd7-9fcb-8150610a190c",
+  "id": "9083dea4-20bb-42cb-951b-738212a05f99",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "municipalities": {
       "name": "municipalities",
       "columns": {
-        "id": {
-          "name": "id",
+        "code": {
+          "name": "code",
           "type": "text",
           "primaryKey": true,
           "notNull": true,
@@ -28,13 +28,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "code": {
-          "name": "code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "name": {
           "name": "name",
           "type": "text",
@@ -49,11 +42,11 @@
           "notNull": true,
           "autoincrement": false
         },
-        "system_type": {
-          "name": "system_type",
+        "region_slug": {
+          "name": "region_slug",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "base_url": {
@@ -87,32 +80,10 @@
         }
       },
       "indexes": {
-        "municipalities_code_idx": {
-          "name": "municipalities_code_idx",
-          "columns": [
-            "code"
-          ],
-          "isUnique": true
-        },
         "municipalities_prefecture_idx": {
           "name": "municipalities_prefecture_idx",
           "columns": [
             "prefecture"
-          ],
-          "isUnique": false
-        },
-        "municipalities_system_type_idx": {
-          "name": "municipalities_system_type_idx",
-          "columns": [
-            "system_type"
-          ],
-          "isUnique": false
-        },
-        "municipalities_enabled_system_type_idx": {
-          "name": "municipalities_enabled_system_type_idx",
-          "columns": [
-            "enabled",
-            "system_type"
           ],
           "isUnique": false
         }
@@ -146,8 +117,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "municipality_id": {
-          "name": "municipality_id",
+        "municipality_code": {
+          "name": "municipality_code",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -208,7 +179,7 @@
         "meetings_municipality_external_id_idx": {
           "name": "meetings_municipality_external_id_idx",
           "columns": [
-            "municipality_id",
+            "municipality_code",
             "external_id"
           ],
           "isUnique": true
@@ -231,13 +202,27 @@
         "meetings_municipality_held_on_idx": {
           "name": "meetings_municipality_held_on_idx",
           "columns": [
-            "municipality_id",
+            "municipality_code",
             "held_on"
           ],
           "isUnique": false
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "meetings_municipality_code_municipalities_code_fk": {
+          "name": "meetings_municipality_code_municipalities_code_fk",
+          "tableFrom": "meetings",
+          "tableTo": "municipalities",
+          "columnsFrom": [
+            "municipality_code"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -350,131 +335,6 @@
           "name": "statements_speaker_name_idx",
           "columns": [
             "speaker_name"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "minute_files": {
-      "name": "minute_files",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "municipality_code": {
-          "name": "municipality_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "meeting_id": {
-          "name": "meeting_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "r2_key": {
-          "name": "r2_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "source_url": {
-          "name": "source_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "content_type": {
-          "name": "content_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "file_size": {
-          "name": "file_size",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "upload_status": {
-          "name": "upload_status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'pending'"
-        },
-        "error_message": {
-          "name": "error_message",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "minute_files_r2_key_idx": {
-          "name": "minute_files_r2_key_idx",
-          "columns": [
-            "r2_key"
-          ],
-          "isUnique": true
-        },
-        "minute_files_municipality_code_idx": {
-          "name": "minute_files_municipality_code_idx",
-          "columns": [
-            "municipality_code"
-          ],
-          "isUnique": false
-        },
-        "minute_files_meeting_id_idx": {
-          "name": "minute_files_meeting_id_idx",
-          "columns": [
-            "meeting_id"
-          ],
-          "isUnique": false
-        },
-        "minute_files_upload_status_idx": {
-          "name": "minute_files_upload_status_idx",
-          "columns": [
-            "upload_status"
-          ],
-          "isUnique": false
-        },
-        "minute_files_municipality_code_upload_status_idx": {
-          "name": "minute_files_municipality_code_upload_status_idx",
-          "columns": [
-            "municipality_code",
-            "upload_status"
           ],
           "isUnique": false
         }

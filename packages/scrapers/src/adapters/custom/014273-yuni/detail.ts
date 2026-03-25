@@ -281,7 +281,7 @@ export async function fetchMeetingData(
     pdfUrl: string;
     meetingType: string;
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const buffer = await fetchBinary(params.pdfUrl);
   if (!buffer) return null;
@@ -311,7 +311,7 @@ export async function fetchMeetingData(
   const pdfId = params.pdfUrl.split("/").pop()?.replace(/\.pdf$/i, "") ?? "unknown";
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(title) || params.meetingType,
     heldOn,

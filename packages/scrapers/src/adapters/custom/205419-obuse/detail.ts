@@ -244,7 +244,7 @@ export interface ObusePdfDetailParams {
  */
 export async function fetchMeetingData(
   params: ObusePdfDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(params.pdfUrl);
   if (!text) return null;
@@ -271,7 +271,7 @@ export async function fetchMeetingData(
   const externalId = `obuse_${urlPath}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.sessionTitle,
     meetingType: detectMeetingType(params.sessionTitle),
     heldOn,

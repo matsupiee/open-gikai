@@ -297,7 +297,7 @@ export function extractMeta(html: string): { title: string | null; heldOn: strin
  */
 export async function fetchMeetingData(
   record: ShimantoRecord,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const html = await fetchPage(record.detailUrl);
   if (!html) return null;
@@ -324,7 +324,7 @@ export async function fetchMeetingData(
   const externalId = `shimanto_${record.hdnId}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(title),
     heldOn,

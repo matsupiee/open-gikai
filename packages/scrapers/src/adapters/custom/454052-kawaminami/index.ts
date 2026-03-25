@@ -24,8 +24,8 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const record = detailParams as unknown as KawaminamiPdfRecord;
-    return buildMeetingData(record, municipalityId);
+    return buildMeetingData(record, municipalityCode);
   },
 };

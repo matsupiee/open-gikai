@@ -22,10 +22,8 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:migrate": "drizzle-kit migrate",
-    "build:sqlite": "bun src/build-sqlite.ts",
-    "upload:r2": "bun src/upload-r2.ts",
-    "db:seed": "bun src/seeds/seed-municipality.ts",
-    "db:seed-municipality": "bun src/seeds/seed-municipality.ts"
+    "build:sqlite": "bun src/seeds/build-sqlite.ts",
+    "upload:r2": "bun src/upload-r2.ts"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^3.3.0",

@@ -214,7 +214,7 @@ export function parseStatements(html: string): ParsedStatement[] {
  */
 export async function fetchMeetingData(
   doc: YawatahamaDocument,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const url = doc.detailUrl;
   const html = await fetchPage(url);
@@ -237,7 +237,7 @@ export async function fetchMeetingData(
   const externalId = pathCodeMatch ? `yawatahama_${pathCodeMatch[1]}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(title),
     heldOn: heldOn ?? `${doc.year}-01-01`,

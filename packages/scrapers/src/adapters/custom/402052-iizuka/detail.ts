@@ -21,10 +21,10 @@ export interface IizukaDetailParams {
  */
 export function buildMeetingData(
   params: IizukaDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): MeetingData {
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

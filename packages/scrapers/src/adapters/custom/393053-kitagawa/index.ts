@@ -28,7 +28,7 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as {
       hdnKey: string;
       title: string;
@@ -37,7 +37,7 @@ export const adapter: ScraperAdapter = {
     };
     return fetchMeetingData(
       { hdnKey: params.hdnKey, title: params.title, detailUrl: params.detailUrl },
-      municipalityId,
+      municipalityCode,
       params.year
     );
   },

@@ -243,7 +243,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   params: YamanouchiDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   // 目次 PDF はスキップ
   if (params.type === "目次") return null;
@@ -261,7 +261,7 @@ export async function buildMeetingData(
   const title = `${params.sessionName} ${params.type}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: params.meetingType,
     heldOn,

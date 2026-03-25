@@ -196,7 +196,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: UchinadaMeeting,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   // heldOn が null の場合は null を返す（"1970-01-01" 禁止）
   if (!meeting.heldOn) return null;
@@ -217,7 +217,7 @@ export async function fetchMeetingData(
     : meeting.pageTitle;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(meeting.pageTitle),
     heldOn: meeting.heldOn,

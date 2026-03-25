@@ -35,8 +35,8 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const meeting = detailParams as unknown as MotubuMeeting;
-    return fetchMeetingData(meeting, municipalityId);
+    return fetchMeetingData(meeting, municipalityCode);
   },
 };

@@ -219,7 +219,7 @@ describe("buildMeetingData", () => {
     const result = buildMeetingData(entry, "municipality_id_001", 2025);
 
     expect(result).not.toBeNull();
-    expect(result!.municipalityId).toBe("municipality_id_001");
+    expect(result!.municipalityCode).toBe("municipality_id_001");
     expect(result!.title).toBe("第1回臨時会（令和7年1月20日）");
     expect(result!.meetingType).toBe("extraordinary");
     expect(result!.heldOn).toBe("2025-01-20");

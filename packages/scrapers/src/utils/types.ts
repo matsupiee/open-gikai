@@ -13,7 +13,7 @@ export interface ParsedStatement {
 }
 
 export interface MeetingData {
-  municipalityId: string;
+  municipalityCode: string;
   title: string;
   meetingType: string;
   heldOn: string; // YYYY-MM-DD

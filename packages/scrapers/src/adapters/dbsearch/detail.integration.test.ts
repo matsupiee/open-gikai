@@ -131,7 +131,7 @@ describe("fetchMeetingDetail integration", () => {
     expect(result!.heldOn).toBe("2024-12-17");
     expect(result!.meetingType).toBe("plenary");
     expect(result!.externalId).toBe("dbsearch_www.town.otofuke.hokkaido.dbsr.jp_1673");
-    expect(result!.municipalityId).toBe("test-municipality-id");
+    expect(result!.municipalityCode).toBe("test-municipality-id");
     expect(result!.statements.length).toBeGreaterThan(0);
     expect(result!.statements[0]!.speakerName).toBe("高瀬博文");
   });

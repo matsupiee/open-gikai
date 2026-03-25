@@ -224,7 +224,7 @@ export async function fetchMeetingData(
     heldOn: string | null;
     meetingType: string;
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   // heldOn が解析できない場合は null を返す
   if (!meeting.heldOn) return null;
@@ -241,7 +241,7 @@ export async function fetchMeetingData(
   const externalId = filename ? `okutama_${filename}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title) || meeting.meetingType,
     heldOn: meeting.heldOn,

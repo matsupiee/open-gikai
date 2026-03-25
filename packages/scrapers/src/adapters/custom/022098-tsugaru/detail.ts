@@ -219,7 +219,7 @@ function extractExternalIdKey(pdfPath: string): string | null {
  */
 export async function fetchMeetingData(
   params: TsugaruDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(params.pdfUrl);
   if (!text) return null;
@@ -243,7 +243,7 @@ export async function fetchMeetingData(
   const externalId = idKey ? `tsugaru_${idKey}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: detectMeetingType(params.title),
     heldOn,

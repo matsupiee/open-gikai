@@ -226,7 +226,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   session: TsumagoiSessionInfo,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(session.pdfUrl);
   if (!text) return null;
@@ -242,7 +242,7 @@ export async function fetchMeetingData(
   const heldOn = `${session.year}-${String(session.month).padStart(2, "0")}-01`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: session.title,
     meetingType: session.meetingType,
     heldOn,
@@ -257,7 +257,7 @@ export async function fetchMeetingData(
  */
 export async function buildMeetingData(
   params: TsumagoiDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const session: TsumagoiSessionInfo = {
     title: params.title,
@@ -266,5 +266,5 @@ export async function buildMeetingData(
     pdfUrl: params.pdfUrl,
     meetingType: params.meetingType,
   };
-  return fetchMeetingData(session, municipalityId);
+  return fetchMeetingData(session, municipalityCode);
 }

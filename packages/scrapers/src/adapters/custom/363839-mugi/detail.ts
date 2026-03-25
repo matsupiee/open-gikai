@@ -214,7 +214,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   params: MugiPdfRecord,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   // 開催日がない場合は処理しない
   if (!params.heldOn) return null;
@@ -229,7 +229,7 @@ export async function buildMeetingData(
   const pdfFileName = params.pdfUrl.split("/").pop()?.replace(".pdf", "") ?? "unknown";
 
   return {
-    municipalityId,
+    municipalityCode,
     title: `${params.title} ${params.pdfLabel}`.trim(),
     meetingType: params.meetingType,
     heldOn: params.heldOn,

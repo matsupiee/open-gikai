@@ -140,7 +140,7 @@ export function buildStatements(
  */
 export function buildMeetingData(
   record: KagamiishiListRecord,
-  municipalityId: string,
+  municipalityCode: string,
 ): MeetingData | null {
   const heldOn = parseHeldOn(record.scheduleLabel, record.councilYear);
   if (!heldOn) return null;
@@ -157,7 +157,7 @@ export function buildMeetingData(
   const externalId = `kagamiishi_${record.councilId}_${record.scheduleId}_${record.playlistId}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: record.councilLabel,
     meetingType: classifyMeetingType(record.councilLabel),
     heldOn,

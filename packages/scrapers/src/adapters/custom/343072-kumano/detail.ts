@@ -19,12 +19,12 @@ export interface KumanoDetailParams {
  */
 export function buildMeetingData(
   params: KumanoDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): MeetingData | null {
   if (!params.heldOn) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

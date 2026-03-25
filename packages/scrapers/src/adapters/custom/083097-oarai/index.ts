@@ -24,8 +24,8 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const record = detailParams as unknown as OaraiPdfRecord;
-    return buildMeetingData(record, municipalityId);
+    return buildMeetingData(record, municipalityCode);
   },
 };

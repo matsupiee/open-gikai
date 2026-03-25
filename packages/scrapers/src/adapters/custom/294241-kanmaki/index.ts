@@ -30,8 +30,8 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as unknown as KanmakiDetailParams;
-    return buildMeetingData(params, municipalityId);
+    return buildMeetingData(params, municipalityCode);
   },
 };

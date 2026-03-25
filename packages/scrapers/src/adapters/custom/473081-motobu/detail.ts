@@ -314,7 +314,7 @@ async function fetchDocxText(docxUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: MotubuMeeting,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   if (!meeting.year) return null;
 
@@ -343,7 +343,7 @@ export async function fetchMeetingData(
   const heldOn = meeting.heldOn ?? null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: meeting.meetingType,
     heldOn: heldOn ?? `${meeting.year}-01-01`,

@@ -29,7 +29,7 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }): Promise<MeetingData | null> {
+  async fetchDetail({ detailParams, municipalityCode }): Promise<MeetingData | null> {
     const params = detailParams as {
       pdfUrl: string;
       filename: string;
@@ -39,7 +39,7 @@ export const adapter: ScraperAdapter = {
 
     const meetings = await fetchMeetingDataFromPdf(
       { pdfUrl: params.pdfUrl, filename: params.filename, yearMonth: params.yearMonth },
-      municipalityId
+      municipalityCode
     );
 
     // sessionTitle で該当セッションの MeetingData を特定して返す

@@ -224,7 +224,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   params: KamiamakusaDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
   detailHtml: string,
 ): Promise<MeetingData | null> {
   const pdfUrls = parsePdfLinks(detailHtml);
@@ -266,7 +266,7 @@ export async function buildMeetingData(
   if (allStatements.length === 0) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType,
     heldOn,

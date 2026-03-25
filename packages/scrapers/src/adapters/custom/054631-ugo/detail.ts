@@ -23,7 +23,7 @@ export interface UgoDetailParams {
  */
 export function buildMeetingData(
   params: UgoDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): MeetingData | null {
   if (params.heldOn === null) return null;
 
@@ -31,7 +31,7 @@ export function buildMeetingData(
   const externalId = `ugo_${encodeURIComponent(params.yearPageUrl)}_${encodeURIComponent(params.meetingName)}_${encodeURIComponent(params.pdfLabel)}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

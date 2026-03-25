@@ -32,7 +32,7 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as {
       pdfUrl: string;
       label: string;
@@ -48,6 +48,6 @@ export const adapter: ScraperAdapter = {
       postTitle: params.postTitle,
     };
 
-    return buildMeetingData(entry, municipalityId, params.year);
+    return buildMeetingData(entry, municipalityCode, params.year);
   },
 };

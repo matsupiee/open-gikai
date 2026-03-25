@@ -341,7 +341,7 @@ async function fetchPdfPages(pdfUrl: string): Promise<string[] | null> {
  */
 export async function fetchMeetingData(
   meeting: MakkariMeeting,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   if (!meeting.heldOn) return null;
 
@@ -357,7 +357,7 @@ export async function fetchMeetingData(
   const externalId = fileName ? `makkari_${fileName}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
     heldOn: meeting.heldOn,

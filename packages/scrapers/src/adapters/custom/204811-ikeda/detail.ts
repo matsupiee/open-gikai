@@ -234,7 +234,7 @@ function extractExternalIdKey(pdfUrl: string): string | null {
  */
 export async function fetchMeetingData(
   meeting: IkedaMeeting,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(meeting.pdfUrl);
   if (!text) return null;
@@ -246,7 +246,7 @@ export async function fetchMeetingData(
   const externalId = idKey ? `ikeda_${idKey.toLowerCase()}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.section),
     heldOn: meeting.heldOn,

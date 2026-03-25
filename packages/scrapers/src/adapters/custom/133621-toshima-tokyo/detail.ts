@@ -228,7 +228,7 @@ export function buildHeldOn(year: number): string {
  */
 export async function fetchMeetingData(
   meeting: ToshimaMeeting,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(meeting.pdfUrl);
   if (!text) return null;
@@ -240,7 +240,7 @@ export async function fetchMeetingData(
   const heldOn = buildHeldOn(meeting.year);
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
     heldOn,

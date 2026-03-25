@@ -240,7 +240,7 @@ export function extractHeldOn(html: string): string | null {
  */
 export async function fetchMeetingData(
   meeting: OganoMeeting,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const html = await fetchPage(meeting.mainUrl);
   if (!html) return null;
@@ -257,7 +257,7 @@ export async function fetchMeetingData(
   const externalId = `ogano_${baseName}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
     heldOn,

@@ -31,12 +31,12 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const { gijirokuId, title, heldOn } = detailParams as {
       gijirokuId: string;
       title: string;
       heldOn: string;
     };
-    return fetchMeetingData({ gijirokuId, title, heldOn }, municipalityId);
+    return fetchMeetingData({ gijirokuId, title, heldOn }, municipalityCode);
   },
 };

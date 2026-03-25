@@ -216,7 +216,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   params: KoraDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   await delay(1000);
 
@@ -231,7 +231,7 @@ export async function buildMeetingData(
   const externalId = `kora_${fileName}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: `${params.sessionTitle} ${params.linkText}`.trim(),
     meetingType: params.meetingType,
     heldOn: params.heldOn ?? "",

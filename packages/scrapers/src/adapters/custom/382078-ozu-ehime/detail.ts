@@ -305,7 +305,7 @@ async function fetchAllPages(baseUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   doc: OzuDocument,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const html = await fetchAllPages(doc.detailUrl);
   if (!html) return null;
@@ -319,7 +319,7 @@ export async function fetchMeetingData(
   if (statements.length === 0) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: doc.sessionTitle,
     meetingType: detectMeetingType(doc.sessionTitle),
     heldOn: heldOn ?? doc.heldYearMonth + "-01",

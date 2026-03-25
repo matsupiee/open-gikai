@@ -191,7 +191,7 @@ describe("buildMeetingData", () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.municipalityId).toBe("muni-392120");
+    expect(result!.municipalityCode).toBe("muni-392120");
     expect(result!.title).toBe("令和6年香美市議会定例会3月定例会議 3月5日　一般質問");
     expect(result!.meetingType).toBe("plenary");
     expect(result!.heldOn).toBe("2024-03-05");

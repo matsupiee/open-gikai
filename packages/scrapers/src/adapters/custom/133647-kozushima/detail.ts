@@ -250,7 +250,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: KozushimaMeeting,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const html = await fetchPage(meeting.pageUrl);
   if (!html) return null;
@@ -270,7 +270,7 @@ export async function fetchMeetingData(
   const externalId = extractExternalId(pdfUrl);
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
     heldOn,

@@ -18,7 +18,7 @@ describe("294462-tenkawa adapter", () => {
   it("fetchDetail は null を返す（呼ばれることはないが念のため）", async () => {
     const result = await adapter.fetchDetail({
       detailParams: {},
-      municipalityId: "294462",
+      municipalityCode: "294462",
     });
     expect(result).toBeNull();
   });

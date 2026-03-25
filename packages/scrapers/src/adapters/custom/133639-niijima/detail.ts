@@ -20,7 +20,7 @@ import type { NijimaRecord } from "./list";
  */
 export function fetchMeetingData(
   _record: NijimaRecord,
-  _municipalityId: string,
+  _municipalityCode: string,
 ): Promise<MeetingData | null> {
   // テキスト会議録なし（映像配信専用）
   return Promise.resolve(null);

@@ -162,7 +162,7 @@ describe("fetchMeetingDetail integration", () => {
     expect(result!.heldOn).toBe("2024-12-26");
     expect(result!.meetingType).toBe("committee");
     expect(result!.externalId).toBe("gijiroku_tsukuba.gijiroku.com_K_R06122614011");
-    expect(result!.municipalityId).toBe("test-municipality-id");
+    expect(result!.municipalityCode).toBe("test-municipality-id");
     expect(result!.statements.length).toBeGreaterThan(0);
     expect(result!.statements[0]!.speakerName).toBe("塩田");
 

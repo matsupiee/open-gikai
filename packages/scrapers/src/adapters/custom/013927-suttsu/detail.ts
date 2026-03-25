@@ -291,7 +291,7 @@ async function extractTextFromPdf(buffer: ArrayBuffer): Promise<string | null> {
  */
 export async function fetchMeetingData(
   record: SuttuPdfRecord,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const buffer = await fetchBinary(record.pdfUrl);
   if (!buffer) return null;
@@ -313,7 +313,7 @@ export async function fetchMeetingData(
   const externalId = fileName ? `suttsu_${fileName}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(title),
     heldOn,

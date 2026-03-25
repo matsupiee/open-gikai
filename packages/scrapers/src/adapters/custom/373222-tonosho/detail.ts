@@ -226,7 +226,7 @@ async function fetchPdfText(pdfUrl: string, referer: string): Promise<string | n
  */
 export async function fetchMeetingData(
   meeting: TonoshoMeeting,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const referer = meeting.pdfUrl.replace(/\/material\/files.*$/, "/");
   const text = await fetchPdfText(meeting.pdfUrl, referer);
@@ -239,7 +239,7 @@ export async function fetchMeetingData(
   const externalId = idKey ? `tonosho_${idKey}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.meetingName),
     heldOn: meeting.heldOn,

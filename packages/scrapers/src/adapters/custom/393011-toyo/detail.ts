@@ -256,7 +256,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: ToyoPdfLink,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const heldOn = parseDateFromLinkText(meeting.text);
   if (!heldOn) return null;
@@ -276,7 +276,7 @@ export async function fetchMeetingData(
     : meeting.text.replace(/\s+/g, " ").trim();
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(meeting.session || meeting.text),
     heldOn,

@@ -234,7 +234,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: OishidaMeeting,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   if (!meeting.heldOn) return null;
 
@@ -251,7 +251,7 @@ export async function fetchMeetingData(
   const externalId = pdfFileName ? `oishida_${pdfFileName}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
     heldOn: meeting.heldOn as string,

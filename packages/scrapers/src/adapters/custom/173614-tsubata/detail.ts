@@ -196,7 +196,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: TsubataMeeting,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   // heldOn が null の場合は null を返す（"1970-01-01" 禁止）
   if (!meeting.heldOn) return null;
@@ -212,7 +212,7 @@ export async function fetchMeetingData(
   const externalId = idMatch ? `tsubata_${idMatch[1]}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
     heldOn: meeting.heldOn,

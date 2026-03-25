@@ -24,8 +24,8 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const meeting = detailParams as unknown as KawatanaMeeting;
-    return buildMeetingData(meeting, municipalityId);
+    return buildMeetingData(meeting, municipalityCode);
   },
 };

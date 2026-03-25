@@ -18,7 +18,7 @@ describe("buildMeetingData", () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.municipalityId).toBe("103845");
+    expect(result!.municipalityCode).toBe("103845");
     expect(result!.title).toBe("第４回定例会（令和６年１２月） 第1号");
     expect(result!.meetingType).toBe("plenary");
     expect(result!.heldOn).toBe("2024-12-06");

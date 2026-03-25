@@ -77,7 +77,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   doc: SotogahamaDocument,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   if (!doc.heldOn) return null;
 
@@ -95,7 +95,7 @@ export async function fetchMeetingData(
       : `外ヶ浜町議会一般質問通告表 ${doc.filename}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: "plenary",
     heldOn: doc.heldOn,

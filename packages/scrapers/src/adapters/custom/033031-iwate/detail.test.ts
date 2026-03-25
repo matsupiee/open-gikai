@@ -49,7 +49,7 @@ describe("fetchMeetingData", () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.municipalityId).toBe("muni_033031");
+    expect(result!.municipalityCode).toBe("muni_033031");
     expect(result!.heldOn).toBe("2024-12-10");
     expect(result!.externalId).toBe("discussnet_ssp_625_101_201");
     expect(result!.sourceUrl).toContain("council_id=101");

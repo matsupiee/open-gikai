@@ -22,7 +22,7 @@ export interface KusatsuDetailParams {
  */
 export function buildMeetingData(
   params: KusatsuDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): MeetingData | null {
   if (!params.year) return null;
 
@@ -31,7 +31,7 @@ export function buildMeetingData(
   if (!heldOn) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn,

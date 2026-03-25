@@ -22,7 +22,7 @@ export interface ShowaGunmaDetailParams {
  */
 export function buildMeetingData(
   params: ShowaGunmaDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): MeetingData | null {
   if (!params.year || params.year <= 0) return null;
 
@@ -30,7 +30,7 @@ export function buildMeetingData(
   const heldOn = parseDateFromPdfUrl(params.pdfUrl) ?? `${params.year}-01-01`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn,

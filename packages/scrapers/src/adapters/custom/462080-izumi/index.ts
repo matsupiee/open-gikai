@@ -24,12 +24,12 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const { councilId, title, heldOn } = detailParams as {
       councilId: number;
       title: string;
       heldOn: string;
     };
-    return fetchMeetingData({ councilId, title, heldOn }, municipalityId);
+    return fetchMeetingData({ councilId, title, heldOn }, municipalityCode);
   },
 };
