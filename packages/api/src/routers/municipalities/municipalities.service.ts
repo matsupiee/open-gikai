@@ -1,4 +1,4 @@
-import type { ShardedMinutesDb } from "@open-gikai/db-minutes";
+import type { MinutesDb } from "@open-gikai/db-minutes";
 import { municipalities } from "@open-gikai/db-minutes";
 import { and, asc, count, eq, like, or, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -22,18 +22,12 @@ export interface MunicipalitiesListResponse {
 }
 
 export async function listMunicipalities(
-  shardedDb: ShardedMinutesDb,
+  db: MinutesDb,
   input: z.infer<typeof municipalitiesListSchema>,
   isAdmin: boolean
 ): Promise<MunicipalitiesListResponse> {
   const limit = input.limit ?? 50;
   const offset = input.offset ?? 0;
-
-  // index.sqlite には自治体マスタのみがある（meetings は含まれない）ため、
-  // 全シャードから meetingCount を集計する必要がある。
-  // ただし meetingCount は概算で良いため、index.sqlite で自治体一覧を取得し、
-  // meetingCount は 0 で返す（将来的にはキャッシュで対応）。
-  const db = shardedDb.getIndexDb();
 
   const conditions = [eq(municipalities.enabled, true)];
 

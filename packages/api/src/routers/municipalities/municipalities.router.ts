@@ -5,5 +5,5 @@ import { listMunicipalities } from "./municipalities.service";
 export const municipalitiesRouter = {
   list: publicProcedure
     .input(municipalitiesListSchema)
-    .handler(({ input, context }) => listMunicipalities(context.shardedMinutesDb, input, context.session?.user?.role === "admin")),
+    .handler(({ input, context }) => listMunicipalities(context.minutesDb, input, context.session?.user?.role === "admin")),
 };
