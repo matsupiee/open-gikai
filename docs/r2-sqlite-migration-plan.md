@@ -182,12 +182,13 @@ const results = db.prepare(`
 
 以下を順番に実行する
 - スクレイピング進捗管理画面の削除
-- system_types、statement_chunks、scraper_jobs、scraper_job_logsの削除
 - apps/scraper-workerの削除
+- system_types、statement_chunks、scraper_jobs、scraper_job_logsの削除
+- packages/dbをpackages/db/authに移行
 
 ### フェーズ 2: ローカル一括ビルド + R2 初期投入
 
-1. **`packages/db-sqlite`** パッケージを新規作成
+1. **`packages/db/minutes`** パッケージを新規作成
    - SQLite スキーマ定義（Drizzle ORM の `better-sqlite3` dialect）
    - SQLite ファイルのビルダー関数
    - FTS5 インデックス構築ロジック（2-gram トークナイズ）
@@ -202,24 +203,20 @@ const results = db.prepare(`
    - ローカルで `scrape -> build sqlite -> upload` を通しで実行する
    - まずは手動実行で再現性を固め、安定後に GitHub Actions への移行を検討する
 
-### フェーズ 3: Web アプリの R2 / D1 対応
+### フェーズ 3: Web アプリの R2 対応
 
-1. **`packages/r2-client`** パッケージ（または `packages/api` 内に追加）
-   - R2 からSQLiteファイルをダウンロードする関数
+1. **`packages/api`** を修正
+   - R2 からSQLiteファイルをダウンロードする関数を実装
    - `manifests/latest.json` を取得して対象シャードを解決する関数
    - インメモリキャッシュ（Workers の `caches` API or KV）
-
-2. **D1 向け DB 層を追加**
-   - `packages/db` を multi-dialect 化するか、`packages/db-d1` を追加する
-   - `users`, `sessions`, `accounts`, `verifications`, `scraper_jobs`, `scraper_job_logs` を D1 スキーマとして定義する
-   - `packages/auth` の Better Auth adapter を D1 backed な Drizzle インスタンスに切り替える
-
-3. **API ルーターの更新**
-   - `statements.service.ts` を PostgreSQL クエリ → SQLite クエリに変更
+   - `statements`や`meetings` を PostgreSQL クエリ → SQLite クエリに変更
    - 検索ロジックを FTS5 ベースに書き換え
-   - 例外分割された都道府県では複数 SQLite を順に検索してマージする
 
-4. **キャッシュ戦略**
+2. **packages/db/auth**から、不要なテーブルを削除
+   - municipalities、meetings、statementsなどを削除
+   - `users`, `sessions`, `accounts`, `verifications`, `scraper_jobs`, `scraper_job_logs` を D1 スキーマとして定義する
+
+3. **キャッシュ戦略**
    - Cloudflare Workers のメモリキャッシュ（同一リクエスト内）
    - Cache API でリクエスト間キャッシュ（TTL: 1 時間）
 
