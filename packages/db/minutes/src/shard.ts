@@ -4,8 +4,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import * as schema from "./schema";
-import type { Db } from "./index";
 import { prefectureToRegion } from "./utils/region";
+
+export type Db = ReturnType<typeof drizzle<typeof schema>>;
 
 // --- Manifest type ---
 
@@ -37,9 +38,7 @@ export class ShardedMinutesDb {
 
   constructor(baseDir: string) {
     this.baseDir = baseDir;
-    this.manifest = JSON.parse(
-      readFileSync(join(baseDir, "manifest.json"), "utf-8"),
-    );
+    this.manifest = JSON.parse(readFileSync(join(baseDir, "manifest.json"), "utf-8"));
   }
 
   /**
@@ -49,9 +48,7 @@ export class ShardedMinutesDb {
    */
   getRelevantDbs(filter?: ShardFilter): Db[] {
     const years = this.resolveYears(filter?.heldOnFrom, filter?.heldOnTo);
-    const region = filter?.prefecture
-      ? prefectureToRegion(filter.prefecture)
-      : undefined;
+    const region = filter?.prefecture ? prefectureToRegion(filter.prefecture) : undefined;
 
     const paths: string[] = [];
     for (const year of years) {
@@ -92,11 +89,18 @@ export class ShardedMinutesDb {
     if (cached) return cached;
 
     const fullPath = join(this.baseDir, relativePath);
+
     const sqlite = new Database(fullPath, { readonly: true });
+    // 書き込みを速く＆安全にするために、WAL（Write-Ahead Logging）モードにする
+    // デフォルト: DBを書き換え → 失敗したら壊れる可能性
+    // WAL: ① 変更をWALファイルに書く ② 後でまとめてDBに反映
     sqlite.run("PRAGMA journal_mode = WAL;");
+    // 外部キー制約を有効にする
     sqlite.run("PRAGMA foreign_keys = ON;");
+
     const db = drizzle(sqlite, { schema, casing: "snake_case" });
     this.dbCache.set(relativePath, db);
+
     return db;
   }
 
