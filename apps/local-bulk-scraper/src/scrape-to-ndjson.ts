@@ -1,8 +1,8 @@
 /**
  * ローカル一括スクレイピング → NDJSON 出力スクリプト
  *
- * 全 enabled 自治体をスクレイピングし、meetings / statements / statement_chunks
- * の3つの NDJSON ファイルを出力する。
+ * 全 enabled 自治体をスクレイピングし、meetings / statements
+ * の NDJSON ファイルを出力する。
  *
  * 使い方:
  *   bun run scrape:ndjson
@@ -13,7 +13,6 @@
  *   bun run scrape:ndjson -- --target 011002,012025
  */
 
-import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, createWriteStream } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,10 +22,8 @@ import { createId } from "@paralleldrive/cuid2";
 import { eq, and, inArray } from "drizzle-orm";
 import dotenv from "dotenv";
 import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";
-import { getAdapter, initAdapterRegistry, buildChunksFromStatements } from "@open-gikai/scrapers";
+import { getAdapter, initAdapterRegistry } from "@open-gikai/scrapers";
 import type { SystemType } from "@open-gikai/db/schema";
-
-const EMBEDDING_BATCH_SIZE = 20;
 
 // --- Setup ---
 
@@ -34,37 +31,6 @@ const root = resolve(fileURLToPath(import.meta.url), "../../../../");
 dotenv.config({ path: resolve(root, ".env.local"), override: true });
 
 const db = createDb(process.env.DATABASE_URL!);
-
-async function generateEmbeddingsBatch(
-  texts: string[],
-  openaiApiKey: string
-): Promise<(number[] | null)[]> {
-  try {
-    const res = await fetch("https://api.openai.com/v1/embeddings", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openaiApiKey}`,
-      },
-      body: JSON.stringify({
-        input: texts.map((t) => t.slice(0, 8000)),
-        model: "text-embedding-3-small",
-      }),
-    });
-    if (!res.ok) return texts.map(() => null);
-    const data = (await res.json()) as {
-      data: { index: number; embedding: number[] }[];
-    };
-    const result: (number[] | null)[] = texts.map(() => null);
-    for (const item of data.data) {
-      result[item.index] = item.embedding;
-    }
-    return result;
-  } catch (err) {
-    console.warn(`[embeddings] batch failed:`, err instanceof Error ? err.message : err);
-    return texts.map(() => null);
-  }
-}
 
 function parseYear(): number | undefined {
   const idx = process.argv.indexOf("--year");
@@ -273,14 +239,9 @@ async function main() {
   const statementsStream = createWriteStream(
     resolve(outputDir, "statements.ndjson")
   );
-  const chunksStream = createWriteStream(
-    resolve(outputDir, "statement_chunks.ndjson")
-  );
 
-  const openaiApiKey = process.env.OPENAI_API_KEY;
   let totalMeetings = 0;
   let totalStatements = 0;
-  let totalChunks = 0;
   const failedMunicipalities: { name: string; prefecture: string; systemType: string; reason: string }[] = [];
 
   // 4. 自治体を並列スクレイピング
@@ -335,71 +296,13 @@ async function main() {
       );
       totalMeetings++;
 
-      // statements の ID を生成
-      const statementsWithIds = meetingData.statements.map((s) => ({
-        id: createId(),
-        meetingId,
-        ...s,
-      }));
-
-      // statement_chunks の生成（statements より先に生成し、chunkId を紐付ける）
-      const chunkInputs = buildChunksFromStatements(
-        statementsWithIds.map((s) => ({
-          id: s.id,
-          speakerName: s.speakerName,
-          speakerRole: s.speakerRole,
-          content: s.content,
-        }))
-      );
-
-      // chunk を生成し、statementId → chunkId のマッピングを構築
-      const stmtToChunkId = new Map<string, string>();
-
-      for (let i = 0; i < chunkInputs.length; i += EMBEDDING_BATCH_SIZE) {
-        const batch = chunkInputs.slice(i, i + EMBEDDING_BATCH_SIZE);
-
-        let embeddings: (number[] | null)[] = batch.map(() => null);
-        if (openaiApiKey) {
-          embeddings = await generateEmbeddingsBatch(
-            batch.map((c) => c.content),
-            openaiApiKey
-          );
-        }
-
-        for (let j = 0; j < batch.length; j++) {
-          const chunk = batch[j]!;
-          const chunkId = createId();
-          const contentHash = createHash("sha256")
-            .update(chunk.content)
-            .digest("hex");
-
-          // statementId → chunkId を記録
-          for (const stmtId of chunk.statementIds) {
-            stmtToChunkId.set(stmtId, chunkId);
-          }
-
-          chunksStream.write(
-            JSON.stringify({
-              id: chunkId,
-              meetingId,
-              speakerName: chunk.speakerName,
-              speakerRole: chunk.speakerRole,
-              chunkIndex: chunk.chunkIndex,
-              content: chunk.content,
-              contentHash,
-              embedding: embeddings[j] ?? null,
-            }) + "\n"
-          );
-          totalChunks++;
-        }
-      }
-
-      // statements を NDJSON に書き出し（chunkId を紐付け済み）
-      for (const s of statementsWithIds) {
+      // statements の ID を生成して NDJSON に書き出し
+      for (const s of meetingData.statements) {
+        const stmtId = createId();
         statementsStream.write(
           JSON.stringify({
-            id: s.id,
-            meetingId: s.meetingId,
+            id: stmtId,
+            meetingId,
             kind: s.kind,
             speakerName: s.speakerName,
             speakerRole: s.speakerRole,
@@ -407,7 +310,6 @@ async function main() {
             contentHash: s.contentHash,
             startOffset: s.startOffset,
             endOffset: s.endOffset,
-            chunkId: stmtToChunkId.get(s.id) ?? null,
           }) + "\n"
         );
         totalStatements++;
@@ -421,14 +323,12 @@ async function main() {
   await Promise.all([
     new Promise<void>((resolve) => meetingsStream.end(resolve)),
     new Promise<void>((resolve) => statementsStream.end(resolve)),
-    new Promise<void>((resolve) => chunksStream.end(resolve)),
   ]);
 
   log("INFO", "[scrape-to-ndjson] 完了!");
   log("INFO", `  出力先: ${outputDir}`);
   log("INFO", `  meetings: ${totalMeetings} 件`);
   log("INFO", `  statements: ${totalStatements} 件`);
-  log("INFO", `  statement_chunks: ${totalChunks} 件`);
 
   if (failedMunicipalities.length > 0) {
     log("INFO", "");

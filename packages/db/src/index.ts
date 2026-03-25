@@ -59,4 +59,4 @@ export function createDb(databaseUrl: string) {
 export type Db = ReturnType<typeof createDb>;
 
 // Re-export schema for convenience
-export { meetings, statements, statement_chunks, scraper_jobs, scraper_job_logs, municipalities, system_types } from "./schema";
+export { meetings, statements, municipalities, system_types } from "./schema";

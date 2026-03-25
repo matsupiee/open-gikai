@@ -9,7 +9,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
-import { scraper_jobs } from "./scrapers";
 import { meetings } from "./meetings";
 import { system_types } from "./system-types";
 
@@ -58,7 +57,6 @@ export const municipalities = pgTable(
 export const municipalitiesRelations = relations(
   municipalities,
   ({ many, one }) => ({
-    scraperJobs: many(scraper_jobs),
     meetings: many(meetings),
     systemTypeRecord: one(system_types, {
       fields: [municipalities.systemTypeId],

@@ -2,7 +2,7 @@
  * NDJSON → 本番 DB インポートスクリプト
  *
  * scrape-to-ndjson.ts が出力した NDJSON ファイルを読み込み、
- * meetings / statements / statement_chunks に INSERT する。
+ * meetings / statements に INSERT する。
  *
  * 使い方:
  *   bun run import:ndjson                          # 最新の output ディレクトリを使用
@@ -18,7 +18,6 @@ import { createDb } from "@open-gikai/db";
 import {
   meetings,
   statements,
-  statement_chunks,
 } from "@open-gikai/db/schema";
 import { inArray } from "drizzle-orm";
 import dotenv from "dotenv";
@@ -98,13 +97,9 @@ async function main() {
   const statementRecords = readNdjsonFile<Record<string, unknown>>(
     resolve(outputDir, "statements.ndjson")
   );
-  const chunkRecords = readNdjsonFile<Record<string, unknown>>(
-    resolve(outputDir, "statement_chunks.ndjson")
-  );
 
   console.log(`  meetings: ${meetingRecords.length} 件`);
   console.log(`  statements: ${statementRecords.length} 件`);
-  console.log(`  statement_chunks: ${chunkRecords.length} 件`);
 
   if (meetingRecords.length === 0) {
     console.log("[import-ndjson] インポートするデータがありません");
@@ -133,7 +128,7 @@ async function main() {
 
   console.log("\n[import-ndjson] インポート開始...");
 
-  // 既存データの削除（CASCADE で statements, statement_chunks も削除される）
+  // 既存データの削除（CASCADE で statements も削除される）
   console.log("  既存 meetings を削除中...");
   for (let i = 0; i < meetingIds.length; i += INSERT_BATCH_SIZE) {
     const batch = meetingIds.slice(i, i + INSERT_BATCH_SIZE);
@@ -162,27 +157,6 @@ async function main() {
       .onConflictDoNothing();
   }
 
-  // statement_chunks の INSERT（statements.chunkId → statement_chunks.id の FK があるため先に INSERT する）
-  console.log("  statement_chunks を INSERT 中...");
-  for (let i = 0; i < chunkRecords.length; i += INSERT_BATCH_SIZE) {
-    const batch = chunkRecords.slice(i, i + INSERT_BATCH_SIZE);
-    await db
-      .insert(statement_chunks)
-      .values(
-        batch.map((r) => ({
-          id: r.id as string,
-          meetingId: r.meetingId as string,
-          speakerName: (r.speakerName as string) ?? null,
-          speakerRole: (r.speakerRole as string) ?? null,
-          chunkIndex: (r.chunkIndex as number) ?? 0,
-          content: r.content as string,
-          contentHash: r.contentHash as string,
-          embedding: (r.embedding as number[]) ?? null,
-        }))
-      )
-      .onConflictDoNothing();
-  }
-
   // statements の INSERT
   console.log("  statements を INSERT 中...");
   for (let i = 0; i < statementRecords.length; i += INSERT_BATCH_SIZE) {
@@ -200,7 +174,6 @@ async function main() {
           contentHash: r.contentHash as string,
           startOffset: (r.startOffset as number) ?? null,
           endOffset: (r.endOffset as number) ?? null,
-          chunkId: (r.chunkId as string) ?? null,
         }))
       )
       .onConflictDoNothing();
@@ -209,7 +182,6 @@ async function main() {
   console.log("\n[import-ndjson] 完了!");
   console.log(`  meetings: ${meetingRecords.length} 件`);
   console.log(`  statements: ${statementRecords.length} 件`);
-  console.log(`  statement_chunks: ${chunkRecords.length} 件`);
 
   process.exit(0);
 }
