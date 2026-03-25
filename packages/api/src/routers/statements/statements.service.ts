@@ -1,4 +1,4 @@
-import type { Db } from "@open-gikai/db-minutes";
+import type { Db, ShardedMinutesDb } from "@open-gikai/db-minutes";
 import { meetings, municipalities, statements } from "@open-gikai/db-minutes";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq, gte, like, lte, lt, sql } from "drizzle-orm";
@@ -77,11 +77,11 @@ function buildStatementFilters(input: z.infer<typeof statementsSearchSchema>) {
   return conditions;
 }
 
-export async function searchStatements(
+function queryStatementsFromShard(
   db: Db,
-  input: z.infer<typeof statementsSearchSchema>
-): Promise<SearchResponse> {
-  const limit = input.limit ?? 20;
+  input: z.infer<typeof statementsSearchSchema>,
+  limit: number,
+) {
   const meetingFilters = buildMeetingFilters(input);
   const statementFilters = buildStatementFilters(input);
 
@@ -109,7 +109,7 @@ export async function searchStatements(
     const terms = input.q.trim().split(/\s+/).filter(Boolean);
     if (terms.length > 0) {
       allConditions.push(
-        and(...terms.map((t) => like(statements.content, `%${t}%`)))!
+        and(...terms.map((t) => like(statements.content, `%${t}%`)))!,
       );
     }
   }
@@ -117,28 +117,54 @@ export async function searchStatements(
   const finalQuery =
     allConditions.length > 0 ? query.where(and(...allConditions)) : query;
 
-  const results = await finalQuery
+  return finalQuery
     .orderBy(desc(statements.createdAt), desc(statements.id))
-    .limit(limit + 1);
+    .limit(limit);
+}
 
-  const hasMore = results.length > limit;
-  const statementsList = hasMore ? results.slice(0, limit) : results;
+export async function searchStatements(
+  shardedDb: ShardedMinutesDb,
+  input: z.infer<typeof statementsSearchSchema>,
+): Promise<SearchResponse> {
+  const limit = input.limit ?? 20;
+  const dbs = shardedDb.getRelevantDbs({
+    heldOnFrom: input.heldOnFrom,
+    heldOnTo: input.heldOnTo,
+    prefecture: input.prefecture,
+  });
+
+  const allResults: SearchResult[] = [];
+  for (const db of dbs) {
+    const results = await queryStatementsFromShard(db, input, limit + 1);
+    allResults.push(...(results as SearchResult[]));
+  }
+
+  allResults.sort((a, b) => {
+    const cmp = b.createdAt.getTime() - a.createdAt.getTime();
+    if (cmp !== 0) return cmp;
+    return b.id.localeCompare(a.id);
+  });
+
+  const hasMore = allResults.length > limit;
+  const statementsList = hasMore ? allResults.slice(0, limit) : allResults;
 
   return {
-    statements: statementsList as SearchResult[],
+    statements: statementsList,
     nextCursor: hasMore ? statementsList[statementsList.length - 1]!.id : null,
   };
 }
 
-export async function semanticSearchStatements(
+function querySemanticFromShard(
   db: Db,
-  input: z.infer<typeof statementsSemanticSearchSchema>
-): Promise<SemanticSearchResponse> {
+  input: z.infer<typeof statementsSemanticSearchSchema>,
+) {
   const terms = input.query.trim().split(/\s+/).filter(Boolean);
   const conditions = [];
 
   if (terms.length > 0) {
-    conditions.push(and(...terms.map((t) => like(statements.content, `%${t}%`)))!);
+    conditions.push(
+      and(...terms.map((t) => like(statements.content, `%${t}%`)))!,
+    );
   }
   if (input.filters?.heldOnFrom) {
     conditions.push(gte(meetings.heldOn, input.filters.heldOnFrom));
@@ -170,23 +196,50 @@ export async function semanticSearchStatements(
     })
     .from(statements)
     .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-    .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code));
+    .innerJoin(
+      municipalities,
+      eq(meetings.municipalityCode, municipalities.code),
+    );
 
-  const finalQuery = conditions.length > 0 ? query.where(and(...conditions)) : query;
+  const finalQuery =
+    conditions.length > 0 ? query.where(and(...conditions)) : query;
 
-  const results = await finalQuery
+  return finalQuery
     .orderBy(desc(statements.createdAt), desc(statements.id))
     .limit(input.topK);
+}
 
-  return { statements: results as SemanticSearchResult[] };
+export async function semanticSearchStatements(
+  shardedDb: ShardedMinutesDb,
+  input: z.infer<typeof statementsSemanticSearchSchema>,
+): Promise<SemanticSearchResponse> {
+  const dbs = shardedDb.getRelevantDbs({
+    heldOnFrom: input.filters?.heldOnFrom,
+    heldOnTo: input.filters?.heldOnTo,
+    prefecture: input.filters?.prefecture,
+  });
+
+  const allResults: SemanticSearchResult[] = [];
+  for (const db of dbs) {
+    const results = await querySemanticFromShard(db, input);
+    allResults.push(...(results as SemanticSearchResult[]));
+  }
+
+  allResults.sort((a, b) => {
+    const cmp = b.createdAt.getTime() - a.createdAt.getTime();
+    if (cmp !== 0) return cmp;
+    return b.id.localeCompare(a.id);
+  });
+
+  return { statements: allResults.slice(0, input.topK) };
 }
 
 export async function askStatements(
-  db: Db,
-  input: z.infer<typeof statementsAskSchema>
+  shardedDb: ShardedMinutesDb,
+  input: z.infer<typeof statementsAskSchema>,
 ): Promise<AskResponse> {
   try {
-    const { statements: sources } = await semanticSearchStatements(db, {
+    const { statements: sources } = await semanticSearchStatements(shardedDb, {
       query: input.query,
       topK: input.topK ?? 8,
       filters: input.filters,
@@ -194,7 +247,8 @@ export async function askStatements(
 
     if (sources.length === 0) {
       return {
-        answer: "関連する発言が見つかりませんでした。検索条件を変えてお試しください。",
+        answer:
+          "関連する発言が見つかりませんでした。検索条件を変えてお試しください。",
         sources: [],
       };
     }

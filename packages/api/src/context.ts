@@ -1,12 +1,12 @@
 import type { Auth } from "@open-gikai/auth";
 import type { Db } from "@open-gikai/db-auth";
-import type { Db as MinutesDb } from "@open-gikai/db-minutes";
+import type { ShardedMinutesDb } from "@open-gikai/db-minutes";
 
 export interface CreateContextParams {
   req: Request;
   auth: Auth;
   db: Db;
-  minutesDb: MinutesDb;
+  minutesDb: ShardedMinutesDb;
 }
 
 /**

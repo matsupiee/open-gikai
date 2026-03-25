@@ -1,5 +1,5 @@
 import { createDb, type Db } from "@open-gikai/db-auth";
-import { createDb as createMinutesDb, type Db as MinutesDb } from "@open-gikai/db-minutes";
+import { ShardedMinutesDb } from "@open-gikai/db-minutes";
 import { createAuth, type Auth } from "@open-gikai/auth";
 import { env } from "cloudflare:workers";
 
@@ -12,8 +12,18 @@ export function getDb(): Db {
   return createDb(env.HYPERDRIVE.connectionString);
 }
 
-export function getMinutesDb(): MinutesDb {
-  return createMinutesDb(env.MINUTES_DB_PATH);
+let shardedMinutesDb: ShardedMinutesDb | undefined;
+
+/**
+ * シャーディングされた議事録 DB を返す。
+ * manifest.json を読み込み、フィルタ条件に応じて適切なシャードを選択する。
+ * インスタンスはキャッシュして再利用する。
+ */
+export function getMinutesDb(): ShardedMinutesDb {
+  if (!shardedMinutesDb) {
+    shardedMinutesDb = new ShardedMinutesDb(env.MINUTES_DB_DIR);
+  }
+  return shardedMinutesDb;
 }
 
 /**
