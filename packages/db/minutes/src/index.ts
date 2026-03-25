@@ -24,6 +24,4 @@ export {
   municipalities,
   meetings,
   statements,
-  minute_files,
 } from "./schema";
-export type { UploadStatus } from "./schema";
