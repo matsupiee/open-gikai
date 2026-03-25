@@ -11,6 +11,9 @@
     "./test-helpers": {
       "default": "./src/test-helpers/index.ts"
     },
+    "./fts": {
+      "default": "./src/fts/index.ts"
+    },
     "./*": {
       "default": "./src/*.ts"
     }
