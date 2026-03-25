@@ -8,6 +8,7 @@
 - **コスト**: Supabase の有料プランや Hyperdrive のコストが増大
 - **クエリ遅延**: フルテキスト検索・ベクター検索が大規模データでスケールしにくい
 - **運用複雑度**: pgvector 拡張・tsvector 生成カラムなど PostgreSQL 固有機能への依存
+- **ベクトル検索**: 大変なので一旦後回しにしたい。とりあえず全文検索がサポートできれば問題ない
 
 ## 初期投入の前提
 
@@ -15,7 +16,6 @@
 
 - 過去データはローカルで全件スクレイピングし、`meetings.ndjson` / `statements.ndjson` / `statement_chunks.ndjson` を生成する
 - SQLite 変換もローカル CLI で実行し、完成した SQLite ファイルだけを R2 にアップロードする
-- **まだサービス未リリースなので、PostgreSQL と新構成を長期間共存させる必要はない**
 - **`apps/scraper-worker` は初期投入には使わない**。必要なら移行完了後の差分更新フェーズで活用する
 
 ## 提案アーキテクチャ
@@ -31,17 +31,16 @@
     ↓ ローカルの builder CLI で SQLite 生成
 [upload CLI]
     ↓ アップロード
-[Cloudflare R2 (SQLite shards)] ←→ [apps/web / API Worker] ←→ [Cloudflare D1]
-    議会コンテンツ検索             認証 / セッション / ジョブ管理
+[Cloudflare R2 (SQLite shards)] ←→ [apps/web / API Worker] ←→ [Supabase]
+    議会コンテンツ検索                                           認証 / セッション管理
                 ↓
           [ユーザーへレスポンス]
 ```
 
 ### データ配置
 
-- **R2 + SQLite**: `index.sqlite`, `municipalities`, `system_types`, `meetings`, `statements`, `statement_chunks`
-- **Cloudflare D1**: `users`, `sessions`, `accounts`, `verifications`, `scraper_jobs`, `scraper_job_logs`
-- **PostgreSQL**: 移行元データソースとしてのみ扱い、カットオーバー後はランタイム依存を残さない
+- **R2 + SQLite**: `index.sqlite`, `municipalities`, `system_types`, `meetings`, `statements`
+- **Supabase**: `users`, `sessions`, `accounts`, `verifications`
 
 ### R2 上のファイル構成
 
@@ -51,23 +50,36 @@ r2://open-gikai-db/
 │   ├── latest.json           # 現在参照すべきシャード一覧
 │   └── 2026-03-24.json       # リリースごとの固定 manifest
 ├── index.sqlite              # 自治体マスタ・system_types（軽量、全体共通）
-└── prefectures/
-    ├── 01.sqlite             # 北海道の10年分スナップショット
-    ├── 02.sqlite             # 青森県の10年分スナップショット
-    ├── 13_2016_2020.sqlite   # 例外的にサイズが大きい県だけ 5 年単位で分割
-    ├── 13_2021_2025.sqlite
-    └── ...
+└── minutes/
+    ├── 2024_hokkaido
+    ├── 2024_tohoku
+    ├── 2024_kanto
+    ├── 2024_chubu
+    ├── 2024_kinki
+    ├── 2024_chugoku
+    ├── 2024_shikoku
+    ├── 2024_kyushu
+    └── ....
 ```
 
+**分割戦略の選択肢**
+- 1ファイル2GBくらいに納めたい。1ファイル10GBとかになるとキャッシュが効きにくい
+- 検索をかける際に、走査するファイル数が増えすぎないようにしたい
+
 **分割戦略の選択肢**:
-- **自治体単位**: 約 1,700 ファイル規模になり、初期投入や manifest 管理が重い
-- **都道府県 + 年度単位**: 10 年分で `47 × 10 = 470` ファイルになり、アップロード・キャッシュ・整合性管理のコストが高い
-- **都道府県単位スナップショット**: まず 47 ファイルで公開でき、初期投入がもっとも単純
-- **都道府県単位 + 5 年バケット**: サイズが大きい県だけ `13_2016_2020.sqlite` のように例外分割できる
+- シンプル路線
+  - **年度単位**: 1ファイルのサイズが大きくなりすぎる
+  - **都道府県単位**: 1ファイルのサイズがまだ大きい
+  - **自治体単位**: 約 1,700 ファイル規模になり、初期投入や manifest 管理が重い
+- 組み合わせ路線
+  - **都道府県 + 年度単位**: 10 年分で `47 × 10 = 470` ファイルになり、複数年を検索する際に走査するファイルが多くなる
+  - **8地方分類 + 年度単位**: 10 年分で `8 × 10 = 80`ファイル。複数年を検索する際も走査するファイルが減る
 
-→ **推奨: 都道府県単位スナップショットを基本にし、サイズ超過時だけ 5 年バケットで例外分割する**
+**実際のデータ**
+- 2024年540自治体のデータが3.6GB -> 1700自治体で11GB
+- 1ファイル2GB以下に収めるには1年分を6分割くらいにするのがいい
 
-この方式なら、初期投入時のファイル数は原則 **47 + index + manifest** で済む。仮に全都道府県で 5 年バケット分割が必要になっても、10 年分で **94 ファイル** に収まり、年度単位の 470 ファイルより運用しやすい。
+→ **採用: 8地方分類 + 年度単位**
 
 `manifests/latest.json` のイメージ:
 
@@ -84,7 +96,7 @@ r2://open-gikai-db/
 }
 ```
 
-Web アプリはこの manifest を見て、都道府県ごとに 1 ファイル読むか、複数ファイルを順に検索するかを決める。全国横断検索用の専用インデックスは、必要性が確認できるまで後回しにする。
+Web アプリはこの manifest を見て、1ファイル読むか、複数ファイルを順に検索するかを決める。
 
 ### SQLite スキーマ（変更点）
 
@@ -127,18 +139,7 @@ CREATE VIRTUAL TABLE statements_fts USING fts5(
   tokenize='unicode61'
 );
 
--- statement_chunks テーブル（embedding を JSON で保存）
-CREATE TABLE statement_chunks (
-  id TEXT PRIMARY KEY,
-  meeting_id TEXT NOT NULL,
-  speaker_name TEXT,
-  speaker_role TEXT,
-  chunk_index INTEGER NOT NULL,
-  content TEXT NOT NULL,
-  content_hash TEXT,
-  embedding TEXT,  -- JSON array (Float32Array → JSON)
-  created_at TEXT DEFAULT (datetime('now'))
-);
+-- statement_chunks → 一旦実装しない（embedding検索は完全に後回しにする）
 
 -- インデックス
 CREATE INDEX idx_meetings_municipality_id ON meetings(municipality_id);
@@ -175,40 +176,16 @@ const results = db.prepare(`
 
 → **推奨: 2-gram + FTS5**（シンプルで依存なし）
 
-### ベクター検索の実装
-
-`pgvector` の `<->` 演算子を使ったコサイン類似度検索の代替。
-
-**オプション A: SQLite-VSS（sqlite-vss 拡張）**
-- Cloudflare Workers では実行困難（native 拡張が必要）
-
-**オプション B: embedding を JSON で保存 → アプリ層でコサイン類似度計算**
-```typescript
-// 対象チャンクを絞り込んでからコサイン類似度でソート
-const chunks = db.prepare(`
-  SELECT id, embedding, content FROM statement_chunks
-  WHERE meeting_id IN (SELECT id FROM meetings WHERE municipality_id = ?)
-`).all(municipalityId);
-
-const queryEmbedding = await generateEmbedding(query);
-const ranked = chunks
-  .map(chunk => ({
-    ...chunk,
-    score: cosineSimilarity(queryEmbedding, JSON.parse(chunk.embedding)),
-  }))
-  .sort((a, b) => b.score - a.score)
-  .slice(0, topK);
-```
-
-→ **推奨: オプション B**（自治体 or 都道府県単位で絞り込めば対象件数が現実的な範囲に収まる）
-
-**オプション C: Cloudflare Vectorize**
-- embedding を Vectorize に別途保存し、セマンティック検索は Vectorize API 経由
-- 実装コストが高いため、フェーズ 2 以降で検討
-
 ## 実装フェーズ
 
-### フェーズ 1: ローカル一括ビルド + R2 初期投入
+### フェーズ1: 不要な機能を削除
+
+以下を順番に実行する
+- スクレイピング進捗管理画面の削除
+- system_types、statement_chunks、scraper_jobs、scraper_job_logsの削除
+- apps/scraper-workerの削除
+
+### フェーズ 2: ローカル一括ビルド + R2 初期投入
 
 1. **`packages/db-sqlite`** パッケージを新規作成
    - SQLite スキーマ定義（Drizzle ORM の `better-sqlite3` dialect）
@@ -225,7 +202,7 @@ const ranked = chunks
    - ローカルで `scrape -> build sqlite -> upload` を通しで実行する
    - まずは手動実行で再現性を固め、安定後に GitHub Actions への移行を検討する
 
-### フェーズ 2: Web アプリの R2 / D1 対応
+### フェーズ 3: Web アプリの R2 / D1 対応
 
 1. **`packages/r2-client`** パッケージ（または `packages/api` 内に追加）
    - R2 からSQLiteファイルをダウンロードする関数
@@ -245,42 +222,14 @@ const ranked = chunks
 4. **キャッシュ戦略**
    - Cloudflare Workers のメモリキャッシュ（同一リクエスト内）
    - Cache API でリクエスト間キャッシュ（TTL: 1 時間）
-   - 大きい県だけ 5 年バケット分割してダウンロードサイズを抑える
 
-### フェーズ 3: 差分更新の自動化
+### フェーズ 4: 差分更新の自動化
 
-1. `apps/scraper-worker` は引き続き最新データ収集に使うが、ジョブ状態とログは D1 に保存する
-2. 差分更新単位は「都道府県全体」または「5 年バケット」に限定し、年度単位分割は採らない
-3. SQLite 生成は別ジョブとして扱い、R2 の該当 shard だけを再ビルドする
-4. 安定後に GitHub Actions あるいは定期バッチで再ビルドを自動化する
+TODO 後から考える
 
-### フェーズ 4: PostgreSQL の一括撤去
-
-1. D1 と R2 を参照する実装へ切り替え、アプリから `DATABASE_URL` 依存を外す
-2. 認証・ジョブ管理・議会コンテンツをそれぞれ D1 / R2 に移し、PostgreSQL への書き込みを停止する
-3. 検証後、`users`, `sessions`, `accounts`, `verifications`, `scraper_jobs`, `scraper_job_logs`, `municipalities`, `system_types`, `meetings`, `statements`, `statement_chunks` を **一括で drop** する
-4. Supabase / Hyperdrive / PostgreSQL 用の運用設定を削除する
-
-## 技術的なトレードオフ
-
-| 観点 | 現在（PostgreSQL） | 移行後（R2 + SQLite + D1） |
-|------|-------------------|----------------------|
-| 全文検索精度 | tsvector（日本語対応） | FTS5 + 2-gram（精度やや低下） |
-| ベクター検索 | pgvector（高速） | アプリ層コサイン計算（低速だが絞り込みで緩和） |
-| スケール | DB スケールアップ必要 | ファイル分割で水平スケール可能 |
-| コスト | Supabase 従量課金 | R2 は読み取り無料、保存コストのみ |
-| 認証・運用メタデータ | PostgreSQL に集約 | D1 に集約 |
-| リアルタイム性 | 即時反映 | SQLite 再生成 + アップロードまでラグあり |
-| 更新複雑度 | INSERT/UPDATE | 都道府県 or 5 年バケット単位の再ビルドが基本 |
-| 読み取り一貫性 | トランザクション保証 | スナップショット読み取り（ファイル単位） |
 
 ## 未解決事項（要検討）
-
-1. **SQLite ファイルの最大サイズ**: 都道府県 1 ファイルでどの程度になるか、どの県から 5 年バケット分割が必要か見積もりが必要
-2. **Workers でのSQLite実行方法**: `@cloudflare/workers-types` での better-sqlite3 利用可否 → Durable Objects の SQLite API または `@sqlite.org/sqlite-wasm` の WASM 版を利用
-3. **差分更新**: 都道府県全体の再ビルドと 5 年バケット再ビルドのどちらを標準にするか
-4. **全国横断検索**: 全 prefecture shard への fan-out で十分か、専用 search shard を別途持つか
-5. **D1 スキーマ設計**: `users`, `sessions`, `accounts`, `verifications`, `scraper_jobs`, `scraper_job_logs` を 1 DB にまとめるか、用途別に分けるか
+- **全国横断検索**: 一旦考えない
 
 ## 参考
 
