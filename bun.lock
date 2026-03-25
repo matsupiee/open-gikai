@@ -134,7 +134,7 @@
       "name": "@open-gikai/config",
       "version": "0.0.0",
     },
-    "packages/db": {
+    "packages/db/auth": {
       "name": "@open-gikai/db",
       "dependencies": {
         "@paralleldrive/cuid2": "^3.3.0",
@@ -560,7 +560,7 @@
 
     "@open-gikai/config": ["@open-gikai/config@workspace:packages/config"],
 
-    "@open-gikai/db": ["@open-gikai/db@workspace:packages/db"],
+    "@open-gikai/db": ["@open-gikai/db@workspace:packages/db/auth"],
 
     "@open-gikai/local-bulk-scraper": ["@open-gikai/local-bulk-scraper@workspace:apps/local-bulk-scraper"],
 
