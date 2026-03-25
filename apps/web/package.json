@@ -12,7 +12,7 @@
     "@base-ui/react": "^1.3.0",
     "@open-gikai/api": "workspace:*",
     "@open-gikai/auth": "workspace:*",
-    "@open-gikai/db": "workspace:*",
+    "@open-gikai/db-auth": "workspace:*",
     "@open-gikai/db-minutes": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",

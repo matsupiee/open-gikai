@@ -11,7 +11,7 @@
   },
   "scripts": {},
   "dependencies": {
-    "@open-gikai/db": "workspace:*",
+    "@open-gikai/db-auth": "workspace:*",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "zod": "catalog:"
