@@ -151,6 +151,23 @@
         "typescript": "catalog:",
       },
     },
+    "packages/db/minutes": {
+      "name": "@open-gikai/db-minutes",
+      "dependencies": {
+        "@paralleldrive/cuid2": "^3.3.0",
+        "dotenv": "catalog:",
+        "drizzle-orm": "^0.45.1",
+        "postgres": "^3.4.7",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@open-gikai/config": "workspace:*",
+        "@types/pg": "^8.16.0",
+        "drizzle-kit": "^0.31.8",
+        "pg": "^8.17.1",
+        "typescript": "catalog:",
+      },
+    },
     "packages/notification": {
       "name": "@open-gikai/notification",
       "devDependencies": {
@@ -561,6 +578,8 @@
     "@open-gikai/config": ["@open-gikai/config@workspace:packages/config"],
 
     "@open-gikai/db": ["@open-gikai/db@workspace:packages/db/auth"],
+
+    "@open-gikai/db-minutes": ["@open-gikai/db-minutes@workspace:packages/db/minutes"],
 
     "@open-gikai/local-bulk-scraper": ["@open-gikai/local-bulk-scraper@workspace:apps/local-bulk-scraper"],
 
