@@ -44,6 +44,7 @@
         "@open-gikai/api": "workspace:*",
         "@open-gikai/auth": "workspace:*",
         "@open-gikai/db": "workspace:*",
+        "@open-gikai/db-minutes": "workspace:*",
         "@orpc/client": "catalog:",
         "@orpc/openapi": "catalog:",
         "@orpc/server": "catalog:",
@@ -103,6 +104,7 @@
       "dependencies": {
         "@open-gikai/auth": "workspace:*",
         "@open-gikai/db": "workspace:*",
+        "@open-gikai/db-minutes": "workspace:*",
         "@orpc/client": "catalog:",
         "@orpc/openapi": "catalog:",
         "@orpc/server": "catalog:",
@@ -156,12 +158,14 @@
     "packages/db/minutes": {
       "name": "@open-gikai/db-minutes",
       "dependencies": {
+        "@aws-sdk/client-s3": "^3.840.0",
         "@paralleldrive/cuid2": "^3.3.0",
         "drizzle-orm": "^0.45.1",
       },
       "devDependencies": {
         "@open-gikai/config": "workspace:*",
         "bun-types": "catalog:",
+        "dotenv": "catalog:",
         "drizzle-kit": "^0.31.8",
         "typescript": "catalog:",
       },

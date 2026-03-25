@@ -21,14 +21,18 @@
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "build:sqlite": "bun src/build-sqlite.ts",
+    "upload:r2": "bun src/upload-r2.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.840.0",
     "@paralleldrive/cuid2": "^3.3.0",
     "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {
     "bun-types": "catalog:",
+    "dotenv": "catalog:",
     "@open-gikai/config": "workspace:*",
     "drizzle-kit": "^0.31.8",
     "typescript": "catalog:"
