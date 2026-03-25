@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "agent",
-            "prompt": "Evaluate if Claude made PR: $ARGUMENTS. If so, post review comment to the PR, fix, verify behavior and merge it.",
+            "prompt": "Evaluate if Claude made PR: $ARGUMENTS. If so, post review comment to the PR, fix, verify behavior.",
             "timeout": 600
           }
         ]
