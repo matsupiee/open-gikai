@@ -9,7 +9,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 import { meetings } from "./meetings";
-import { statement_chunks } from "./statement-chunks";
 import { statement_policy_tags } from "./policy-tags";
 import { createId } from "@paralleldrive/cuid2";
 
@@ -60,10 +59,6 @@ export const statements = pgTable(
     // 原文ドキュメント内での位置（文字オフセット）
     startOffset: integer(),
     endOffset: integer(),
-    // 属するチャンク（手続き系発言は null）
-    chunkId: text().references(() => statement_chunks.id, {
-      onDelete: "set null",
-    }),
     // 全文検索用インデックス（content から自動生成される仮想カラム）
     contentTsv: tsvector().generatedAlwaysAs(
       sql`to_tsvector('simple', coalesce(content, ''))`
@@ -87,11 +82,6 @@ export const statementsRelations = relations(statements, ({ one, many }) => ({
   meeting: one(meetings, {
     fields: [statements.meetingId],
     references: [meetings.id],
-  }),
-  // 発言は1つのチャンクに属する（手続き系は null）
-  chunk: one(statement_chunks, {
-    fields: [statements.chunkId],
-    references: [statement_chunks.id],
   }),
   // 発言には複数の政策タグが付く（1対多）
   policy_tags: many(statement_policy_tags),

@@ -10,7 +10,6 @@ import {
   municipalities,
   meetings,
   statements,
-  statement_chunks,
 } from "@open-gikai/db/schema";
 import { eq, inArray } from "drizzle-orm";
 
@@ -67,37 +66,7 @@ describe("import-ndjson DB統合テスト", () => {
         })
         .returning();
 
-      // 2. statement_chunks の INSERT（statements.chunkId → statement_chunks.id の FK があるため先に INSERT）
-      const chunkContent1 = stmtContent2;
-      const chunkContent2 = stmtContent3;
-
-      const [dbChunk1] = await tx
-        .insert(statement_chunks)
-        .values({
-          meetingId: dbMeeting!.id,
-          speakerName: "佐藤花子",
-          speakerRole: "議員",
-          chunkIndex: 0,
-          content: chunkContent1,
-          contentHash: createHash("sha256").update(chunkContent1).digest("hex"),
-          embedding: null,
-        })
-        .returning();
-
-      const [dbChunk2] = await tx
-        .insert(statement_chunks)
-        .values({
-          meetingId: dbMeeting!.id,
-          speakerName: "鈴木一郎",
-          speakerRole: "市長",
-          chunkIndex: 0,
-          content: chunkContent2,
-          contentHash: createHash("sha256").update(chunkContent2).digest("hex"),
-          embedding: null,
-        })
-        .returning();
-
-      // 3. statements の INSERT（chunkId を紐付け）
+      // 2. statements の INSERT
       await tx.insert(statements).values({
         meetingId: dbMeeting!.id,
         kind: "remark",
@@ -107,7 +76,6 @@ describe("import-ndjson DB統合テスト", () => {
         contentHash: createHash("sha256").update(stmtContent1).digest("hex"),
         startOffset: 0,
         endOffset: stmtContent1.length,
-        chunkId: null,
       });
 
       await tx.insert(statements).values({
@@ -119,7 +87,6 @@ describe("import-ndjson DB統合テスト", () => {
         contentHash: createHash("sha256").update(stmtContent2).digest("hex"),
         startOffset: stmtContent1.length + 1,
         endOffset: stmtContent1.length + 1 + stmtContent2.length,
-        chunkId: dbChunk1!.id,
       });
 
       await tx.insert(statements).values({
@@ -131,7 +98,6 @@ describe("import-ndjson DB統合テスト", () => {
         contentHash: createHash("sha256").update(stmtContent3).digest("hex"),
         startOffset: stmtContent1.length + 1 + stmtContent2.length + 1,
         endOffset: stmtContent1.length + 1 + stmtContent2.length + 1 + stmtContent3.length,
-        chunkId: dbChunk2!.id,
       });
 
       // 検証: meetings
@@ -156,22 +122,12 @@ describe("import-ndjson DB統合テスト", () => {
 
       const remark = stmtRows.find((s) => s.kind === "remark");
       expect(remark!.speakerName).toBe("山田太郎");
-      expect(remark!.chunkId).toBeNull();
 
       const question = stmtRows.find((s) => s.kind === "question");
       expect(question!.speakerName).toBe("佐藤花子");
-      expect(question!.chunkId).toBe(dbChunk1!.id);
 
       const answer = stmtRows.find((s) => s.kind === "answer");
       expect(answer!.speakerName).toBe("鈴木一郎");
-      expect(answer!.chunkId).toBe(dbChunk2!.id);
-
-      // 検証: statement_chunks
-      const chunkRows = await tx
-        .select()
-        .from(statement_chunks)
-        .where(eq(statement_chunks.meetingId, dbMeeting!.id));
-      expect(chunkRows).toHaveLength(2);
     });
   });
 
