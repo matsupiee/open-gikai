@@ -25,5 +25,6 @@ export function createDb(dbPath: string) {
 export type Db = ReturnType<typeof createDb>;
 
 export { municipalities, meetings, statements } from "./schema";
-export { ShardedMinutesDb, prefectureToRegion } from "./shard";
+export { ShardedMinutesDb } from "./shard";
 export type { ShardFilter } from "./shard";
+export { prefectureToRegion, prefectureToRegionSlug, REGION_TO_PREFECTURES } from "./utils/region";

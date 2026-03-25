@@ -133,11 +133,10 @@ export async function searchStatements(
     prefecture: input.prefecture,
   });
 
-  const allResults: SearchResult[] = [];
-  for (const db of dbs) {
-    const results = await queryStatementsFromShard(db, input, limit + 1);
-    allResults.push(...(results as SearchResult[]));
-  }
+  const shardResults = await Promise.all(
+    dbs.map((db) => queryStatementsFromShard(db, input, limit + 1)),
+  );
+  const allResults: SearchResult[] = shardResults.flat() as SearchResult[];
 
   allResults.sort((a, b) => {
     const cmp = b.createdAt.getTime() - a.createdAt.getTime();
@@ -219,11 +218,10 @@ export async function semanticSearchStatements(
     prefecture: input.filters?.prefecture,
   });
 
-  const allResults: SemanticSearchResult[] = [];
-  for (const db of dbs) {
-    const results = await querySemanticFromShard(db, input);
-    allResults.push(...(results as SemanticSearchResult[]));
-  }
+  const shardResults = await Promise.all(
+    dbs.map((db) => querySemanticFromShard(db, input)),
+  );
+  const allResults: SemanticSearchResult[] = shardResults.flat() as SemanticSearchResult[];
 
   allResults.sort((a, b) => {
     const cmp = b.createdAt.getTime() - a.createdAt.getTime();

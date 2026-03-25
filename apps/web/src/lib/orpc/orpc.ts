@@ -42,8 +42,8 @@ const getORPCClient = createIsomorphicFn()
         return createContext({
           req: getRequest(),
           auth: getAuth(),
-          db: getDb(),
-          minutesDb: getMinutesDb(),
+          authDb: getDb(),
+          shardedMinutesDb: getMinutesDb(),
         });
       },
     }),

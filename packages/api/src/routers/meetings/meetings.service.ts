@@ -84,11 +84,10 @@ export async function listMeetings(
     prefecture: input.prefecture,
   });
 
-  const allResults: MeetingListItem[] = [];
-  for (const db of dbs) {
-    const results = await queryMeetingsFromShard(db, input, limit + 1);
-    allResults.push(...(results as MeetingListItem[]));
-  }
+  const shardResults = await Promise.all(
+    dbs.map((db) => queryMeetingsFromShard(db, input, limit + 1)),
+  );
+  const allResults: MeetingListItem[] = shardResults.flat() as MeetingListItem[];
 
   allResults.sort((a, b) => {
     const cmp = b.heldOn.localeCompare(a.heldOn);
@@ -111,42 +110,47 @@ export async function getMeetingStatements(
 ): Promise<MeetingDetail> {
   const dbs = shardedDb.getAllDbs();
 
-  for (const db of dbs) {
-    const [meeting] = await db
-      .select({
-        id: meetings.id,
-        title: meetings.title,
-        meetingType: meetings.meetingType,
-        heldOn: meetings.heldOn,
-        prefecture: municipalities.prefecture,
-        municipality: municipalities.name,
-        sourceUrl: meetings.sourceUrl,
-        status: meetings.status,
-      })
-      .from(meetings)
-      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
-      .where(eq(meetings.id, input.meetingId))
-      .limit(1);
+  // 全シャードを並列で検索し、meetingId が見つかったシャードを特定する
+  const meetingResults = await Promise.all(
+    dbs.map((db) =>
+      db
+        .select({
+          id: meetings.id,
+          title: meetings.title,
+          meetingType: meetings.meetingType,
+          heldOn: meetings.heldOn,
+          prefecture: municipalities.prefecture,
+          municipality: municipalities.name,
+          sourceUrl: meetings.sourceUrl,
+          status: meetings.status,
+        })
+        .from(meetings)
+        .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
+        .where(eq(meetings.id, input.meetingId))
+        .limit(1)
+        .then((rows) => ({ db, meeting: rows[0] })),
+    ),
+  );
 
-    if (!meeting) continue;
-
-    const statementRows = await db
-      .select({
-        id: statements.id,
-        kind: statements.kind,
-        speakerName: statements.speakerName,
-        speakerRole: statements.speakerRole,
-        content: statements.content,
-      })
-      .from(statements)
-      .where(eq(statements.meetingId, input.meetingId))
-      .orderBy(asc(statements.id));
-
-    return {
-      ...(meeting as MeetingListItem),
-      statements: statementRows as MeetingStatement[],
-    };
+  const found = meetingResults.find((r) => r.meeting);
+  if (!found?.meeting) {
+    throw new Error("Meeting not found");
   }
 
-  throw new Error("Meeting not found");
+  const statementRows = await found.db
+    .select({
+      id: statements.id,
+      kind: statements.kind,
+      speakerName: statements.speakerName,
+      speakerRole: statements.speakerRole,
+      content: statements.content,
+    })
+    .from(statements)
+    .where(eq(statements.meetingId, input.meetingId))
+    .orderBy(asc(statements.id));
+
+  return {
+    ...(found.meeting as MeetingListItem),
+    statements: statementRows as MeetingStatement[],
+  };
 }
