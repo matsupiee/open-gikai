@@ -20,12 +20,6 @@ import { Route as authSignUpIndexRouteImport } from './routes/(auth)/sign-up/ind
 import { Route as authSignInIndexRouteImport } from './routes/(auth)/sign-in/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as AdminLayoutScrapersIndexRouteImport } from './routes/admin/_layout/scrapers/index'
-import { Route as AdminLayoutProgressIndexRouteImport } from './routes/admin/_layout/progress/index'
-import { Route as AdminLayoutScrapersJobIdRouteImport } from './routes/admin/_layout/scrapers/$jobId'
-import { Route as AdminLayoutProgressYearsRouteImport } from './routes/admin/_layout/progress/years'
-import { Route as AdminLayoutProgressPrefecturesRouteImport } from './routes/admin/_layout/progress/prefectures'
-import { Route as AdminLayoutProgressMunicipalitiesRouteImport } from './routes/admin/_layout/progress/municipalities'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -82,42 +76,6 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminLayoutScrapersIndexRoute =
-  AdminLayoutScrapersIndexRouteImport.update({
-    id: '/scrapers/',
-    path: '/scrapers/',
-    getParentRoute: () => AdminLayoutRoute,
-  } as any)
-const AdminLayoutProgressIndexRoute =
-  AdminLayoutProgressIndexRouteImport.update({
-    id: '/progress/',
-    path: '/progress/',
-    getParentRoute: () => AdminLayoutRoute,
-  } as any)
-const AdminLayoutScrapersJobIdRoute =
-  AdminLayoutScrapersJobIdRouteImport.update({
-    id: '/scrapers/$jobId',
-    path: '/scrapers/$jobId',
-    getParentRoute: () => AdminLayoutRoute,
-  } as any)
-const AdminLayoutProgressYearsRoute =
-  AdminLayoutProgressYearsRouteImport.update({
-    id: '/progress/years',
-    path: '/progress/years',
-    getParentRoute: () => AdminLayoutRoute,
-  } as any)
-const AdminLayoutProgressPrefecturesRoute =
-  AdminLayoutProgressPrefecturesRouteImport.update({
-    id: '/progress/prefectures',
-    path: '/progress/prefectures',
-    getParentRoute: () => AdminLayoutRoute,
-  } as any)
-const AdminLayoutProgressMunicipalitiesRoute =
-  AdminLayoutProgressMunicipalitiesRouteImport.update({
-    id: '/progress/municipalities',
-    path: '/progress/municipalities',
-    getParentRoute: () => AdminLayoutRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -131,12 +89,6 @@ export interface FileRoutesByFullPath {
   '/sign-in/': typeof authSignInIndexRoute
   '/sign-up/': typeof authSignUpIndexRoute
   '/admin/': typeof AdminLayoutIndexRoute
-  '/admin/progress/municipalities': typeof AdminLayoutProgressMunicipalitiesRoute
-  '/admin/progress/prefectures': typeof AdminLayoutProgressPrefecturesRoute
-  '/admin/progress/years': typeof AdminLayoutProgressYearsRoute
-  '/admin/scrapers/$jobId': typeof AdminLayoutScrapersJobIdRoute
-  '/admin/progress/': typeof AdminLayoutProgressIndexRoute
-  '/admin/scrapers/': typeof AdminLayoutScrapersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -149,12 +101,6 @@ export interface FileRoutesByTo {
   '/sign-in': typeof authSignInIndexRoute
   '/sign-up': typeof authSignUpIndexRoute
   '/admin': typeof AdminLayoutIndexRoute
-  '/admin/progress/municipalities': typeof AdminLayoutProgressMunicipalitiesRoute
-  '/admin/progress/prefectures': typeof AdminLayoutProgressPrefecturesRoute
-  '/admin/progress/years': typeof AdminLayoutProgressYearsRoute
-  '/admin/scrapers/$jobId': typeof AdminLayoutScrapersJobIdRoute
-  '/admin/progress': typeof AdminLayoutProgressIndexRoute
-  '/admin/scrapers': typeof AdminLayoutScrapersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -169,12 +115,6 @@ export interface FileRoutesById {
   '/(auth)/sign-in/': typeof authSignInIndexRoute
   '/(auth)/sign-up/': typeof authSignUpIndexRoute
   '/admin/_layout/': typeof AdminLayoutIndexRoute
-  '/admin/_layout/progress/municipalities': typeof AdminLayoutProgressMunicipalitiesRoute
-  '/admin/_layout/progress/prefectures': typeof AdminLayoutProgressPrefecturesRoute
-  '/admin/_layout/progress/years': typeof AdminLayoutProgressYearsRoute
-  '/admin/_layout/scrapers/$jobId': typeof AdminLayoutScrapersJobIdRoute
-  '/admin/_layout/progress/': typeof AdminLayoutProgressIndexRoute
-  '/admin/_layout/scrapers/': typeof AdminLayoutScrapersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -190,12 +130,6 @@ export interface FileRouteTypes {
     | '/sign-in/'
     | '/sign-up/'
     | '/admin/'
-    | '/admin/progress/municipalities'
-    | '/admin/progress/prefectures'
-    | '/admin/progress/years'
-    | '/admin/scrapers/$jobId'
-    | '/admin/progress/'
-    | '/admin/scrapers/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -208,12 +142,6 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/admin'
-    | '/admin/progress/municipalities'
-    | '/admin/progress/prefectures'
-    | '/admin/progress/years'
-    | '/admin/scrapers/$jobId'
-    | '/admin/progress'
-    | '/admin/scrapers'
   id:
     | '__root__'
     | '/'
@@ -227,12 +155,6 @@ export interface FileRouteTypes {
     | '/(auth)/sign-in/'
     | '/(auth)/sign-up/'
     | '/admin/_layout/'
-    | '/admin/_layout/progress/municipalities'
-    | '/admin/_layout/progress/prefectures'
-    | '/admin/_layout/progress/years'
-    | '/admin/_layout/scrapers/$jobId'
-    | '/admin/_layout/progress/'
-    | '/admin/_layout/scrapers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -327,70 +249,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/_layout/scrapers/': {
-      id: '/admin/_layout/scrapers/'
-      path: '/scrapers'
-      fullPath: '/admin/scrapers/'
-      preLoaderRoute: typeof AdminLayoutScrapersIndexRouteImport
-      parentRoute: typeof AdminLayoutRoute
-    }
-    '/admin/_layout/progress/': {
-      id: '/admin/_layout/progress/'
-      path: '/progress'
-      fullPath: '/admin/progress/'
-      preLoaderRoute: typeof AdminLayoutProgressIndexRouteImport
-      parentRoute: typeof AdminLayoutRoute
-    }
-    '/admin/_layout/scrapers/$jobId': {
-      id: '/admin/_layout/scrapers/$jobId'
-      path: '/scrapers/$jobId'
-      fullPath: '/admin/scrapers/$jobId'
-      preLoaderRoute: typeof AdminLayoutScrapersJobIdRouteImport
-      parentRoute: typeof AdminLayoutRoute
-    }
-    '/admin/_layout/progress/years': {
-      id: '/admin/_layout/progress/years'
-      path: '/progress/years'
-      fullPath: '/admin/progress/years'
-      preLoaderRoute: typeof AdminLayoutProgressYearsRouteImport
-      parentRoute: typeof AdminLayoutRoute
-    }
-    '/admin/_layout/progress/prefectures': {
-      id: '/admin/_layout/progress/prefectures'
-      path: '/progress/prefectures'
-      fullPath: '/admin/progress/prefectures'
-      preLoaderRoute: typeof AdminLayoutProgressPrefecturesRouteImport
-      parentRoute: typeof AdminLayoutRoute
-    }
-    '/admin/_layout/progress/municipalities': {
-      id: '/admin/_layout/progress/municipalities'
-      path: '/progress/municipalities'
-      fullPath: '/admin/progress/municipalities'
-      preLoaderRoute: typeof AdminLayoutProgressMunicipalitiesRouteImport
-      parentRoute: typeof AdminLayoutRoute
-    }
   }
 }
 
 interface AdminLayoutRouteChildren {
   AdminLayoutIndexRoute: typeof AdminLayoutIndexRoute
-  AdminLayoutProgressMunicipalitiesRoute: typeof AdminLayoutProgressMunicipalitiesRoute
-  AdminLayoutProgressPrefecturesRoute: typeof AdminLayoutProgressPrefecturesRoute
-  AdminLayoutProgressYearsRoute: typeof AdminLayoutProgressYearsRoute
-  AdminLayoutScrapersJobIdRoute: typeof AdminLayoutScrapersJobIdRoute
-  AdminLayoutProgressIndexRoute: typeof AdminLayoutProgressIndexRoute
-  AdminLayoutScrapersIndexRoute: typeof AdminLayoutScrapersIndexRoute
 }
 
 const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
   AdminLayoutIndexRoute: AdminLayoutIndexRoute,
-  AdminLayoutProgressMunicipalitiesRoute:
-    AdminLayoutProgressMunicipalitiesRoute,
-  AdminLayoutProgressPrefecturesRoute: AdminLayoutProgressPrefecturesRoute,
-  AdminLayoutProgressYearsRoute: AdminLayoutProgressYearsRoute,
-  AdminLayoutScrapersJobIdRoute: AdminLayoutScrapersJobIdRoute,
-  AdminLayoutProgressIndexRoute: AdminLayoutProgressIndexRoute,
-  AdminLayoutScrapersIndexRoute: AdminLayoutScrapersIndexRoute,
 }
 
 const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(
