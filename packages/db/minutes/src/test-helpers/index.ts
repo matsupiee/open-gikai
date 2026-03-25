@@ -15,12 +15,12 @@ export type TestDb = ReturnType<typeof drizzle<typeof schema>>;
  * テスト用インメモリ SQLite 接続を返す。
  * マイグレーションと FTS5 セットアップを自動で実行する。
  */
-export function getTestDb(): { db: TestDb; sqlite: Database } {
+export function getTestDb(): TestDb {
   const sqlite = new Database(":memory:");
   sqlite.exec("PRAGMA journal_mode = WAL;");
   sqlite.exec("PRAGMA foreign_keys = ON;");
   const db = drizzle(sqlite, { schema, casing: "snake_case" });
   migrate(db, { migrationsFolder });
-  setupFts(sqlite);
-  return { db, sqlite };
+  setupFts(db);
+  return db;
 }

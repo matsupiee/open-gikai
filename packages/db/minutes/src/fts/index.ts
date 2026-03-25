@@ -1,4 +1,4 @@
-import type { Database } from "bun:sqlite";
+import type { Db } from "../index";
 
 /**
  * テキストを 2-gram トークン列に変換する。
@@ -53,8 +53,8 @@ export function tokenizeSearchQuery(query: string): string {
  * - `statement_id`: statements.id（UNINDEXED = FTS インデックス対象外）
  * - `bigrams`: 2-gram トークン化済みの発言内容
  */
-export function setupFts(sqlite: Database): void {
-  sqlite.run(`
+export function setupFts(db: Db): void {
+  db.$client.run(`
     CREATE VIRTUAL TABLE IF NOT EXISTS statements_fts USING fts5(
       statement_id UNINDEXED,
       bigrams,
@@ -64,23 +64,20 @@ export function setupFts(sqlite: Database): void {
 }
 
 /**
- * FTS5 インデックスを再構築する。
- * statements テーブルへの一括挿入後に呼び出す。
- */
-export function rebuildFts(sqlite: Database): void {
-  sqlite.run(`INSERT INTO statements_fts(statements_fts) VALUES('rebuild')`);
-}
-
-/**
  * statements テーブルの全レコードを FTS5 インデックスに投入する。
  * bigram 変換は JS 側で行い、SQLite に挿入する。
  *
  * 大量データの場合はバッチ処理で実行する。
  */
-export function populateFts(sqlite: Database, batchSize = 1000): void {
-  const count = (
-    sqlite.query<{ count: number }, []>("SELECT COUNT(*) as count FROM statements").get()
-  )?.count ?? 0;
+export function populateFts(db: Db, batchSize = 1000): void {
+  const sqlite = db.$client;
+
+  const count =
+    sqlite
+      .query<{ count: number }, []>(
+        "SELECT COUNT(*) as count FROM statements"
+      )
+      .get()?.count ?? 0;
 
   const insert = sqlite.prepare<void, [string, string]>(
     "INSERT OR REPLACE INTO statements_fts(statement_id, bigrams) VALUES (?, ?)"
