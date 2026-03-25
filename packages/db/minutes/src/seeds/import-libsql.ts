@@ -8,9 +8,10 @@
  *   bun run db:import
  */
 
-import { createClient, type Client } from "@libsql/client";
+import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
+import { sql } from "drizzle-orm";
 import { createReadStream, existsSync, unlinkSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +19,7 @@ import { createInterface } from "node:readline";
 import { setupFts, tokenizeBigram } from "../fts/index";
 import dotenv from "dotenv";
 import * as schema from "../schema";
+import type { MinutesDb } from "../client";
 import { municipalityRowsFromCsv, type MunicipalityRow } from "./parse-data/municipalities";
 import { parseMeetingNdjsonLine, type MeetingNdjsonRow } from "./parse-data/meetings";
 import { parseStatementNdjsonLine, type StatementNdjsonRow } from "./parse-data/statements";
@@ -68,20 +70,32 @@ async function main() {
   await migrate(db, { migrationsFolder });
   await setupFts(db);
 
-  const nowMs = Date.now();
-
   // 1. municipalities
   console.log("[import-libsql] municipalities.csv を読み込み中...");
   const municipalityRows = municipalityRowsFromCsv(municipalitiesCsvPath);
   console.log(`[import-libsql] ${municipalityRows.length} 自治体`);
 
-  await insertMunicipalities(client, municipalityRows, nowMs);
+  for (let i = 0; i < municipalityRows.length; i += BATCH_SIZE) {
+    const chunk = municipalityRows.slice(i, i + BATCH_SIZE);
+    await db.insert(schema.municipalities).values(
+      chunk.map((m) => ({
+        code: m.code,
+        name: m.name,
+        prefecture: m.prefecture,
+        regionSlug: m.regionSlug,
+        baseUrl: m.baseUrl || null,
+        enabled: m.enabled,
+        population: m.population ?? null,
+        populationYear: m.populationYear ?? null,
+      })),
+    );
+  }
   console.log(`[import-libsql] ${municipalityRows.length} 自治体 INSERT 完了`);
 
   // 2. meetings
   console.log("[import-libsql] meetings.ndjson を読み込み中...");
   let totalMeetings = 0;
-  let batch: MeetingNdjsonRow[] = [];
+  let meetingBatch: MeetingNdjsonRow[] = [];
 
   for await (const line of createInterface({
     input: createReadStream(meetingsPath),
@@ -89,15 +103,15 @@ async function main() {
   })) {
     const m = parseMeetingNdjsonLine(line);
     if (!m) continue;
-    batch.push(m);
+    meetingBatch.push(m);
     totalMeetings++;
 
-    if (batch.length >= BATCH_SIZE) {
-      await insertMeetings(client, batch, nowMs);
-      batch = [];
+    if (meetingBatch.length >= BATCH_SIZE) {
+      await insertMeetings(db, meetingBatch);
+      meetingBatch = [];
     }
   }
-  if (batch.length > 0) await insertMeetings(client, batch, nowMs);
+  if (meetingBatch.length > 0) await insertMeetings(db, meetingBatch);
   console.log(`[import-libsql] ${totalMeetings} 会議 INSERT 完了`);
 
   // 3. statements + FTS
@@ -115,11 +129,11 @@ async function main() {
     totalStatements++;
 
     if (stmtBatch.length >= BATCH_SIZE) {
-      await insertStatements(client, stmtBatch, nowMs);
+      await insertStatements(db, stmtBatch);
       stmtBatch = [];
     }
   }
-  if (stmtBatch.length > 0) await insertStatements(client, stmtBatch, nowMs);
+  if (stmtBatch.length > 0) await insertStatements(db, stmtBatch);
   console.log(`[import-libsql] ${totalStatements} 発言 INSERT 完了`);
 
   console.log("[import-libsql] 完了!");
@@ -131,86 +145,46 @@ async function main() {
   process.exit(0);
 }
 
-async function insertMunicipalities(
-  client: Client,
-  rows: MunicipalityRow[],
-  nowMs: number,
-): Promise<void> {
-  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-    const chunk = rows.slice(i, i + BATCH_SIZE);
-    await client.batch(
-      chunk.map((m) => ({
-        sql: "INSERT INTO municipalities (code, created_at, updated_at, name, prefecture, region_slug, base_url, enabled, population, population_year) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        args: [
-          m.code,
-          nowMs,
-          nowMs,
-          m.name,
-          m.prefecture,
-          m.regionSlug,
-          m.baseUrl || null,
-          m.enabled ? 1 : 0,
-          m.population ?? null,
-          m.populationYear ?? null,
-        ],
-      })),
-    );
-  }
-}
-
-async function insertMeetings(
-  client: Client,
-  rows: MeetingNdjsonRow[],
-  nowMs: number,
-): Promise<void> {
-  await client.batch(
+async function insertMeetings(db: MinutesDb, rows: MeetingNdjsonRow[]): Promise<void> {
+  await db.insert(schema.meetings).values(
     rows.map((m) => ({
-      sql: "INSERT INTO meetings (id, created_at, updated_at, municipality_code, title, meeting_type, held_on, source_url, external_id, status, scraped_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      args: [
-        m.id,
-        nowMs,
-        nowMs,
-        m.municipalityCode,
-        m.title,
-        m.meetingType,
-        m.heldOn,
-        m.sourceUrl ?? null,
-        m.externalId ?? null,
-        m.status,
-        m.scrapedAt ? new Date(m.scrapedAt).getTime() : null,
-      ],
+      id: m.id,
+      municipalityCode: m.municipalityCode,
+      title: m.title,
+      meetingType: m.meetingType,
+      heldOn: m.heldOn,
+      sourceUrl: m.sourceUrl ?? null,
+      externalId: m.externalId ?? null,
+      status: m.status,
+      scrapedAt: m.scrapedAt ? new Date(m.scrapedAt) : null,
     })),
   );
 }
 
-async function insertStatements(
-  client: Client,
-  rows: StatementNdjsonRow[],
-  nowMs: number,
-): Promise<void> {
-  const stmts = rows.flatMap((s) => [
-    {
-      sql: "INSERT OR IGNORE INTO statements (id, created_at, updated_at, meeting_id, kind, speaker_name, speaker_role, content, content_hash, start_offset, end_offset) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      args: [
-        s.id,
-        nowMs,
-        nowMs,
-        s.meetingId,
-        s.kind,
-        s.speakerName ?? null,
-        s.speakerRole ?? null,
-        s.content,
-        s.contentHash,
-        s.startOffset ?? null,
-        s.endOffset ?? null,
-      ],
-    },
-    {
-      sql: "INSERT OR REPLACE INTO statements_fts (statement_id, bigrams) VALUES (?, ?)",
-      args: [s.id, tokenizeBigram(s.content)],
-    },
-  ]);
-  await client.batch(stmts);
+async function insertStatements(db: MinutesDb, rows: StatementNdjsonRow[]): Promise<void> {
+  await db
+    .insert(schema.statements)
+    .values(
+      rows.map((s) => ({
+        id: s.id,
+        meetingId: s.meetingId,
+        kind: s.kind,
+        speakerName: s.speakerName ?? null,
+        speakerRole: s.speakerRole ?? null,
+        content: s.content,
+        contentHash: s.contentHash,
+        startOffset: s.startOffset ?? null,
+        endOffset: s.endOffset ?? null,
+      })),
+    )
+    .onConflictDoNothing();
+
+  // FTS インデックスの投入（Drizzle は FTS5 virtual table をサポートしていないため raw SQL）
+  for (const s of rows) {
+    await db.run(
+      sql`INSERT OR REPLACE INTO statements_fts (statement_id, bigrams) VALUES (${s.id}, ${tokenizeBigram(s.content)})`,
+    );
+  }
 }
 
 main().catch((err) => {
