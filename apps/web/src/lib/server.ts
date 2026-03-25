@@ -1,4 +1,5 @@
 import { createDb, type Db } from "@open-gikai/db";
+import { createDb as createMinutesDb, type Db as MinutesDb } from "@open-gikai/db-minutes";
 import { createAuth, type Auth } from "@open-gikai/auth";
 import { env } from "cloudflare:workers";
 
@@ -9,6 +10,10 @@ import { env } from "cloudflare:workers";
  */
 export function getDb(): Db {
   return createDb(env.HYPERDRIVE.connectionString);
+}
+
+export function getMinutesDb(): MinutesDb {
+  return createMinutesDb(env.MINUTES_DB_PATH);
 }
 
 /**

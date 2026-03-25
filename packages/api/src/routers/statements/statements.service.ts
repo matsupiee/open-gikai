@@ -1,7 +1,7 @@
-import type { Db } from "@open-gikai/db";
-import { meetings, municipalities, statements } from "@open-gikai/db";
+import type { Db } from "@open-gikai/db-minutes";
+import { meetings, municipalities, statements } from "@open-gikai/db-minutes";
 import { ORPCError } from "@orpc/server";
-import { and, desc, eq, gte, ilike, lte, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, like, lte, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { generateAnswer } from "../../shared/llm";
 import type {
@@ -68,7 +68,7 @@ function buildStatementFilters(input: z.infer<typeof statementsSearchSchema>) {
     conditions.push(eq(statements.kind, input.kind));
   }
   if (input.speakerName) {
-    conditions.push(ilike(statements.speakerName, `%${input.speakerName}%`));
+    conditions.push(like(statements.speakerName, `%${input.speakerName}%`));
   }
   if (input.cursor) {
     conditions.push(lt(statements.id, input.cursor));
@@ -109,7 +109,7 @@ export async function searchStatements(
     const terms = input.q.trim().split(/\s+/).filter(Boolean);
     if (terms.length > 0) {
       allConditions.push(
-        and(...terms.map((t) => ilike(statements.content, `%${t}%`)))!
+        and(...terms.map((t) => like(statements.content, `%${t}%`)))!
       );
     }
   }
@@ -138,7 +138,7 @@ export async function semanticSearchStatements(
   const conditions = [];
 
   if (terms.length > 0) {
-    conditions.push(and(...terms.map((t) => ilike(statements.content, `%${t}%`)))!);
+    conditions.push(and(...terms.map((t) => like(statements.content, `%${t}%`)))!);
   }
   if (input.filters?.heldOnFrom) {
     conditions.push(gte(meetings.heldOn, input.filters.heldOnFrom));

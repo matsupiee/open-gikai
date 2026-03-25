@@ -1,6 +1,6 @@
-import type { Db } from "@open-gikai/db";
-import { meetings, municipalities, statements } from "@open-gikai/db";
-import { and, asc, desc, eq, gte, ilike, lte, lt } from "drizzle-orm";
+import type { Db } from "@open-gikai/db-minutes";
+import { meetings, municipalities, statements } from "@open-gikai/db-minutes";
+import { and, asc, desc, eq, gte, like, lte, lt } from "drizzle-orm";
 import { z } from "zod";
 
 import type { meetingsListSchema, meetingStatementsSchema } from "./_schemas";
@@ -46,7 +46,7 @@ export async function listMeetings(
   if (input.municipality) {
     const tokens = input.municipality.trim().split(/\s+/).filter(Boolean);
     for (const token of tokens) {
-      conditions.push(ilike(municipalities.name, `%${token}%`));
+      conditions.push(like(municipalities.name, `%${token}%`));
     }
   }
   if (input.meetingType) conditions.push(eq(meetings.meetingType, input.meetingType));
