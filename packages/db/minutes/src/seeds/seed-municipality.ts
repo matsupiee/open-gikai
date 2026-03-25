@@ -1,23 +1,11 @@
-import dotenv from "dotenv";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/node-postgres";
 import { municipalities } from "../schema/municipalities";
-import { system_types, SYSTEM_TYPES_SEED } from "../schema/system-types";
-import type { SystemType } from "../schema/system-types";
-
-dotenv.config({
-  path: "../../.env.local",
-});
-
-const DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) {
-  console.error("DATABASE_URL is required");
-  process.exit(1);
-}
+import type { SystemType } from "../schema/municipalities";
+import { createDb } from "../index";
 
 interface MunicipalityRecord {
   code: string;
@@ -76,72 +64,56 @@ async function seed() {
   const csvPath = join(__dirname, "municipalities.csv");
   const municipalityList = parseCsv(csvPath);
 
-  const db = drizzle(DATABASE_URL as string, { casing: "snake_case" });
+  const db = createDb();
 
-  // 1. system_types を先に upsert する
-  console.log(
-    `[seed] system_types を ${SYSTEM_TYPES_SEED.length} 件 upsert します`,
-  );
-  await db
-    .insert(system_types)
-    .values(SYSTEM_TYPES_SEED)
-    .onConflictDoUpdate({
-      target: system_types.name,
-      set: { description: sql`excluded.description` },
+  try {
+    console.log(`[seed] ${municipalityList.length} 件の自治体を登録します`);
+
+    let inserted = 0;
+    const BATCH_SIZE = 100;
+
+    const values = municipalityList.map((m) => {
+      const displayName = m.name || m.prefecture; // 都道府県行は都道府県名を name に
+      const systemType = detectSystemType(m.baseUrl);
+
+      return {
+        code: m.code,
+        name: displayName,
+        prefecture: m.prefecture,
+        systemType,
+        baseUrl: m.baseUrl,
+        enabled: true,
+        population: m.population,
+        populationYear: m.populationYear,
+      };
     });
 
-  // 2. name → id のマップを構築する
-  const systemTypeRows = await db
-    .select({ id: system_types.id, name: system_types.name })
-    .from(system_types);
-  const systemTypeIdByName = new Map(systemTypeRows.map((r) => [r.name, r.id]));
+    for (let i = 0; i < values.length; i += BATCH_SIZE) {
+      const batch = values.slice(i, i + BATCH_SIZE);
+      const result = await db
+        .insert(municipalities)
+        .values(batch)
+        .onConflictDoUpdate({
+          target: municipalities.code,
+          set: {
+            name: sql`excluded.name`,
+            prefecture: sql`excluded.prefecture`,
+            baseUrl: sql`excluded.base_url`,
+            systemType: sql`excluded.system_type`,
+            population: sql`excluded.population`,
+            populationYear: sql`excluded.population_year`,
+          },
+        })
+        .returning({ id: municipalities.id, code: municipalities.code });
 
-  // 3. municipalities を 50 件ずつバッチで upsert する
-  console.log(`[seed] ${municipalityList.length} 件の自治体を登録します`);
+      inserted += result.length;
+    }
 
-  let inserted = 0;
-  const BATCH_SIZE = 100;
-
-  const values = municipalityList.map((m) => {
-    const displayName = m.name || m.prefecture; // 都道府県行は都道府県名を name に
-    const typeName = detectSystemType(m.baseUrl);
-    const systemTypeId = systemTypeIdByName.get(typeName ?? "");
-
-    return {
-      code: m.code,
-      name: displayName,
-      prefecture: m.prefecture,
-      systemTypeId,
-      baseUrl: m.baseUrl,
-      enabled: true,
-      population: m.population,
-      populationYear: m.populationYear,
-    };
-  });
-
-  for (let i = 0; i < values.length; i += BATCH_SIZE) {
-    const batch = values.slice(i, i + BATCH_SIZE);
-    const result = await db
-      .insert(municipalities)
-      .values(batch)
-      .onConflictDoUpdate({
-        target: municipalities.code,
-        set: {
-          name: sql`excluded.name`,
-          prefecture: sql`excluded.prefecture`,
-          baseUrl: sql`excluded.base_url`,
-          systemTypeId: sql`excluded.system_type_id`,
-          population: sql`excluded.population`,
-          populationYear: sql`excluded.population_year`,
-        },
-      })
-      .returning({ id: municipalities.id, code: municipalities.code });
-
-    inserted += result.length;
+    console.log(`[seed] 完了: inserted/updated=${inserted}`);
+  } finally {
+    // Explicitly close the database connection
+    db.$client.close();
   }
-
-  console.log(`[seed] 完了: inserted/updated=${inserted}`);
-  await db.$client.end();
 }
 
 seed().catch((err) => {
