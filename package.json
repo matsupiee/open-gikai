@@ -32,8 +32,7 @@
     "db:seed": "turbo -F @open-gikai/db db:seed",
     "db:seed-municipality": "turbo -F @open-gikai/db db:seed-municipality",
     "test": "turbo test",
-    "check": "oxlint && oxfmt --write",
-    "scrape:local": "turbo -F @open-gikai/scraper-worker scrape:local"
+    "check": "oxlint && oxfmt --write"
   },
   "dependencies": {
     "dotenv": "catalog:",
