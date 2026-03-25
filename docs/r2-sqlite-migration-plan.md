@@ -39,30 +39,24 @@
 
 ### データ配置
 
-- **R2 + SQLite**: `index.sqlite`, `municipalities`, `system_types`, `meetings`, `statements`
+- **R2 + SQLite**: `index.sqlite`（内に `municipalities`, `system_types` など参照系テーブル）、シャード内に `meetings`, `statements` など
 - **Supabase**: `users`, `sessions`, `accounts`, `verifications`
 
 ### R2 上のファイル構成
 
 ```
 r2://open-gikai-db/
-├── manifests/
-│   ├── latest.json           # 現在参照すべきシャード一覧
-│   └── 2026-03-24.json       # リリースごとの固定 manifest
-├── index.sqlite              # 自治体マスタ・system_types（軽量、全体共通）
+├── manifest.json     # シャードファイルの場所を記録する
+├── index.sqlite      # 自治体マスタ・system_types（軽量、全体共通）
 └── minutes/
-    ├── 2024_hokkaido
-    ├── 2024_tohoku
-    ├── 2024_kanto
-    ├── 2024_chubu
-    ├── 2024_kinki
-    ├── 2024_chugoku
-    ├── 2024_shikoku
-    ├── 2024_kyushu
-    └── ....
+    ├── 2024/
+    │   ├── kanto.db
+    │   ├── kinki.db
+    │   └── ...
+    ├── 2025/
 ```
 
-**分割戦略の選択肢**
+**分割戦略の要件**
 - 1ファイル2GBくらいに納めたい。1ファイル10GBとかになるとキャッシュが効きにくい
 - 検索をかける際に、走査するファイル数が増えすぎないようにしたい
 
@@ -79,24 +73,45 @@ r2://open-gikai-db/
 - 2024年540自治体のデータが3.6GB -> 1700自治体で11GB
 - 1ファイル2GB以下に収めるには1年分を6分割くらいにするのがいい
 
-→ **採用: 8地方分類 + 年度単位**
+→ **採用: 8地方分類 + 年度単位**（データ量が偏る地方は同一キーに複数パスを載せて分割する）
 
-`manifests/latest.json` のイメージ:
+
+`manifest.json` の例（シャード一覧の本体）:
 
 ```json
 {
-  "version": "2026-03-24",
-  "prefectures": {
-    "01": ["prefectures/01.sqlite"],
-    "13": [
-      "prefectures/13_2016_2020.sqlite",
-      "prefectures/13_2021_2025.sqlite"
-    ]
+  "index": {
+    "path": "index.sqlite",
+    "size": 5242880
+  },
+  "minutes": {
+    "2024": {
+      "kanto": [
+        {
+          "path": "minutes/2024/kanto.db",
+          "size": 1800000000
+        }
+      ],
+      "kinki": [
+        {
+          "path": "minutes/2024/kinki.db",
+          "size": 1500000000
+        }
+      ]
+    },
+    "2025": {
+      "kanto": [
+        {
+          "path": "minutes/2025/kanto.db",
+          "size": 1900000000
+        }
+      ]
+    }
   }
 }
 ```
 
-Web アプリはこの manifest を見て、1ファイル読むか、複数ファイルを順に検索するかを決める。
+Web アプリは **`manifest.json`* を読み、そこに書かれたパスから SQLite を取得する。1ファイル読むか、複数ファイルを順に検索するかはその内容に従う。
 
 ### SQLite スキーマ（変更点）
 
@@ -193,11 +208,9 @@ const results = db.prepare(`
    - SQLite ファイルのビルダー関数
    - FTS5 インデックス構築ロジック（2-gram トークナイズ）
 
-2. **`apps/db-builder`** スクリプトを作成
-   - `apps/local-bulk-scraper` の NDJSON 出力を読み込む
-   - `index.sqlite` と都道府県シャードを生成・FTS5 インデックスを構築する
-   - シャードサイズを見て、必要な県だけ 5 年バケットに分割する
-   - `manifests/latest.json` を生成し、R2 にアップロードする（`wrangler r2 object put` または AWS SDK）
+2. **R2にデータをアップロードする仕組みを整える**
+   - `apps/local-bulk-scraper` の NDJSON 出力を`packages/db/minutes/dbjson`に変更する
+   - `index.sqlite` と「8地方分類 + 年度単位」シャードを生成・FTS5 インデックスを構築し、R2にアップロードを行うスクリプトを作成
 
 3. **初期公開手順を手動で固定**
    - ローカルで `scrape -> build sqlite -> upload` を通しで実行する
@@ -207,8 +220,8 @@ const results = db.prepare(`
 
 1. **`packages/api`** を修正
    - R2 からSQLiteファイルをダウンロードする関数を実装
-   - `manifests/latest.json` を取得して対象シャードを解決する関数
-   - インメモリキャッシュ（Workers の `caches` API or KV）
+   - `manifests/latest.json` を取得し `current` の先の **リリース manifest** を読み、対象シャードを解決する関数
+   - インメモリキャッシュ（Workers の `caches` API or KV）。`latest` は短 TTL、リリース manifest・`.db` は長め（不変オブジェクトとして扱う）
    - `statements`や`meetings` を PostgreSQL クエリ → SQLite クエリに変更
    - 検索ロジックを FTS5 ベースに書き換え
 
@@ -218,7 +231,7 @@ const results = db.prepare(`
 
 3. **キャッシュ戦略**
    - Cloudflare Workers のメモリキャッシュ（同一リクエスト内）
-   - Cache API でリクエスト間キャッシュ（TTL: 1 時間）
+   - Cache API でリクエスト間キャッシュ（方針は上記「Manifest のバージョン管理」の `latest` / リリース manifest / `.db` の切り分けに合わせる）
 
 ### フェーズ 4: 差分更新の自動化
 
