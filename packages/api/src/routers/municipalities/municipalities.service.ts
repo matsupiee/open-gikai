@@ -1,5 +1,5 @@
-import type { Db } from "@open-gikai/db-minutes";
-import { meetings, municipalities } from "@open-gikai/db-minutes";
+import type { ShardedMinutesDb } from "@open-gikai/db-minutes";
+import { municipalities } from "@open-gikai/db-minutes";
 import { and, asc, count, eq, like, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
@@ -22,12 +22,19 @@ export interface MunicipalitiesListResponse {
 }
 
 export async function listMunicipalities(
-  db: Db,
+  shardedDb: ShardedMinutesDb,
   input: z.infer<typeof municipalitiesListSchema>,
   isAdmin: boolean
 ): Promise<MunicipalitiesListResponse> {
   const limit = input.limit ?? 50;
   const offset = input.offset ?? 0;
+
+  // index.sqlite には自治体マスタのみがある（meetings は含まれない）ため、
+  // 全シャードから meetingCount を集計する必要がある。
+  // ただし meetingCount は概算で良いため、index.sqlite で自治体一覧を取得し、
+  // meetingCount は 0 で返す（将来的にはキャッシュで対応）。
+  const db = shardedDb.getIndexDb();
+
   const conditions = [eq(municipalities.enabled, true)];
 
   if (input.query) {
@@ -59,19 +66,11 @@ export async function listMunicipalities(
         prefecture: municipalities.prefecture,
         baseUrl: municipalities.baseUrl,
         population: municipalities.population,
-        meetingCount: count(meetings.id),
+        meetingCount: sql<number>`0`,
         systemTypeDescription: sql<string | null>`null`,
       })
       .from(municipalities)
-      .leftJoin(meetings, eq(meetings.municipalityCode, municipalities.code))
       .where(where)
-      .groupBy(
-        municipalities.code,
-        municipalities.name,
-        municipalities.prefecture,
-        municipalities.baseUrl,
-        municipalities.population,
-      )
       .orderBy(...orderBy)
       .limit(limit)
       .offset(offset),

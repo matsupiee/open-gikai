@@ -34,8 +34,8 @@ async function handle({ request }: { request: Request }) {
   const context = await createContext({
     req: request,
     auth: getAuth(),
-    db: getDb(),
-    minutesDb: getMinutesDb(),
+    authDb: getDb(),
+    shardedMinutesDb: getMinutesDb(),
   });
   const rpcResult = await rpcHandler.handle(request, {
     prefix: "/api/rpc",
