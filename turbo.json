@@ -21,33 +21,24 @@
       "cache": false,
       "persistent": true
     },
-    "db:start": {
+    "db:auth:start": {
       "cache": false,
       "persistent": true
     },
-    "db:stop": {
+    "db:auth:stop": {
       "cache": false,
       "persistent": true
     },
-    "db:generate": {
+    "db:auth:generate": {
       "cache": false
     },
-    "db:migrate": {
+    "db:auth:migrate": {
       "cache": false,
       "env": ["DATABASE_URL"]
     },
-    "db:studio": {
+    "db:auth:studio": {
       "cache": false,
       "persistent": true
-    },
-    "db:seed": {
-      "cache": false,
-      "persistent": false
-    },
-    "db:seed-municipality": {
-      "cache": false,
-      "persistent": false,
-      "env": ["DATABASE_URL"]
     }
   }
 }
