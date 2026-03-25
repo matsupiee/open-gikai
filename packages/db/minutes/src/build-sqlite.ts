@@ -18,13 +18,13 @@ import { createReadStream, existsSync, mkdirSync, statSync, unlinkSync, writeFil
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline";
-import { createDb, municipalities } from "@open-gikai/db-minutes";
+import { createDb, municipalities } from "./index";
 import dotenv from "dotenv";
-import { tokenizeBigram } from "@open-gikai/db-minutes/fts";
+import { tokenizeBigram } from "./fts/index";
 
 // --- Setup ---
 
-const root = resolve(fileURLToPath(import.meta.url), "../../../../");
+const root = resolve(fileURLToPath(import.meta.url), "../../../../../");
 dotenv.config({ path: resolve(root, ".env.local"), override: true });
 
 const dbjsonDir = resolve(root, "packages/db/minutes/dbjson");
