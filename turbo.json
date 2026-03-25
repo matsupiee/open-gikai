@@ -48,10 +48,6 @@
       "cache": false,
       "persistent": false,
       "env": ["DATABASE_URL"]
-    },
-    "scrape:local": {
-      "cache": false,
-      "persistent": false
     }
   }
 }
