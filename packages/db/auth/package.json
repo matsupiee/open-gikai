@@ -20,9 +20,7 @@
     "db:stop": "supabase stop",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate",
-    "db:seed": "bun src/seeds/seed-municipality.ts",
-    "db:seed-municipality": "bun src/seeds/seed-municipality.ts"
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^3.3.0",

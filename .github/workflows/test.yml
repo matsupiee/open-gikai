@@ -1,15 +1,6 @@
 name: Test
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "apps/**"
-      - "packages/**"
-      - "package.json"
-      - "bun.lock"
-      - "tsconfig.json"
-      - "turbo.json"
   pull_request:
     branches: [main]
     paths:
@@ -27,26 +18,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        ports:
-          # Supabase CLI と同じ 54322 を使用。ローカルで supabase start 中は競合するため注意
-          - 54322:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
-    env:
-      TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres_test
+    timeout-minutes: 3
 
     steps:
       - uses: actions/checkout@v4
