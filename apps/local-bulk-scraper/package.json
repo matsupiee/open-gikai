@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.840.0",
-    "@open-gikai/db": "workspace:*",
     "@open-gikai/db-minutes": "workspace:*",
     "@open-gikai/scrapers": "workspace:*",
     "@paralleldrive/cuid2": "^3.3.0",
