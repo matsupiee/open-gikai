@@ -18,9 +18,7 @@ import { createReadStream, existsSync, mkdirSync, statSync, unlinkSync, writeFil
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline";
-import { createDb } from "@open-gikai/db";
-import { municipalities, system_types } from "@open-gikai/db/schema";
-import { eq } from "drizzle-orm";
+import { createDb, municipalities } from "@open-gikai/db-minutes";
 import dotenv from "dotenv";
 import { tokenizeBigram } from "@open-gikai/db-minutes/fts";
 
@@ -222,23 +220,22 @@ async function main() {
 
   const nowMs = Date.now();
 
-  // 1. PostgreSQL から municipalities を取得
-  console.log("[build-sqlite] PostgreSQL から自治体データを取得中...");
-  const pgDb = createDb(process.env.DATABASE_URL!);
-  const pgMunicipalities = await pgDb
+  // 1. SQLite (db-minutes) から municipalities を取得
+  console.log("[build-sqlite] SQLite から自治体データを取得中...");
+  const minutesDb = createDb(process.env.MINUTES_DB_PATH);
+  const pgMunicipalities = await minutesDb
     .select({
       id: municipalities.id,
       code: municipalities.code,
       name: municipalities.name,
       prefecture: municipalities.prefecture,
-      systemTypeName: system_types.name,
+      systemTypeName: municipalities.systemType,
       baseUrl: municipalities.baseUrl,
       enabled: municipalities.enabled,
       population: municipalities.population,
       populationYear: municipalities.populationYear,
     })
-    .from(municipalities)
-    .leftJoin(system_types, eq(municipalities.systemTypeId, system_types.id));
+    .from(municipalities);
 
   const municipalityMap = new Map(pgMunicipalities.map((m) => [m.id, m]));
   console.log(`[build-sqlite] ${pgMunicipalities.length} 自治体を取得`);

@@ -16,21 +16,20 @@
 import { existsSync, mkdirSync, createWriteStream } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createDb } from "@open-gikai/db";
-import { municipalities, system_types } from "@open-gikai/db/schema";
+import { createDb, municipalities } from "@open-gikai/db-minutes";
 import { createId } from "@paralleldrive/cuid2";
 import { eq, and, inArray } from "drizzle-orm";
 import dotenv from "dotenv";
 import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";
 import { getAdapter, initAdapterRegistry } from "@open-gikai/scrapers";
-import type { SystemType } from "@open-gikai/db/schema";
+import type { SystemType } from "@open-gikai/db-minutes";
 
 // --- Setup ---
 
 const root = resolve(fileURLToPath(import.meta.url), "../../../../");
 dotenv.config({ path: resolve(root, ".env.local"), override: true });
 
-const db = createDb(process.env.DATABASE_URL!);
+const db = createDb(process.env.MINUTES_DB_PATH);
 
 function parseYear(): number | undefined {
   const idx = process.argv.indexOf("--year");
@@ -222,10 +221,9 @@ async function main() {
       name: municipalities.name,
       prefecture: municipalities.prefecture,
       baseUrl: municipalities.baseUrl,
-      systemTypeName: system_types.name,
+      systemTypeName: municipalities.systemType,
     })
     .from(municipalities)
-    .leftJoin(system_types, eq(municipalities.systemTypeId, system_types.id))
     .where(and(...conditions));
 
   const enabledTargets = targets.filter((t) => {

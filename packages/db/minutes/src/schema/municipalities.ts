@@ -7,6 +7,9 @@ import {
 } from "drizzle-orm/sqlite-core";
 import { createId } from "@paralleldrive/cuid2";
 
+/** 議会録システム種別（既知の値） */
+export type SystemType = "discussnet_ssp" | "dbsearch" | "kensakusystem" | "gijiroku_com";
+
 /**
  * 自治体マスタテーブル（SQLite 版）。
  * PostgreSQL 版の system_types FK は systemType テキストに簡略化。

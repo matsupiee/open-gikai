@@ -7,7 +7,7 @@ import { RPCHandler } from "@orpc/server/fetch";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { getAuth, getDb } from "@/lib/server";
+import { getAuth, getDb, getMinutesDb } from "@/lib/server";
 
 const rpcHandler = new RPCHandler(appRouter, {
   interceptors: [
@@ -35,6 +35,7 @@ async function handle({ request }: { request: Request }) {
     req: request,
     auth: getAuth(),
     db: getDb(),
+    minutesDb: getMinutesDb(),
   });
   const rpcResult = await rpcHandler.handle(request, {
     prefix: "/api/rpc",

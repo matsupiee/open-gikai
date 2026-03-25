@@ -25,3 +25,4 @@ export {
   meetings,
   statements,
 } from "./schema";
+export type { SystemType } from "./schema/municipalities";

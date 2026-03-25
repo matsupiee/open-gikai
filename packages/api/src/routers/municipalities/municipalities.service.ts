@@ -1,6 +1,6 @@
-import type { Db } from "@open-gikai/db";
-import { meetings, municipalities, system_types } from "@open-gikai/db";
-import { and, asc, count, eq, ilike, or, sql } from "drizzle-orm";
+import type { Db } from "@open-gikai/db-minutes";
+import { meetings, municipalities } from "@open-gikai/db-minutes";
+import { and, asc, count, eq, like, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type { municipalitiesListSchema } from "./_schemas";
@@ -35,9 +35,9 @@ export async function listMunicipalities(
     for (const token of tokens) {
       conditions.push(
         or(
-          ilike(municipalities.name, `%${token}%`),
-          ilike(municipalities.prefecture, `%${token}%`),
-          ilike(municipalities.baseUrl, `%${token}%`)
+          like(municipalities.name, `%${token}%`),
+          like(municipalities.prefecture, `%${token}%`),
+          like(municipalities.baseUrl, `%${token}%`)
         )!
       );
     }
@@ -60,11 +60,10 @@ export async function listMunicipalities(
         baseUrl: municipalities.baseUrl,
         population: municipalities.population,
         meetingCount: count(meetings.id),
-        systemTypeDescription: system_types.description,
+        systemTypeDescription: municipalities.systemType,
       })
       .from(municipalities)
       .leftJoin(meetings, eq(meetings.municipalityId, municipalities.id))
-      .leftJoin(system_types, eq(system_types.id, municipalities.systemTypeId))
       .where(where)
       .groupBy(
         municipalities.id,
@@ -73,7 +72,7 @@ export async function listMunicipalities(
         municipalities.prefecture,
         municipalities.baseUrl,
         municipalities.population,
-        system_types.description
+        municipalities.systemType
       )
       .orderBy(...orderBy)
       .limit(limit)
