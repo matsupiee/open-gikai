@@ -5,22 +5,18 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "scrape:ndjson": "bun src/scrape-to-ndjson.ts",
-    "import:ndjson": "bun src/import-ndjson.ts"
+    "scrape:ndjson": "bun src/scrape-to-ndjson.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.840.0",
     "@open-gikai/db-minutes": "workspace:*",
     "@open-gikai/scrapers": "workspace:*",
     "@paralleldrive/cuid2": "^3.3.0",
-    "drizzle-orm": "^0.45.1",
-    "pg": "^8.17.1"
+    "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {
     "bun-types": "catalog:",
     "dotenv": "catalog:",
     "@open-gikai/config": "workspace:*",
-    "@types/pg": "^8.18.0",
     "typescript": "catalog:",
     "vitest": "^4.1.0"
   }
