@@ -1,15 +1,6 @@
 name: Test
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "apps/**"
-      - "packages/**"
-      - "package.json"
-      - "bun.lock"
-      - "tsconfig.json"
-      - "turbo.json"
   pull_request:
     branches: [main]
     paths:
