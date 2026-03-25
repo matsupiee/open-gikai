@@ -5,7 +5,10 @@ export default defineConfig({
   out: "./src/migrations",
   dialect: "sqlite",
   casing: "snake_case",
-  dbCredentials: {
-    url: "./minutes.db",
-  },
+  // シャーディングにより、マイグレーションを複数のDBに対して行うことになる
+  // dbCredentialsでは1つのurlしか指定できないので、このプロジェクトでは使えない
+  // db:studio機能により特定のDBに対して接続を行いたい場合だけ、dbCredentialsを指定する
+  // dbCredentials: {
+  //   url: "",
+  // },
 });

@@ -21,7 +21,6 @@
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate",
     "build:sqlite": "bun src/seeds/build-sqlite.ts",
     "upload:r2": "bun src/upload-r2.ts"
   },
