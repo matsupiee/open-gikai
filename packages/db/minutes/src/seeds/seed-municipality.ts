@@ -66,49 +66,54 @@ async function seed() {
 
   const db = createDb();
 
-  console.log(`[seed] ${municipalityList.length} 件の自治体を登録します`);
+  try {
+    console.log(`[seed] ${municipalityList.length} 件の自治体を登録します`);
 
-  let inserted = 0;
-  const BATCH_SIZE = 100;
+    let inserted = 0;
+    const BATCH_SIZE = 100;
 
-  const values = municipalityList.map((m) => {
-    const displayName = m.name || m.prefecture; // 都道府県行は都道府県名を name に
-    const systemType = detectSystemType(m.baseUrl);
+    const values = municipalityList.map((m) => {
+      const displayName = m.name || m.prefecture; // 都道府県行は都道府県名を name に
+      const systemType = detectSystemType(m.baseUrl);
 
-    return {
-      code: m.code,
-      name: displayName,
-      prefecture: m.prefecture,
-      systemType,
-      baseUrl: m.baseUrl,
-      enabled: true,
-      population: m.population,
-      populationYear: m.populationYear,
-    };
-  });
+      return {
+        code: m.code,
+        name: displayName,
+        prefecture: m.prefecture,
+        systemType,
+        baseUrl: m.baseUrl,
+        enabled: true,
+        population: m.population,
+        populationYear: m.populationYear,
+      };
+    });
 
-  for (let i = 0; i < values.length; i += BATCH_SIZE) {
-    const batch = values.slice(i, i + BATCH_SIZE);
-    const result = await db
-      .insert(municipalities)
-      .values(batch)
-      .onConflictDoUpdate({
-        target: municipalities.code,
-        set: {
-          name: sql`excluded.name`,
-          prefecture: sql`excluded.prefecture`,
-          baseUrl: sql`excluded.base_url`,
-          systemType: sql`excluded.system_type`,
-          population: sql`excluded.population`,
-          populationYear: sql`excluded.population_year`,
-        },
-      })
-      .returning({ id: municipalities.id, code: municipalities.code });
+    for (let i = 0; i < values.length; i += BATCH_SIZE) {
+      const batch = values.slice(i, i + BATCH_SIZE);
+      const result = await db
+        .insert(municipalities)
+        .values(batch)
+        .onConflictDoUpdate({
+          target: municipalities.code,
+          set: {
+            name: sql`excluded.name`,
+            prefecture: sql`excluded.prefecture`,
+            baseUrl: sql`excluded.base_url`,
+            systemType: sql`excluded.system_type`,
+            population: sql`excluded.population`,
+            populationYear: sql`excluded.population_year`,
+          },
+        })
+        .returning({ id: municipalities.id, code: municipalities.code });
 
-    inserted += result.length;
+      inserted += result.length;
+    }
+
+    console.log(`[seed] 完了: inserted/updated=${inserted}`);
+  } finally {
+    // Explicitly close the database connection
+    db.$client.close();
   }
-
-  console.log(`[seed] 完了: inserted/updated=${inserted}`);
 }
 
 seed().catch((err) => {
