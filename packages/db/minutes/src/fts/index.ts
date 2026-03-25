@@ -1,6 +1,3 @@
-import { sql } from "drizzle-orm";
-import type { MinutesDb } from "../client";
-
 /**
  * テキストを 2-gram トークン列に変換する。
  *
@@ -36,32 +33,5 @@ export function tokenizeBigram(text: string): string {
  * tokenizeSearchQuery("東京 教育") // "東京 教育"（1文字キーワードはそのまま）
  */
 export function tokenizeSearchQuery(query: string): string {
-  return query
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map(tokenizeBigram)
-    .join(" ");
-}
-
-/**
- * FTS5 virtual table を作成する。
- *
- * Drizzle-kit は virtual table を生成できないため、
- * マイグレーション後にこの関数を呼び出す。
- *
- * テーブル構造:
- * - `statement_id`: statements.id（UNINDEXED = FTS インデックス対象外）
- * - `bigrams`: 2-gram トークン化済みの発言内容
- */
-export async function setupFts(db: MinutesDb): Promise<void> {
-  await db.run(
-    sql.raw(`
-    CREATE VIRTUAL TABLE IF NOT EXISTS statements_fts USING fts5(
-      statement_id UNINDEXED,
-      bigrams,
-      tokenize = 'unicode61'
-    )
-  `),
-  );
+  return query.trim().split(/\s+/).filter(Boolean).map(tokenizeBigram).join(" ");
 }

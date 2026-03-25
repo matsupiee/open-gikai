@@ -16,11 +16,11 @@ import { createReadStream, existsSync, unlinkSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline";
-import { setupFts, tokenizeBigram } from "../fts/index";
+import { tokenizeBigram } from "../fts/index";
 import dotenv from "dotenv";
 import * as schema from "../schema";
 import type { MinutesDb } from "../client";
-import { municipalityRowsFromCsv, type MunicipalityRow } from "./parse-data/municipalities";
+import { municipalityRowsFromCsv } from "./parse-data/municipalities";
 import { parseMeetingNdjsonLine, type MeetingNdjsonRow } from "./parse-data/meetings";
 import { parseStatementNdjsonLine, type StatementNdjsonRow } from "./parse-data/statements";
 
@@ -68,7 +68,6 @@ async function main() {
   const client = createClient({ url: `file:${dbPath}` });
   const db = drizzle(client, { schema, casing: "snake_case" });
   await migrate(db, { migrationsFolder });
-  await setupFts(db);
 
   // 1. municipalities
   console.log("[import-libsql] municipalities.csv を読み込み中...");
