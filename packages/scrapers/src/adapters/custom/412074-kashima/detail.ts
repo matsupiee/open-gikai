@@ -22,14 +22,14 @@ export interface KashimaDetailParams {
  */
 export function buildMeetingData(
   params: KashimaDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): MeetingData | null {
   // PDF URL の末尾ファイル名をIDのキーとして使用
   const fileName = decodeURIComponent(params.pdfUrl.split("/").pop() ?? "");
   const externalId = `kashima_${params.heldOn}_${fileName.replace(/[^a-zA-Z0-9_\-]/g, "_")}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

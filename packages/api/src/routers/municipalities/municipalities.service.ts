@@ -53,26 +53,24 @@ export async function listMunicipalities(
   const [results, [countRow]] = await Promise.all([
     db
       .select({
-        id: municipalities.id,
+        id: municipalities.code,
         code: municipalities.code,
         name: municipalities.name,
         prefecture: municipalities.prefecture,
         baseUrl: municipalities.baseUrl,
         population: municipalities.population,
         meetingCount: count(meetings.id),
-        systemTypeDescription: municipalities.systemType,
+        systemTypeDescription: sql<string | null>`null`,
       })
       .from(municipalities)
-      .leftJoin(meetings, eq(meetings.municipalityId, municipalities.id))
+      .leftJoin(meetings, eq(meetings.municipalityCode, municipalities.code))
       .where(where)
       .groupBy(
-        municipalities.id,
         municipalities.code,
         municipalities.name,
         municipalities.prefecture,
         municipalities.baseUrl,
         municipalities.population,
-        municipalities.systemType
       )
       .orderBy(...orderBy)
       .limit(limit)

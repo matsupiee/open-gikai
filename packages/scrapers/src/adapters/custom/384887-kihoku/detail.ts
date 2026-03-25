@@ -214,7 +214,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   params: KihokuDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   // heldOn が解析できない場合は null を返す
   if (!params.heldOn) return null;
@@ -230,7 +230,7 @@ export async function buildMeetingData(
   const externalId = `kihoku_${fileName.replace(/\.pdf$/i, "")}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

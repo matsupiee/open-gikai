@@ -295,9 +295,9 @@ export async function fetchMeetingDetail(params: {
   sectionIndex: number;
   title: string;
   heldOn: string;
-  municipalityId: string;
+  municipalityCode: string;
 }): Promise<MeetingData | null> {
-  const { pageUrl, sectionIndex, title, heldOn, municipalityId } = params;
+  const { pageUrl, sectionIndex, title, heldOn, municipalityCode } = params;
 
   const html = await fetchPage(pageUrl);
   if (!html) {
@@ -309,7 +309,7 @@ export async function fetchMeetingDetail(params: {
   if (statements.length === 0) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(title),
     heldOn,

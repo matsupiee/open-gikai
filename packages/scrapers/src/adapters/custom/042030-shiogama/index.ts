@@ -29,10 +29,10 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     return fetchMeetingData(
       detailParams as unknown as Parameters<typeof fetchMeetingData>[0],
-      municipalityId,
+      municipalityCode,
     );
   },
 };

@@ -376,7 +376,7 @@ function buildExternalId(item: SusakiListItem, pdfIndex: number): string {
  */
 export async function fetchMeetingData(
   item: SusakiListItem,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const html = await fetchPage(item.detailUrl);
   if (!html) return null;
@@ -401,7 +401,7 @@ export async function fetchMeetingData(
   const meetingType = detectMeetingType(title);
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType,
     heldOn,
@@ -417,7 +417,7 @@ export async function fetchMeetingData(
  */
 export async function fetchAllMeetingData(
   item: SusakiListItem,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData[]> {
   const html = await fetchPage(item.detailUrl);
   if (!html) return [];
@@ -448,7 +448,7 @@ export async function fetchAllMeetingData(
     const meetingType = detectMeetingType(title);
 
     results.push({
-      municipalityId,
+      municipalityCode,
       title,
       meetingType,
       heldOn,

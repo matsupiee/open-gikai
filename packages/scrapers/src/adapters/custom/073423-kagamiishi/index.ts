@@ -17,8 +17,8 @@ export const adapter: ScraperAdapter = {
     return fetchKagamiishiList(year);
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const record = detailParams as unknown as KagamiishiListRecord;
-    return buildMeetingData(record, municipalityId);
+    return buildMeetingData(record, municipalityCode);
   },
 };

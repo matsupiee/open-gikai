@@ -239,7 +239,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: GodoMeeting,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(meeting.pdfUrl);
   if (!text) return null;
@@ -255,7 +255,7 @@ export async function fetchMeetingData(
   const externalId = `godo_${meeting.eraCode}_${meeting.number}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(title),
     heldOn,

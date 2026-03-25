@@ -20,9 +20,4 @@ export function createDb(dbPath?: string) {
 
 export type Db = ReturnType<typeof createDb>;
 
-export {
-  municipalities,
-  meetings,
-  statements,
-} from "./schema";
-export type { SystemType } from "./schema/municipalities";
+export { municipalities, meetings, statements } from "./schema";

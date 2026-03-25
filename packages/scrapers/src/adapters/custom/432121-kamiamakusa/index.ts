@@ -34,12 +34,12 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as unknown as KamiamakusaDetailParams;
 
     const html = await fetchPage(params.detailUrl);
     if (!html) return null;
 
-    return buildMeetingData(params, municipalityId, html);
+    return buildMeetingData(params, municipalityCode, html);
   },
 };

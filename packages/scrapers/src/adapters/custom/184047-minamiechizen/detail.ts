@@ -215,7 +215,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   params: MinamiechizeDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   if (!params.heldOn) return null;
 
@@ -232,7 +232,7 @@ export async function fetchMeetingData(
   await delay(1000);
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

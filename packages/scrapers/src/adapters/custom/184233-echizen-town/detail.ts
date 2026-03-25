@@ -244,7 +244,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   params: EchizenDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const externalId = `echizen_${params.pageId}`;
 
@@ -271,7 +271,7 @@ export async function buildMeetingData(
   if (allStatements.length === 0) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

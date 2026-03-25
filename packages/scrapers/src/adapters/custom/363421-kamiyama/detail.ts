@@ -14,7 +14,7 @@ import type { MeetingData } from "../../../utils/types";
  */
 export async function fetchMeetingData(
   _detailParams: Record<string, unknown>,
-  _municipalityId: string,
+  _municipalityCode: string,
 ): Promise<MeetingData | null> {
   return null;
 }

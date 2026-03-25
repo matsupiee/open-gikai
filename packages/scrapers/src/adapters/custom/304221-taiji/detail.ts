@@ -209,7 +209,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   params: TaijiDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(params.pdfUrl);
   if (!text) return null;
@@ -224,7 +224,7 @@ export async function buildMeetingData(
   const fileBaseName = params.fileName.replace(/\.(pdf|docx)$/i, "");
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn,

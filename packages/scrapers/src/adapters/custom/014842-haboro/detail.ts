@@ -237,7 +237,7 @@ async function fetchHtmlText(htmlUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: HaboroMeeting,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   let text: string | null;
 
@@ -261,7 +261,7 @@ export async function fetchMeetingData(
   const externalId = `haboro_${pathKey}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.section || meeting.title),
     heldOn: meeting.heldOn,

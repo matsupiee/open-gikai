@@ -155,7 +155,7 @@ export async function fetchMeetingData(
     pdfUrl: string;
     linkText: string;
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const result = await fetchPdfStatements(doc.pdfUrl);
   if (!result) return null;
@@ -191,7 +191,7 @@ export async function fetchMeetingData(
   const title = doc.linkText.replace(/\.pdf$/i, "").trim() || doc.linkText;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: "plenary",
     heldOn,

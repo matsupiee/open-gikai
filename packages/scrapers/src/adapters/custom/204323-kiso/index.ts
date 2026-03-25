@@ -26,7 +26,7 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const { categoryId, articleId, title } = detailParams as {
       categoryId: CategoryId;
       articleId: string;
@@ -37,6 +37,6 @@ export const adapter: ScraperAdapter = {
       articleId,
       title,
     };
-    return fetchArticleDetail(article, municipalityId);
+    return fetchArticleDetail(article, municipalityCode);
   },
 };

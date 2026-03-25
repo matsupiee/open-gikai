@@ -275,7 +275,7 @@ export function parseStatements(html: string): ParsedStatement[] {
  */
 export async function fetchMeetingData(
   meeting: { councilId: number; title: string; heldOn: string },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const url = buildDetailUrl(meeting.councilId);
   const html = await fetchPage(url);
@@ -285,7 +285,7 @@ export async function fetchMeetingData(
   if (statements.length === 0) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
     heldOn: meeting.heldOn,

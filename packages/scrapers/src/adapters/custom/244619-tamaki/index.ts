@@ -24,8 +24,8 @@ export const adapter: ScraperAdapter = {
     return records.map(toListRecord);
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as unknown as TamakiDetailParams;
-    return buildMeetingData(params, municipalityId);
+    return buildMeetingData(params, municipalityCode);
   },
 };

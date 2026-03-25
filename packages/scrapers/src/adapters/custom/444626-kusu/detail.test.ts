@@ -17,7 +17,7 @@ describe("buildMeetingData", () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.municipalityId).toBe("municipality-id-123");
+    expect(result!.municipalityCode).toBe("municipality-id-123");
     expect(result!.title).toBe(
       "令和6年第4回定例会（令和6年11月29日～12月17日） 開会（11月29日）",
     );

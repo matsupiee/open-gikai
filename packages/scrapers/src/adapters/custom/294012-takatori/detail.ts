@@ -213,9 +213,9 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
 export async function fetchMeetingData(params: {
   session: TakatoriSession;
   pdf: TakatoriPdfInfo;
-  municipalityId: string;
+  municipalityCode: string;
 }): Promise<MeetingData | null> {
-  const { session, pdf, municipalityId } = params;
+  const { session, pdf, municipalityCode } = params;
 
   const text = await fetchPdfText(pdf.pdfUrl);
   if (!text) return null;
@@ -241,7 +241,7 @@ export async function fetchMeetingData(params: {
   const externalId = `takatori_${session.frmId}_${fileName}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(title),
     heldOn,

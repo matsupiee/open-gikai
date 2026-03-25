@@ -209,7 +209,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: OgimiMeeting,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   if (!meeting.year) return null;
 
@@ -230,7 +230,7 @@ export async function fetchMeetingData(
   const heldOn = `${meeting.year}-01-01`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: meeting.meetingType,
     heldOn,

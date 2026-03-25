@@ -220,7 +220,7 @@ function extractExternalIdKey(pdfPath: string): string | null {
  */
 export async function fetchMeetingData(
   params: KuroishiDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   if (!params.heldOn) return null;
 
@@ -240,7 +240,7 @@ export async function fetchMeetingData(
   const externalId = idKey ? `kuroishi_${idKey}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: detectMeetingType(params.title),
     heldOn: params.heldOn,

@@ -8,7 +8,7 @@
  *   bun run scrape:ndjson
  *   bun run scrape:ndjson -- --year 2025
  *   bun run scrape:ndjson -- --system-type dbsearch
- *   bun run scrape:ndjson -- --year 2025 --system-type discussnet_ssp
+ *   bun run scrape:ndjson -- --year 2025 --system-type discussnet
  *   bun run scrape:ndjson -- --system-type kensakusystem --meeting-limit 2
  *   bun run scrape:ndjson -- --target 011002,012025
  */
@@ -16,20 +16,26 @@
 import { existsSync, mkdirSync, createWriteStream } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createDb, municipalities } from "@open-gikai/db-minutes";
+import { municipalityRowsFromCsv } from "@open-gikai/db-minutes/seeds/municipalities-csv";
 import { createId } from "@paralleldrive/cuid2";
-import { eq, and, inArray } from "drizzle-orm";
 import dotenv from "dotenv";
 import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";
-import { getAdapter, initAdapterRegistry } from "@open-gikai/scrapers";
-import type { SystemType } from "@open-gikai/db-minutes";
+import {
+  detectAdapterKey,
+  getAdapter,
+  initAdapterRegistry,
+  SharedSystemAdapterKey,
+} from "@open-gikai/scrapers";
 
 // --- Setup ---
 
 const root = resolve(fileURLToPath(import.meta.url), "../../../../");
 dotenv.config({ path: resolve(root, ".env.local"), override: true });
 
-const db = createDb(process.env.MINUTES_DB_PATH);
+const municipalitiesCsvPath = resolve(
+  root,
+  "packages/db/minutes/src/seeds/data/municipalities.csv",
+);
 
 function parseYear(): number | undefined {
   const idx = process.argv.indexOf("--year");
@@ -53,29 +59,31 @@ function parseMeetingLimit(): number | undefined {
   return val;
 }
 
-const VALID_SYSTEM_TYPES: SystemType[] = ["discussnet_ssp", "dbsearch", "kensakusystem", "gijiroku_com"];
-
 function parseTarget(): string[] | undefined {
   const idx = process.argv.indexOf("--target");
   if (idx === -1) return undefined;
   const val = process.argv[idx + 1];
   if (!val) {
-    console.error(`[scrape-to-ndjson] --target に自治体コードを指定してください（カンマ区切りで複数指定可）`);
+    console.error(
+      `[scrape-to-ndjson] --target に自治体コードを指定してください（カンマ区切りで複数指定可）`,
+    );
     process.exit(1);
   }
   return val.split(",").map((s) => s.trim());
 }
 
-function parseSystemType(): SystemType | undefined {
+const validSystemTypes = Object.values(SharedSystemAdapterKey);
+
+function parseSystemType(): SharedSystemAdapterKey | undefined {
   const idx = process.argv.indexOf("--system-type");
   if (idx === -1) return undefined;
   const val = process.argv[idx + 1];
-  if (!val || !VALID_SYSTEM_TYPES.includes(val as SystemType)) {
+  if (!val || !validSystemTypes.includes(val as SharedSystemAdapterKey)) {
     console.error(`[scrape-to-ndjson] 無効なシステムタイプ: ${val}`);
-    console.error(`  有効な値: ${VALID_SYSTEM_TYPES.join(", ")}`);
+    console.error(`  有効な値: ${validSystemTypes.join(", ")}`);
     process.exit(1);
   }
-  return val as SystemType;
+  return val as SharedSystemAdapterKey;
 }
 
 // 同一ホスト内のデフォルト並列数。
@@ -122,9 +130,9 @@ function extractGroupKey(hostname: string): string {
  * dbsr.jp (*.dbsr.jp)、discussnet-ssp (ssp.kaigiroku.net)、kensakusystem (*.kensakusystem.jp) のように
  * 複数自治体が同一サーバーを共有するシステムでは、並列数を抑えて IP 制限を回避する。
  */
-function runGroupedByHost(
+async function runGroupedByHost(
   targets: { baseUrl: string | null }[],
-  tasks: (() => Promise<void>)[]
+  tasks: (() => Promise<void>)[],
 ): Promise<void> {
   const hostGroups = new Map<string, { groupKey: string; tasks: (() => Promise<void>)[] }>();
 
@@ -160,11 +168,7 @@ async function main() {
   // 1. 出力ディレクトリの準備（ログ記録のため最初に作成）
   const today = new Date().toISOString().slice(0, 10);
   // ログは apps/local-bulk-scraper/output/{today}/ に出力
-  const logDir = resolve(
-    fileURLToPath(import.meta.url),
-    "../../output",
-    today
-  );
+  const logDir = resolve(fileURLToPath(import.meta.url), "../../output", today);
   if (!existsSync(logDir)) {
     mkdirSync(logDir, { recursive: true });
   }
@@ -174,13 +178,8 @@ async function main() {
     mkdirSync(ndjsonDir, { recursive: true });
   }
 
-  const runTimestamp = new Date()
-    .toISOString()
-    .replace(/[:.]/g, "-")
-    .slice(0, 19);
-  const logStream = createWriteStream(
-    resolve(logDir, `scrape-${runTimestamp}.log`)
-  );
+  const runTimestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const logStream = createWriteStream(resolve(logDir, `scrape-${runTimestamp}.log`));
 
   const log = (level: "INFO" | "WARN" | "ERROR", ...args: unknown[]) => {
     const ts = new Date().toISOString();
@@ -209,71 +208,79 @@ async function main() {
   }
   log("INFO", "[scrape-to-ndjson] Starting...");
 
-  // 2. DB から enabled な municipalities + system_types を取得
-  const conditions = [eq(municipalities.enabled, true)];
-  if (targetCodes) {
-    conditions.push(inArray(municipalities.code, targetCodes));
+  // 2. municipalities.csv（団体コード = meetings.ndjson の municipalityCode）
+  if (!existsSync(municipalitiesCsvPath)) {
+    log("ERROR", `[scrape-to-ndjson] CSV が見つかりません: ${municipalitiesCsvPath}`);
+    await new Promise<void>((r) => logStream.end(r));
+    process.exit(1);
   }
-  const targets = await db
-    .select({
-      id: municipalities.id,
-      code: municipalities.code,
-      name: municipalities.name,
-      prefecture: municipalities.prefecture,
-      baseUrl: municipalities.baseUrl,
-      systemTypeName: municipalities.systemType,
-    })
-    .from(municipalities)
-    .where(and(...conditions));
 
-  const enabledTargets = targets.filter((t) => {
-    if (!t.baseUrl) return false;
-    // systemTypeName またはカスタムアダプター（自治体コード）のいずれかで adapter が見つかる必要がある
-    if (!t.systemTypeName && !getAdapter(t.code)) return false;
-    if (targetSystemType && t.systemTypeName !== targetSystemType) return false;
-    return true;
-  });
+  let csvRows = municipalityRowsFromCsv(municipalitiesCsvPath).filter((r) => r.enabled && r.baseUrl);
+  if (targetCodes) {
+    const set = new Set(targetCodes);
+    csvRows = csvRows.filter((r) => set.has(r.code));
+  }
+
+  let enabledTargets = csvRows.filter((t) => getAdapter(detectAdapterKey(t.baseUrl, t.code)));
+  if (targetSystemType) {
+    enabledTargets = enabledTargets.filter((t) => detectAdapterKey(t.baseUrl, t.code) === targetSystemType);
+  }
 
   log("INFO", `[scrape-to-ndjson] ${enabledTargets.length} 自治体を処理します`);
 
   // 3. NDJSON 出力ストリームの準備
-  const meetingsStream = createWriteStream(
-    resolve(ndjsonDir, "meetings.ndjson")
-  );
-  const statementsStream = createWriteStream(
-    resolve(ndjsonDir, "statements.ndjson")
-  );
+  const meetingsStream = createWriteStream(resolve(ndjsonDir, "meetings.ndjson"));
+  const statementsStream = createWriteStream(resolve(ndjsonDir, "statements.ndjson"));
 
   let totalMeetings = 0;
   let totalStatements = 0;
-  const failedMunicipalities: { name: string; prefecture: string; systemType: string; reason: string }[] = [];
+  const failedMunicipalities: {
+    name: string;
+    prefecture: string;
+    systemType: string;
+    reason: string;
+  }[] = [];
 
   // 4. 自治体を並列スクレイピング
   const tasks = enabledTargets.map((target) => async () => {
-    const adapterKey = target.systemTypeName ?? target.code;
+    if (!target.baseUrl) throw new Error(); // この分岐に入ることはないが型安全のため書く
+
+    const adapterKey = detectAdapterKey(target.baseUrl, target.code);
+    const adapter = getAdapter(adapterKey);
+    if (!adapter) throw new Error(); // この分岐に入ることはないが型安全のため書く
+
     log("INFO", `[scrape-to-ndjson] ${target.prefecture} ${target.name} (${adapterKey})`);
 
     let meetingDataList: MeetingData[];
     try {
-      meetingDataList = await scrapeMunicipality(
-        target.id,
-        target.name,
+      meetingDataList = await scrapeWithAdapter(
+        adapter,
         target.code,
-        target.baseUrl!,
-        target.systemTypeName,
+        target.name,
+        target.baseUrl,
         targetYear,
-        meetingLimit
+        meetingLimit,
       );
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       log("ERROR", `${target.name}: スクレイピング失敗: ${reason}`);
-      failedMunicipalities.push({ name: target.name, prefecture: target.prefecture, systemType: adapterKey, reason });
+      failedMunicipalities.push({
+        name: target.name,
+        prefecture: target.prefecture,
+        systemType: adapterKey,
+        reason,
+      });
       return;
     }
 
     if (meetingDataList.length === 0) {
       log("INFO", `${target.name}: 0 件`);
-      failedMunicipalities.push({ name: target.name, prefecture: target.prefecture, systemType: adapterKey, reason: "0 件（データなし）" });
+      failedMunicipalities.push({
+        name: target.name,
+        prefecture: target.prefecture,
+        systemType: adapterKey,
+        reason: "0 件（データなし）",
+      });
       return;
     }
 
@@ -288,7 +295,7 @@ async function main() {
       meetingsStream.write(
         JSON.stringify({
           id: meetingId,
-          municipalityId: meetingData.municipalityId,
+          municipalityCode: meetingData.municipalityCode,
           title: meetingData.title,
           meetingType: meetingData.meetingType,
           heldOn: meetingData.heldOn,
@@ -296,7 +303,7 @@ async function main() {
           externalId: meetingData.externalId,
           status: "processed",
           scrapedAt: now,
-        }) + "\n"
+        }) + "\n",
       );
       totalMeetings++;
 
@@ -314,7 +321,7 @@ async function main() {
             contentHash: s.contentHash,
             startOffset: s.startOffset,
             endOffset: s.endOffset,
-          }) + "\n"
+          }) + "\n",
         );
         totalStatements++;
       }
@@ -356,50 +363,27 @@ async function main() {
   process.exit(0);
 }
 
-async function scrapeMunicipality(
-  municipalityId: string,
-  municipalityName: string,
-  municipalityCode: string,
-  baseUrl: string,
-  systemTypeName: string | null,
-  targetYear?: number,
-  meetingLimit?: number
-): Promise<MeetingData[]> {
-  // カスタムアダプター（自治体コード）を優先し、なければ汎用アダプター（systemType）を使う
-  const adapter = getAdapter(municipalityCode) || (systemTypeName && getAdapter(systemTypeName));
-  if (adapter) {
-    return scrapeWithAdapter(adapter, municipalityId, municipalityName, baseUrl, targetYear, meetingLimit);
-  }
-
-  console.warn(`  未対応の systemType: ${systemTypeName ?? "null"} (code=${municipalityCode})`);
-  return [];
-}
-
 /**
  * ScraperAdapter を使った汎用バルクスクレイピング。
  * 指定年度（未指定時は直近5年）の議事録を取得する。
  */
 async function scrapeWithAdapter(
   adapter: ScraperAdapter,
-  municipalityId: string,
+  municipalityCode: string,
   municipalityName: string,
   baseUrl: string,
   targetYear?: number,
-  meetingLimit?: number
+  meetingLimit?: number,
 ): Promise<MeetingData[]> {
   const results: MeetingData[] = [];
 
   const currentYear = new Date().getFullYear();
-  const years = targetYear
-    ? [targetYear]
-    : Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const years = targetYear ? [targetYear] : Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   for (const year of years) {
     if (meetingLimit && results.length >= meetingLimit) break;
 
-    console.log(
-      `  [${adapter.name}] ${municipalityName}: ${year}年の一覧を取得中...`
-    );
+    console.log(`  [${adapter.name}] ${municipalityName}: ${year}年の一覧を取得中...`);
 
     const records = await adapter.fetchList({ baseUrl, year });
     if (records.length === 0) {
@@ -412,13 +396,13 @@ async function scrapeWithAdapter(
     const limitNote = meetingLimit ? ` (${limited.length}/${records.length} 件処理)` : "";
 
     console.log(
-      `  [${adapter.name}] ${municipalityName}: ${year}年 → ${records.length} 件${limitNote}`
+      `  [${adapter.name}] ${municipalityName}: ${year}年 → ${records.length} 件${limitNote}`,
     );
 
     for (const record of limited) {
       const meeting = await adapter.fetchDetail({
         detailParams: record.detailParams,
-        municipalityId,
+        municipalityCode,
       });
       if (meeting) {
         results.push(meeting);

@@ -1,14 +1,16 @@
-import {
-  sqliteTable,
-  text,
-  integer,
-  index,
-  uniqueIndex,
-} from "drizzle-orm/sqlite-core";
-import { createId } from "@paralleldrive/cuid2";
+import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 
-/** 議会録システム種別（既知の値） */
-export type SystemType = "discussnet_ssp" | "dbsearch" | "kensakusystem" | "gijiroku_com";
+export const REGION_SLUGS = [
+  "hokkaido",
+  "tohoku",
+  "kanto",
+  "chubu",
+  "kinki",
+  "chugoku",
+  "shikoku",
+  "kyushu",
+] as const;
+export type RegionSlug = (typeof REGION_SLUGS)[number];
 
 /**
  * 自治体マスタテーブル（SQLite 版）。
@@ -17,9 +19,8 @@ export type SystemType = "discussnet_ssp" | "dbsearch" | "kensakusystem" | "giji
 export const municipalities = sqliteTable(
   "municipalities",
   {
-    id: text()
-      .$defaultFn(() => createId())
-      .primaryKey(),
+    /** 総務省 地方公共団体コード（6桁）— 主キー（NDJSON・meetings.municipalityCode と同一） */
+    code: text().primaryKey(),
     createdAt: integer({ mode: "timestamp" })
       .$defaultFn(() => new Date())
       .notNull(),
@@ -27,14 +28,12 @@ export const municipalities = sqliteTable(
       .$defaultFn(() => new Date())
       .$onUpdate(() => new Date())
       .notNull(),
-    /** 総務省 地方公共団体コード（6桁） */
-    code: text().notNull(),
     /** 自治体名（例: 鹿児島市） */
     name: text().notNull(),
     /** 都道府県名（例: 鹿児島県） */
     prefecture: text().notNull(),
-    /** 会議録システム種別（例: discussnet_ssp, dbsearch） */
-    systemType: text(),
+    /** 8地方分類（例: "hokkaido", "kanto"） */
+    regionSlug: text({ enum: REGION_SLUGS }).notNull(),
     /** 会議録トップ URL */
     baseUrl: text(),
     /** スクレイピング対象フラグ */
@@ -44,13 +43,5 @@ export const municipalities = sqliteTable(
     /** 人口データの基準年 */
     populationYear: integer(),
   },
-  (table) => [
-    uniqueIndex("municipalities_code_idx").on(table.code),
-    index("municipalities_prefecture_idx").on(table.prefecture),
-    index("municipalities_system_type_idx").on(table.systemType),
-    index("municipalities_enabled_system_type_idx").on(
-      table.enabled,
-      table.systemType
-    ),
-  ]
+  (table) => [index("municipalities_prefecture_idx").on(table.prefecture)],
 );

@@ -106,7 +106,7 @@ export function buildMeetingData(
     scheduleLabel: string;
     playlist: PlaylistItem[];
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): MeetingData | null {
   const statements = buildStatements(params.playlist);
   if (statements.length === 0) return null;
@@ -117,7 +117,7 @@ export function buildMeetingData(
   const title = `${params.councilLabel} ${params.scheduleLabel}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(params.councilLabel),
     heldOn,

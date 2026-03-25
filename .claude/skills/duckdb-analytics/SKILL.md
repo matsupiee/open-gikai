@@ -21,7 +21,7 @@ version: 1.1.0
 - 省略された場合は `output/` 配下の最新ディレクトリを使う
 
 **オプション:**
-- `--municipality <municipalityId>` — 特定の自治体に絞って分析
+- `--municipality <municipalityCode>` — 特定の自治体に絞って分析
 - `--check <チェック名>` — 特定のチェックだけ実行（下記チェック一覧参照）
 
 引数が不足している場合はユーザーに確認する。
@@ -69,7 +69,7 @@ FROM read_ndjson_auto('{OUTDIR}/meetings.ndjson') AS m
 ```sql
 SELECT
   (SELECT count(*) FROM read_ndjson_auto('{OUTDIR}/meetings.ndjson')) AS total_meetings,
-  (SELECT count(DISTINCT municipalityId) FROM read_ndjson_auto('{OUTDIR}/meetings.ndjson')) AS total_municipalities,
+  (SELECT count(DISTINCT municipalityCode) FROM read_ndjson_auto('{OUTDIR}/meetings.ndjson')) AS total_municipalities,
   (SELECT count(*) FROM read_ndjson_auto('{OUTDIR}/statements.ndjson')) AS total_statements,
   (SELECT count(*) FROM read_ndjson_auto('{OUTDIR}/statement_chunks.ndjson')) AS total_chunks;
 ```
@@ -82,7 +82,7 @@ SELECT
 
 ```sql
 SELECT
-  m.municipalityId,
+  m.municipalityCode,
   count(DISTINCT m.id) AS meeting_count,
   count(DISTINCT s.id) AS statement_count,
   min(m.heldOn) AS earliest_meeting,
@@ -90,7 +90,7 @@ SELECT
 FROM read_ndjson_auto('{OUTDIR}/meetings.ndjson') AS m
 LEFT JOIN read_ndjson_auto('{OUTDIR}/statements.ndjson') AS s
   ON m.id = s.meetingId
-GROUP BY m.municipalityId
+GROUP BY m.municipalityCode
 ORDER BY meeting_count ASC;
 ```
 
@@ -107,7 +107,7 @@ ORDER BY meeting_count ASC;
 ```sql
 SELECT
   m.id AS meeting_id,
-  m.municipalityId,
+  m.municipalityCode,
   m.title,
   m.heldOn,
   m.sourceUrl
@@ -115,7 +115,7 @@ FROM read_ndjson_auto('{OUTDIR}/meetings.ndjson') AS m
 LEFT JOIN read_ndjson_auto('{OUTDIR}/statements.ndjson') AS s
   ON m.id = s.meetingId
 WHERE s.id IS NULL
-ORDER BY m.municipalityId, m.heldOn;
+ORDER BY m.municipalityCode, m.heldOn;
 ```
 
 **注目ポイント:**
@@ -153,7 +153,7 @@ SELECT
   externalId,
   count(*) AS dup_count,
   array_agg(id) AS meeting_ids,
-  array_agg(DISTINCT municipalityId) AS municipality_ids
+  array_agg(DISTINCT municipalityCode) AS municipality_codes
 FROM read_ndjson_auto('{OUTDIR}/meetings.ndjson')
 WHERE externalId IS NOT NULL
 GROUP BY externalId
@@ -231,7 +231,7 @@ WHERE s.chunkId IS NOT NULL
 ```sql
 SELECT
   id,
-  municipalityId,
+  municipalityCode,
   title,
   heldOn,
   sourceUrl
@@ -264,7 +264,7 @@ FROM read_ndjson_auto('{OUTDIR}/statements.ndjson');
 ```sql
 SELECT
   s.meetingId,
-  m.municipalityId,
+  m.municipalityCode,
   m.title,
   count(*) AS total_statements,
   count(*) FILTER (WHERE s.speakerName IS NULL) AS null_name_count,
@@ -272,7 +272,7 @@ SELECT
 FROM read_ndjson_auto('{OUTDIR}/statements.ndjson') AS s
 JOIN read_ndjson_auto('{OUTDIR}/meetings.ndjson') AS m
   ON s.meetingId = m.id
-GROUP BY s.meetingId, m.municipalityId, m.title
+GROUP BY s.meetingId, m.municipalityCode, m.title
 HAVING count(*) FILTER (WHERE s.speakerName IS NULL) > 0
 ORDER BY pct_null_name DESC
 LIMIT 50;
@@ -388,32 +388,32 @@ ORDER BY cnt DESC;
 
 ### Step 4: 自治体名の解決（オプション）
 
-`municipalityId` だけでは自治体を特定しにくい場合、`municipalities.csv` と突合する。
+NDJSON の `municipalityCode`（6 桁の団体コード）を `municipalities.csv` の「団体コード」と突合し、都道府県名・市区町村名を付与する。
 
 ```sql
 SELECT
-  m.municipalityId,
+  m.municipalityCode,
   csv."都道府県名（漢字）" AS prefecture,
   csv."市区町村名（漢字）" AS city,
   count(*) AS meeting_count
 FROM read_ndjson_auto('{OUTDIR}/meetings.ndjson') AS m
-LEFT JOIN read_csv_auto('{worktree_root}/packages/db/src/seeds/municipalities.csv') AS csv
-  ON true  -- municipalities.csv には municipalityId がないため直接結合できない
-GROUP BY m.municipalityId, csv."都道府県名（漢字）", csv."市区町村名（漢字）"
+LEFT JOIN read_csv_auto('{worktree_root}/packages/db/minutes/src/seeds/data/municipalities.csv') AS csv
+  ON lpad(cast(csv."団体コード" AS VARCHAR), 6, '0') = m.municipalityCode
+GROUP BY m.municipalityCode, csv."都道府県名（漢字）", csv."市区町村名（漢字）"
 ORDER BY meeting_count ASC;
 ```
 
-**注意:** `municipalities.csv` には内部 ID（`municipalityId`）が含まれていない。自治体名の解決が必要な場合は、DB にアクセスして municipalities テーブルから取得する（db-access スキル参照）。
+**注意:** CSV の団体コードが数値として読まれる場合があるため、`lpad(cast(...))` で 6 桁に揃えてから比較する。より確実な突合が必要なら DB の `municipalities` テーブルを参照する（db-access スキル参照）。
 
 代替手段として、NDJSON の `sourceUrl` から自治体ドメインを抽出して推測できる:
 
 ```sql
 SELECT
-  municipalityId,
+  municipalityCode,
   regexp_extract(sourceUrl, 'https?://([^/]+)', 1) AS domain,
   count(*) AS meeting_count
 FROM read_ndjson_auto('{OUTDIR}/meetings.ndjson')
-GROUP BY municipalityId, domain
+GROUP BY municipalityCode, domain
 ORDER BY meeting_count ASC;
 ```
 

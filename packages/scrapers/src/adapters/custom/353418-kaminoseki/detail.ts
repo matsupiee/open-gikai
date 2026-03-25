@@ -16,7 +16,7 @@ import type { KaminosekiMeeting } from "./list";
  */
 export async function fetchMeetingData(
   _params: KaminosekiMeeting,
-  _municipalityId: string,
+  _municipalityCode: string,
 ): Promise<MeetingData | null> {
   // 会議録ページが 404 エラーのためスクレイピング不可
   return null;

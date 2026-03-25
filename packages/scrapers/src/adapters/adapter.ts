@@ -39,6 +39,6 @@ export interface ScraperAdapter {
    */
   fetchDetail(params: {
     detailParams: Record<string, unknown>;
-    municipalityId: string;
+    municipalityCode: string;
   }): Promise<MeetingData | null>;
 }

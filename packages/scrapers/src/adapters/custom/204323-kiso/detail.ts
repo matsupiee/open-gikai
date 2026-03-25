@@ -209,7 +209,7 @@ async function extractTextFromPdf(data: Uint8Array): Promise<string | null> {
  */
 export async function fetchArticleDetail(
   article: KisoArticle & { categoryId: CategoryId },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const url = buildArticleUrl(article.categoryId, article.articleId);
   const html = await fetchPage(url);
@@ -244,7 +244,7 @@ export async function fetchArticleDetail(
   if (!heldOn) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: article.title,
     meetingType: detectMeetingType(article.title),
     heldOn,

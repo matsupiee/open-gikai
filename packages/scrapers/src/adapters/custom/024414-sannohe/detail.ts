@@ -247,7 +247,7 @@ export function extractExternalIdKey(pdfUrl: string): string | null {
  */
 export async function fetchMeetingData(
   meeting: SannoheMeeting,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   if (!meeting.heldOn) return null;
 
@@ -261,7 +261,7 @@ export async function fetchMeetingData(
   const externalId = idKey ? `sannohe_${idKey}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.section),
     heldOn: meeting.heldOn,

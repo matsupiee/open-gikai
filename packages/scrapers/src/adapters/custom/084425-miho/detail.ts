@@ -278,7 +278,7 @@ function buildTitle(record: MihoPdfRecord): string {
  */
 export async function buildMeetingData(
   record: MihoPdfRecord,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(record.pdfUrl);
   if (!text) return null;
@@ -292,7 +292,7 @@ export async function buildMeetingData(
   const fileKey = extractFileKey(record.pdfUrl);
 
   return {
-    municipalityId,
+    municipalityCode,
     title: buildTitle(record),
     meetingType: record.meetingType,
     heldOn,

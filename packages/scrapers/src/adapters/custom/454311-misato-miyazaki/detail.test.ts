@@ -196,7 +196,7 @@ describe("buildMeetingData", () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.municipalityId).toBe("muni-123");
+    expect(result!.municipalityCode).toBe("muni-123");
     expect(result!.title).toBe("令和7年第1回定例会 3月2日　一般質問");
     expect(result!.meetingType).toBe("plenary");
     expect(result!.heldOn).toBe("2025-03-02");

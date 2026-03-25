@@ -18,7 +18,7 @@ import type { MogamiRecord } from "./list";
  */
 export function fetchMeetingData(
   _record: MogamiRecord,
-  _municipalityId: string,
+  _municipalityCode: string,
 ): Promise<MeetingData | null> {
   // テキスト会議録なし（映像配信専用）
   return Promise.resolve(null);

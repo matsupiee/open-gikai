@@ -182,7 +182,7 @@ describe("fetchMeetingData", () => {
     const result = fetchMeetingData(record, "municipality-id-1");
 
     expect(result).not.toBeNull();
-    expect(result!.municipalityId).toBe("municipality-id-1");
+    expect(result!.municipalityCode).toBe("municipality-id-1");
     expect(result!.title).toBe("令和６年第２４０回滑川町議会定例会");
     expect(result!.meetingType).toBe("plenary");
     expect(result!.heldOn).toBe("2024-03-05");

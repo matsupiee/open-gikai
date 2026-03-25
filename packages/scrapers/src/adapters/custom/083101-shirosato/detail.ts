@@ -15,7 +15,7 @@ import type { ShirosatoListRecord } from "./list";
  */
 export async function fetchMeetingData(
   params: ShirosatoListRecord,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const data = await fetchMinuteData(
     params.tenantId,
@@ -27,7 +27,7 @@ export async function fetchMeetingData(
       name: params.scheduleName,
       memberList: params.memberList,
     },
-    municipalityId,
+    municipalityCode,
     { viewYear: params.viewYear },
   );
   if (!data || data.statements.length === 0) return null;

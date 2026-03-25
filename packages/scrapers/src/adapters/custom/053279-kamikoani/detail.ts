@@ -203,7 +203,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   pdf: KamikoaniPdf,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(pdf.pdfUrl);
   if (!text) return null;
@@ -219,7 +219,7 @@ export async function fetchMeetingData(
   const title = `${pdf.meetingTitle} ${pdf.partTitle}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(pdf.meetingTitle),
     heldOn: pdf.heldOn,

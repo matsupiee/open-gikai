@@ -22,7 +22,7 @@ import type { ShirakawaVillagePdfLink } from "./list";
  */
 export async function fetchMeetingData(
   _link: ShirakawaVillagePdfLink,
-  _municipalityId: string
+  _municipalityCode: string
 ): Promise<MeetingData | null> {
   // 発言全文テキスト形式の会議録は公開されていない。
   // statements が空になるため null を返す。

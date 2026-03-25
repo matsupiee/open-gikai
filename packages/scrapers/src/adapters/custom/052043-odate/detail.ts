@@ -22,7 +22,7 @@ export interface OdateDetailParams {
  */
 export function buildMeetingData(
   params: OdateDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): MeetingData | null {
   if (params.heldOn === null) return null;
 
@@ -30,7 +30,7 @@ export function buildMeetingData(
   const externalId = `odate_${encodeURIComponent(params.pdfUrl)}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

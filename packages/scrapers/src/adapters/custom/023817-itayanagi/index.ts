@@ -25,13 +25,13 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const { pageUrl, sectionIndex, title, heldOn } = detailParams as {
       pageUrl: string;
       sectionIndex: number;
       title: string;
       heldOn: string;
     };
-    return fetchMeetingDetail({ pageUrl, sectionIndex, title, heldOn, municipalityId });
+    return fetchMeetingDetail({ pageUrl, sectionIndex, title, heldOn, municipalityCode });
   },
 };

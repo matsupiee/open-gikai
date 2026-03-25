@@ -27,7 +27,7 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const { pdfUrl, linkText, sourcePageUrl } = detailParams as {
       pdfUrl: string;
       linkText: string;
@@ -35,7 +35,7 @@ export const adapter: ScraperAdapter = {
     };
     return fetchMeetingData(
       { pdfUrl, linkText, sourcePageUrl },
-      municipalityId,
+      municipalityCode,
     );
   },
 };

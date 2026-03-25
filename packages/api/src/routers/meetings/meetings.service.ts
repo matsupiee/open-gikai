@@ -64,7 +64,7 @@ export async function listMeetings(
       status: meetings.status,
     })
     .from(meetings)
-    .innerJoin(municipalities, eq(meetings.municipalityId, municipalities.id));
+    .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code));
 
   const finalQuery = conditions.length > 0 ? query.where(and(...conditions)) : query;
 
@@ -97,7 +97,7 @@ export async function getMeetingStatements(
       status: meetings.status,
     })
     .from(meetings)
-    .innerJoin(municipalities, eq(meetings.municipalityId, municipalities.id))
+    .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
     .where(eq(meetings.id, input.meetingId))
     .limit(1);
 

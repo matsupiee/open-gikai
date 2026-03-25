@@ -45,10 +45,10 @@ export const adapter: ScraperAdapter = {
     return records;
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const session = detailParams.session as TakatoriSession;
     const pdf = detailParams.pdf as TakatoriPdfInfo;
 
-    return fetchMeetingData({ session, pdf, municipalityId });
+    return fetchMeetingData({ session, pdf, municipalityCode });
   },
 };

@@ -37,7 +37,7 @@ import { extractBaseInfo } from "./url";
 export async function fetchMeetingDetail(
   baseUrl: string,
   fino: string,
-  municipalityId: string,
+  municipalityCode: string,
   unid: string,
   title: string,
   dateLabel: string
@@ -103,7 +103,7 @@ export async function fetchMeetingDetail(
     const externalId = `gijiroku_${hostPrefix}_${unid}`;
 
     return {
-      municipalityId,
+      municipalityCode,
       title,
       meetingType,
       heldOn,

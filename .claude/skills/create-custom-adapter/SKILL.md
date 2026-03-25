@@ -26,7 +26,7 @@ version: 3.0.0
 ScraperAdapter インターフェース (packages/scrapers/src/adapters/adapter.ts)
 ├── fetchList({ baseUrl, year }) → ListRecord[]
 │   各 ListRecord は detailParams を持ち、detail フェーズにキュー経由で渡される
-└── fetchDetail({ detailParams, municipalityId }) → MeetingData | null
+└── fetchDetail({ detailParams, municipalityCode }) → MeetingData | null
     detailParams を使って議事録本文を取得し、MeetingData を返す
 
 汎用ハンドラー (apps/scraper-worker/src/handlers/)
@@ -299,10 +299,10 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     // detailParams をキャストして MeetingData を返す
     const params = detailParams as { ... };
-    return fetchMeetingData(params, municipalityId);
+    return fetchMeetingData(params, municipalityCode);
   },
 };
 ```

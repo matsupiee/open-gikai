@@ -226,7 +226,7 @@ export function parsePageStatements(html: string): ParsedStatement[] {
  */
 export async function fetchMeetingData(
   ref: ShimoimchiMeetingRef,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const html = await fetchPage(ref.pageUrl);
   if (!html) return null;
@@ -247,7 +247,7 @@ export async function fetchMeetingData(
   if (statements.length === 0) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(title),
     heldOn,

@@ -106,7 +106,7 @@ export function buildMeetingData(
     scheduleLabel: string;
     playlist: PlaylistItem[];
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): MeetingData | null {
   const heldOn = extractDateFromScheduleLabel(
     params.scheduleLabel,
@@ -122,7 +122,7 @@ export function buildMeetingData(
   const sourceUrl = `${VIEW_BASE}/rd/council_${params.councilId}.html`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(params.councilLabel),
     heldOn,

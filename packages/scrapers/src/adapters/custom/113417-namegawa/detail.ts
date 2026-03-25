@@ -108,13 +108,13 @@ export function parseStatements(playlist: PlaylistEntry[]): ParsedStatement[] {
  */
 export function fetchMeetingData(
   record: NamegawaListRecord,
-  municipalityId: string
+  municipalityCode: string
 ): MeetingData | null {
   const statements = parseStatements(record.playlist);
   if (statements.length === 0) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: record.councilLabel,
     meetingType: detectMeetingType(record.councilLabel),
     heldOn: record.heldOn,

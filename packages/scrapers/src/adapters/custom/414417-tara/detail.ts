@@ -21,14 +21,14 @@ export interface TaraDetailParams {
  */
 export function buildMeetingData(
   params: TaraDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): MeetingData | null {
   // PDF URL のファイル名部分を ID のキーとして使用
   const fileName = decodeURIComponent(params.pdfUrl.split("/").pop() ?? "");
   const externalId = `tara_${params.heldOn}_${fileName.replace(/[^a-zA-Z0-9_\-]/g, "_")}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

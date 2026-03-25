@@ -352,7 +352,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   article: KitagawaArticle,
-  municipalityId: string,
+  municipalityCode: string,
   targetYear: number
 ): Promise<MeetingData | null> {
   // 対象年と一致しない記事はスキップ
@@ -390,7 +390,7 @@ export async function fetchMeetingData(
     : `kitagawa_${article.hdnKey}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: article.title,
     meetingType: detectMeetingType(article.title),
     heldOn,

@@ -103,7 +103,7 @@ export function buildStatements(entry: UmajiPdfEntry): ParsedStatement[] {
  */
 export function buildMeetingData(
   entry: UmajiPdfEntry,
-  municipalityId: string,
+  municipalityCode: string,
   targetYear: number
 ): MeetingData | null {
   const heldOn = extractHeldOn(entry);
@@ -121,7 +121,7 @@ export function buildMeetingData(
   const externalId = buildExternalId(entry);
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType,
     heldOn,

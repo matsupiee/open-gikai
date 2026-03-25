@@ -101,7 +101,7 @@ export async function searchStatements(
     })
     .from(statements)
     .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-    .innerJoin(municipalities, eq(meetings.municipalityId, municipalities.id));
+    .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code));
 
   const allConditions = [...statementFilters, ...meetingFilters];
 
@@ -170,7 +170,7 @@ export async function semanticSearchStatements(
     })
     .from(statements)
     .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-    .innerJoin(municipalities, eq(meetings.municipalityId, municipalities.id));
+    .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code));
 
   const finalQuery = conditions.length > 0 ? query.where(and(...conditions)) : query;
 

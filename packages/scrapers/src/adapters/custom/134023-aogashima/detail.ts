@@ -191,7 +191,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingDataFromPdf(
   pdf: AogashimaPdf,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData[]> {
   const text = await fetchPdfText(pdf.pdfUrl);
   if (!text) return [];
@@ -204,7 +204,7 @@ export async function fetchMeetingDataFromPdf(
     if (statements.length === 0) continue;
 
     results.push({
-      municipalityId,
+      municipalityCode,
       title: `${session.title}議決一覧`,
       meetingType: detectMeetingType(session.title),
       heldOn: session.heldOn,

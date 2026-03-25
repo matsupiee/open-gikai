@@ -30,8 +30,8 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const record = detailParams as unknown as ShimantoRecord;
-    return fetchMeetingData(record, municipalityId);
+    return fetchMeetingData(record, municipalityCode);
   },
 };

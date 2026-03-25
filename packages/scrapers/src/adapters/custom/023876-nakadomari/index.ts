@@ -28,8 +28,8 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const doc = detailParams as unknown as NakadomariDocument;
-    return fetchMeetingData(doc, municipalityId);
+    return fetchMeetingData(doc, municipalityCode);
   },
 };

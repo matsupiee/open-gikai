@@ -51,3 +51,7 @@ apps/local-bulk-scraper/output/
 .cache
 tmp
 temp
+
+dbjson
+
+*.db

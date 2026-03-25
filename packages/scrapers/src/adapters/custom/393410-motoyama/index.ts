@@ -23,11 +23,11 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as {
       entry: import("./list").MotoyamaPdfEntry;
       year: number;
     };
-    return fetchMeetingData(params.entry, municipalityId);
+    return fetchMeetingData(params.entry, municipalityCode);
   },
 };

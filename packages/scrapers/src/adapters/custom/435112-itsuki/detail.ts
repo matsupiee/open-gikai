@@ -125,7 +125,7 @@ export function parseTitle(html: string): string | null {
  */
 export async function fetchMeetingData(
   articleUrl: string,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const html = await fetchPage(articleUrl);
   if (!html) return null;
@@ -161,7 +161,7 @@ export async function fetchMeetingData(
   const externalId = kijiMatch?.[1] ? `itsuki_kiji${kijiMatch[1]}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(title),
     heldOn,

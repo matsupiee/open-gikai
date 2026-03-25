@@ -318,7 +318,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: ShinhidakaMeeting,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   if (meeting.format === "html") {
     const html = await fetchShiftJisPage(meeting.sourceUrl);
@@ -340,7 +340,7 @@ export async function fetchMeetingData(
       : baseTitle;
 
     return {
-      municipalityId,
+      municipalityCode,
       title,
       meetingType: detectMeetingType(title),
       heldOn,
@@ -360,7 +360,7 @@ export async function fetchMeetingData(
     if (!heldOn) return null;
 
     return {
-      municipalityId,
+      municipalityCode,
       title: meeting.title,
       meetingType: detectMeetingType(meeting.title),
       heldOn,

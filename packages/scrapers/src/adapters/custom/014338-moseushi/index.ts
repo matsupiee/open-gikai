@@ -31,12 +31,12 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const { url, format, title } = detailParams as {
       url: string;
       format: "html" | "pdf";
       title: string;
     };
-    return fetchMeetingData({ url, format, title }, municipalityId);
+    return fetchMeetingData({ url, format, title }, municipalityCode);
   },
 };

@@ -250,7 +250,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   params: RyuoDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   await delay(1000);
 
@@ -273,7 +273,7 @@ export async function buildMeetingData(
     : params.linkText;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: titleBase.trim(),
     meetingType: params.meetingType,
     heldOn: heldOn ?? "",

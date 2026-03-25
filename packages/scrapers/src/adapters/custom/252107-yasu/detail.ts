@@ -214,7 +214,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   params: YasuDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   await delay(1000);
 
@@ -229,7 +229,7 @@ export async function buildMeetingData(
   const externalId = `yasu_${fileName.replace(".pdf", "")}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.sessionTitle,
     meetingType: params.meetingType,
     heldOn: params.heldOn ?? "",

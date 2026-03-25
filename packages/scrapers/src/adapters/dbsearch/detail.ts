@@ -47,7 +47,7 @@ function buildCookieHeader(headers: Headers): string {
  */
 export async function fetchMeetingDetail(
   detailUrl: string,
-  municipalityId: string,
+  municipalityCode: string,
   meetingId: string,
   listTitle?: string,
   listDate?: string,
@@ -70,7 +70,7 @@ export async function fetchMeetingDetail(
     // サブフレームのリクエストにはセッション Cookie が必要（新版 dbsearch）
     if (html.includes("<frameset")) {
       const cookie = buildCookieHeader(res.headers);
-      return fetchFromFrameset(html, fetchUrl, municipalityId, meetingId, listTitle, listDate, baseUrl, cookie);
+      return fetchFromFrameset(html, fetchUrl, municipalityCode, meetingId, listTitle, listDate, baseUrl, cookie);
     }
 
     // 旧形式・中間形式: 単一ページから直接パース
@@ -87,7 +87,7 @@ export async function fetchMeetingDetail(
     const externalId = `dbsearch_${hostPrefix}_${meetingId}`;
 
     return {
-      municipalityId,
+      municipalityCode,
       title,
       meetingType,
       heldOn,
@@ -107,7 +107,7 @@ export async function fetchMeetingDetail(
 async function fetchFromFrameset(
   framesetHtml: string,
   detailUrl: string,
-  municipalityId: string,
+  municipalityCode: string,
   meetingId: string,
   listTitle?: string,
   listDate?: string,
@@ -193,7 +193,7 @@ async function fetchFromFrameset(
   const externalId = `dbsearch_${hostPrefix}_${meetingId}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType,
     heldOn,

@@ -211,7 +211,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   params: MikasaDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(params.pdfUrl);
   const statements = text ? parseStatements(text) : [];
@@ -219,7 +219,7 @@ export async function buildMeetingData(
   if (statements.length === 0) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

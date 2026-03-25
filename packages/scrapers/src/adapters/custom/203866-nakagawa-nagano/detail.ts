@@ -209,7 +209,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   params: NakagawaNaganoDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(params.pdfUrl);
   if (!text) return null;
@@ -225,7 +225,7 @@ export async function fetchMeetingData(
   const externalId = idMatch ? `nakagawa-nagano_${idMatch[1]}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.sessionTitle,
     meetingType: detectMeetingType(params.sessionTitle),
     heldOn,

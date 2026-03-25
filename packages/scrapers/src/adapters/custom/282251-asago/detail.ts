@@ -259,7 +259,7 @@ export async function fetchMeetingData(
     kaisu: string;
     year: number;
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const html = await fetchMeetingContent(
     doc.year,
@@ -276,7 +276,7 @@ export async function fetchMeetingData(
   const externalId = `asago_${createHash("md5").update(doc.title).digest("hex").slice(0, 12)}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: doc.title,
     meetingType: detectMeetingType(doc.title),
     heldOn: doc.heldOn,

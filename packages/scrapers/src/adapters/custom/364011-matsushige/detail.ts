@@ -249,7 +249,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   params: MatsushigeDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   if (!params.heldOn) return null;
 
@@ -264,7 +264,7 @@ export async function buildMeetingData(
   const externalId = `matsushige_${pdfPath.replace(/\.pdf$/i, "")}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

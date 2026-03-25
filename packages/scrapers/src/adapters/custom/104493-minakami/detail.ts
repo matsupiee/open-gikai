@@ -226,7 +226,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: { pdfUrl: string; title: string; heldOn: string | null },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   // heldOn が解析できない場合は null を返す（フォールバック値禁止）
   if (!meeting.heldOn) return null;
@@ -242,7 +242,7 @@ export async function fetchMeetingData(
   const externalId = filename ? `minakami_${filename}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
     heldOn: meeting.heldOn,

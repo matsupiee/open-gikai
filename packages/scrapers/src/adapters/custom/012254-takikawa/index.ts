@@ -30,7 +30,7 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as {
       pageId: string;
       attachmentId: string;
@@ -39,6 +39,6 @@ export const adapter: ScraperAdapter = {
       heldOn: string | null;
       isIndex: boolean;
     };
-    return fetchMeetingData(params, municipalityId);
+    return fetchMeetingData(params, municipalityCode);
   },
 };

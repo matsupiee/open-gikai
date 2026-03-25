@@ -208,7 +208,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: HinoMeeting,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(meeting.pdfUrl);
   if (!text) return null;
@@ -228,7 +228,7 @@ export async function fetchMeetingData(
     : `hino_${createHash("md5").update(meeting.pdfUrl).digest("hex").slice(0, 12)}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.sessionTitle),
     heldOn,

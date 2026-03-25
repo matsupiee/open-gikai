@@ -32,13 +32,13 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const { url, format, title, sessionName } = detailParams as {
       url: string;
       format: "html" | "pdf";
       title: string;
       sessionName: string;
     };
-    return fetchMeetingData({ url, format, title, sessionName }, municipalityId);
+    return fetchMeetingData({ url, format, title, sessionName }, municipalityCode);
   },
 };

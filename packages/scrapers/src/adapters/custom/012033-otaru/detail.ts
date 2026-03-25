@@ -138,13 +138,13 @@ export function buildMeetingData(
     ym: string;
     records: Array<{ speaker: string; text: string }>;
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): MeetingData | null {
   const statements = buildStatements(params.records);
   if (statements.length === 0) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: detectMeetingType(params.title),
     heldOn: ymToDate(params.ym),

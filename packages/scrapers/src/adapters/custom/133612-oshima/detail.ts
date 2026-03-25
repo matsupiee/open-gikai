@@ -232,7 +232,7 @@ export function buildHeldOn(year: number, month: number | null): string | null {
  */
 export async function fetchMeetingData(
   meeting: OshimaMeeting,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const heldOn = buildHeldOn(meeting.year, meeting.month);
   if (!heldOn) return null;
@@ -246,7 +246,7 @@ export async function fetchMeetingData(
   const externalId = extractExternalId(meeting.pdfUrl);
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
     heldOn,

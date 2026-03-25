@@ -271,7 +271,7 @@ export interface NakanojoDetailParams {
  */
 export async function fetchMeetingData(
   params: NakanojoDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   // heldOn が解析できない場合は null を返す（フォールバック値禁止）
   if (!params.heldOn) return null;
@@ -287,7 +287,7 @@ export async function fetchMeetingData(
   const externalId = attachmentId ? `nakanojo_${attachmentId}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: detectMeetingType(params.title),
     heldOn: params.heldOn,

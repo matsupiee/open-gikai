@@ -171,7 +171,7 @@ describe("buildMeetingData", () => {
     const result = buildMeetingData(record, "municipality-1");
 
     expect(result).not.toBeNull();
-    expect(result!.municipalityId).toBe("municipality-1");
+    expect(result!.municipalityCode).toBe("municipality-1");
     expect(result!.title).toBe("令和7年6月鏡石町議会定例会（第8回）");
     expect(result!.meetingType).toBe("plenary");
     expect(result!.heldOn).toBe("2025-06-12");

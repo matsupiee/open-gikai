@@ -310,7 +310,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   record: OaraiPdfRecord,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   const text = await fetchPdfText(record.pdfUrl);
   if (!text) return null;
@@ -328,7 +328,7 @@ export async function buildMeetingData(
   const fileKey = extractFileName(record.pdfUrl);
 
   return {
-    municipalityId,
+    municipalityCode,
     title: record.title,
     meetingType: record.meetingType,
     heldOn,

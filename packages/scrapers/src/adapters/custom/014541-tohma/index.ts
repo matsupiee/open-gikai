@@ -26,11 +26,11 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const { pdfUrl, linkText } = detailParams as {
       pdfUrl: string;
       linkText: string;
     };
-    return fetchMeetingData({ pdfUrl, linkText }, municipalityId);
+    return fetchMeetingData({ pdfUrl, linkText }, municipalityCode);
   },
 };

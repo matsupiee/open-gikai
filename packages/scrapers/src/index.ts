@@ -1,6 +1,7 @@
 export type { ParsedStatement, MeetingData } from "./utils/types";
 export type { ScraperAdapter, ListRecord } from "./adapters/adapter";
 export { buildChunksFromStatements } from "./utils/statement-chunking";
+export * from "./utils/detect-adapter-key";
 
 // adapter registry: ディレクトリを走査して自動登録する。
 // 新しい adapter を追加する場合はこのファイルを編集する必要はなく、
@@ -35,7 +36,9 @@ async function discoverAdapters(
       if (mod.adapter?.name) {
         map.set(mod.adapter.name, mod.adapter);
       } else {
-        console.warn(`[scrapers] ${entry.name}: "adapter" named export が見つかりません。スキップします。`);
+        console.warn(
+          `[scrapers] ${entry.name}: "adapter" named export が見つかりません。スキップします。`,
+        );
       }
     } catch (e) {
       console.warn(`[scrapers] ${entry.name} の読み込みに失敗しました。スキップします。`, e);
@@ -68,7 +71,9 @@ export async function initAdapterRegistry(): Promise<void> {
  */
 export function getAdapter(name: string): ScraperAdapter | undefined {
   if (!registry) {
-    throw new Error("adapter registry が未初期化です。先に initAdapterRegistry() を呼び出してください。");
+    throw new Error(
+      "adapter registry が未初期化です。先に initAdapterRegistry() を呼び出してください。",
+    );
   }
   return registry.get(name);
 }

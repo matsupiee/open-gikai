@@ -298,7 +298,7 @@ describe("fetchMeetingDataFromSchedule integration", () => {
     expect(result!.heldOn).toBe("2025-02-17");
     expect(result!.meetingType).toBe("plenary");
     expect(result!.externalId).toBe("kensakusystem_meguro_R070217A");
-    expect(result!.municipalityId).toBe("test-municipality-id");
+    expect(result!.municipalityCode).toBe("test-municipality-id");
     expect(result!.statements.length).toBe(31);
   });
 
@@ -328,7 +328,7 @@ describe("fetchMeetingDataFromSchedule integration", () => {
     expect(result!.heldOn).toBe("2025-02-14");
     expect(result!.meetingType).toBe("plenary");
     expect(result!.externalId).toBe("kensakusystem_katsushika_R070214A");
-    expect(result!.municipalityId).toBe("test-municipality-id");
+    expect(result!.municipalityCode).toBe("test-municipality-id");
     expect(result!.statements.length).toBe(34);
   });
 
@@ -358,7 +358,7 @@ describe("fetchMeetingDataFromSchedule integration", () => {
     expect(result!.heldOn).toBe("2023-02-17");
     expect(result!.meetingType).toBe("plenary");
     expect(result!.externalId).toBe("kensakusystem_hirosaki_R050217A");
-    expect(result!.municipalityId).toBe("test-municipality-id");
+    expect(result!.municipalityCode).toBe("test-municipality-id");
     expect(result!.statements.length).toBe(13);
   });
 });

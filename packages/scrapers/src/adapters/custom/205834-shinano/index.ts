@@ -33,7 +33,7 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as {
       fileUrl: string;
       fileType: "pdf" | "doc" | "docx";
@@ -45,6 +45,6 @@ export const adapter: ScraperAdapter = {
       month: number | null;
       memberName: string | null;
     };
-    return fetchMeetingData(params, municipalityId);
+    return fetchMeetingData(params, municipalityCode);
   },
 };

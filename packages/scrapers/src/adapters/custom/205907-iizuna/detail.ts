@@ -200,7 +200,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function fetchMeetingData(
   meeting: IizunaMeeting,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   // 詳細ページから PDF URL を取得
   const detailHtml = await fetchPage(meeting.detailUrl);
@@ -224,7 +224,7 @@ export async function fetchMeetingData(
   const externalId = idMatch ? `iizuna_${idMatch[1]}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
     heldOn,

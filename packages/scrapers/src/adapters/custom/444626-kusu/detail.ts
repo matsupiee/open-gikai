@@ -113,12 +113,12 @@ export function classifyKind(
  */
 export function buildMeetingData(
   params: KusuDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
 ): MeetingData | null {
   if (!params.heldOn) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

@@ -33,8 +33,8 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as unknown as ShinkamigotoDetailParams;
-    return await buildMeetingData(params, municipalityId);
+    return await buildMeetingData(params, municipalityCode);
   },
 };

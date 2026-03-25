@@ -33,8 +33,8 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const link = detailParams as unknown as ShirakawaVillagePdfLink;
-    return fetchMeetingData(link, municipalityId);
+    return fetchMeetingData(link, municipalityCode);
   },
 };

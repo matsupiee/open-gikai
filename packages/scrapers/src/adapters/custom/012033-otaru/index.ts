@@ -38,12 +38,12 @@ export const adapter: ScraperAdapter = {
     }));
   },
 
-  async fetchDetail({ detailParams, municipalityId }) {
+  async fetchDetail({ detailParams, municipalityCode }) {
     const params = detailParams as {
       title: string;
       ym: string;
       records: Array<{ speaker: string; text: string }>;
     };
-    return buildMeetingData(params, municipalityId);
+    return buildMeetingData(params, municipalityCode);
   },
 };

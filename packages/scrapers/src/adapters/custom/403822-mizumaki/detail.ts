@@ -217,7 +217,7 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
  */
 export async function buildMeetingData(
   params: MizumakiDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): Promise<MeetingData | null> {
   // heldOn が解析できない場合は null を返す（フォールバック値禁止）
   if (!params.heldOn) return null;
@@ -228,7 +228,7 @@ export async function buildMeetingData(
   const statements = parseStatements(text);
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

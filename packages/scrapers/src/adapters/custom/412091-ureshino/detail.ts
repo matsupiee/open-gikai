@@ -21,7 +21,7 @@ export interface UreshinoDetailParams {
  */
 export function buildMeetingData(
   params: UreshinoDetailParams,
-  municipalityId: string
+  municipalityCode: string
 ): MeetingData | null {
   // PDF URL のパス部分をIDのキーとして使用
   // 例: /var/rev0/0047/2592/1258610641.pdf → rev0_0047_2592_1258610641
@@ -34,7 +34,7 @@ export function buildMeetingData(
   const externalId = `ureshino_${params.heldOn}_${pdfPathParts}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: params.meetingType,
     heldOn: params.heldOn,

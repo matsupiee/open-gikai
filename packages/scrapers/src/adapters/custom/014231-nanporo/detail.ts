@@ -285,7 +285,7 @@ export async function fetchMeetingData(
     heldOn: string | null;
     pdfType: "会議録" | "一般質問";
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   // heldOn が解析できない場合は null を返す（フォールバック値禁止）
   if (!meeting.heldOn) return null;
@@ -302,7 +302,7 @@ export async function fetchMeetingData(
   const externalId = filename ? `nanporo_${filename}` : null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
     heldOn: meeting.heldOn,

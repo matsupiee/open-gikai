@@ -229,7 +229,7 @@ export async function fetchMeetingData(
     questionPdfUrls: string[];
     docId: string;
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const allStatements: ParsedStatement[] = [];
 
@@ -251,7 +251,7 @@ export async function fetchMeetingData(
   if (allStatements.length === 0) return null;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: detectMeetingType(params.title),
     heldOn: params.heldOn,

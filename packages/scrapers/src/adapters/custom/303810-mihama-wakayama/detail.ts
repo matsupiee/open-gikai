@@ -303,7 +303,7 @@ export async function fetchMeetingData(
     yearPageUrl: string;
     meetingType: "plenary" | "extraordinary" | "committee";
   },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const result = await fetchPdfStatements(params.pdfUrl);
   if (!result) return null;
@@ -318,7 +318,7 @@ export async function fetchMeetingData(
   const externalId = `mihama_wakayama_${encodeURIComponent(params.pdfUrl.split("/").pop() ?? params.pdfUrl)}`;
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.title,
     meetingType: detectMeetingType(params.title) || params.meetingType,
     heldOn,

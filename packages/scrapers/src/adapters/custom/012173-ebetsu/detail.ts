@@ -194,7 +194,7 @@ export function parseStatements(html: string): ParsedStatement[] {
  */
 export async function fetchMeetingData(
   doc: { pageId: string; url: string; section: string },
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const html = await fetchPage(doc.url);
   if (!html) return null;
@@ -208,7 +208,7 @@ export async function fetchMeetingData(
   const statements = parseStatements(html);
 
   return {
-    municipalityId,
+    municipalityCode,
     title,
     meetingType: detectMeetingType(title, doc.section),
     heldOn,

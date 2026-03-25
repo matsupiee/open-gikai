@@ -15,7 +15,7 @@ describe("buildMeetingData", () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.municipalityId).toBe("municipality-id-123");
+    expect(result!.municipalityCode).toBe("municipality-id-123");
     expect(result!.title).toBe("令和6年第1回熊野町議会定例会（3月5日）");
     expect(result!.meetingType).toBe("plenary");
     expect(result!.heldOn).toBe("2024-03-05");

@@ -318,7 +318,7 @@ export function buildContentUrl(fino: number): string {
  */
 export async function buildMeetingData(
   params: YatsushiroDetailParams,
-  municipalityId: string,
+  municipalityCode: string,
 ): Promise<MeetingData | null> {
   const contentUrl = buildContentUrl(params.fino);
   const html = await fetchPage(contentUrl);
@@ -333,7 +333,7 @@ export async function buildMeetingData(
   const meetingType = detectMeetingType(params.meetingTitle);
 
   return {
-    municipalityId,
+    municipalityCode,
     title: params.meetingTitle.replace(/[\u3000\s]+/g, ""),
     meetingType: meetingType || params.meetingType,
     heldOn,
