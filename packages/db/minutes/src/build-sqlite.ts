@@ -24,7 +24,7 @@ import { tokenizeBigram } from "./fts/index";
 
 // --- Setup ---
 
-const root = resolve(fileURLToPath(import.meta.url), "../../../../");
+const root = resolve(fileURLToPath(import.meta.url), "../../../../../");
 dotenv.config({ path: resolve(root, ".env.local"), override: true });
 
 const dbjsonDir = resolve(root, "packages/db/minutes/dbjson");
