@@ -33,11 +33,7 @@ export interface MeetingDetail extends MeetingListItem {
   statements: MeetingStatement[];
 }
 
-function queryMeetingsFromShard(
-  db: Db,
-  input: z.infer<typeof meetingsListSchema>,
-  limit: number,
-) {
+function queryMeetingsFromShard(db: Db, input: z.infer<typeof meetingsListSchema>, limit: number) {
   const conditions = [];
 
   if (input.heldOnFrom) conditions.push(gte(meetings.heldOn, input.heldOnFrom));
@@ -68,9 +64,7 @@ function queryMeetingsFromShard(
 
   const finalQuery = conditions.length > 0 ? query.where(and(...conditions)) : query;
 
-  return finalQuery
-    .orderBy(desc(meetings.heldOn), desc(meetings.id))
-    .limit(limit);
+  return finalQuery.orderBy(desc(meetings.heldOn), desc(meetings.id)).limit(limit);
 }
 
 export async function listMeetings(
