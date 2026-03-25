@@ -28,6 +28,7 @@
     "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {
+    "bun-types": "catalog:",
     "@open-gikai/config": "workspace:*",
     "drizzle-kit": "^0.31.8",
     "typescript": "catalog:"

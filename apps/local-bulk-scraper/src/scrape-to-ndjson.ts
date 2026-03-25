@@ -160,13 +160,19 @@ async function main() {
 
   // 1. 出力ディレクトリの準備（ログ記録のため最初に作成）
   const today = new Date().toISOString().slice(0, 10);
-  const outputDir = resolve(
+  // ログは apps/local-bulk-scraper/output/{today}/ に出力
+  const logDir = resolve(
     fileURLToPath(import.meta.url),
     "../../output",
     today
   );
-  if (!existsSync(outputDir)) {
-    mkdirSync(outputDir, { recursive: true });
+  if (!existsSync(logDir)) {
+    mkdirSync(logDir, { recursive: true });
+  }
+  // NDJSON は packages/db/minutes/dbjson/ に出力（R2 構造と一致）
+  const ndjsonDir = resolve(root, "packages/db/minutes/dbjson");
+  if (!existsSync(ndjsonDir)) {
+    mkdirSync(ndjsonDir, { recursive: true });
   }
 
   const runTimestamp = new Date()
@@ -174,7 +180,7 @@ async function main() {
     .replace(/[:.]/g, "-")
     .slice(0, 19);
   const logStream = createWriteStream(
-    resolve(outputDir, `scrape-${runTimestamp}.log`)
+    resolve(logDir, `scrape-${runTimestamp}.log`)
   );
 
   const log = (level: "INFO" | "WARN" | "ERROR", ...args: unknown[]) => {
@@ -234,10 +240,10 @@ async function main() {
 
   // 3. NDJSON 出力ストリームの準備
   const meetingsStream = createWriteStream(
-    resolve(outputDir, "meetings.ndjson")
+    resolve(ndjsonDir, "meetings.ndjson")
   );
   const statementsStream = createWriteStream(
-    resolve(outputDir, "statements.ndjson")
+    resolve(ndjsonDir, "statements.ndjson")
   );
 
   let totalMeetings = 0;
@@ -326,7 +332,8 @@ async function main() {
   ]);
 
   log("INFO", "[scrape-to-ndjson] 完了!");
-  log("INFO", `  出力先: ${outputDir}`);
+  log("INFO", `  NDJSON 出力先: ${ndjsonDir}`);
+  log("INFO", `  ログ出力先: ${logDir}`);
   log("INFO", `  meetings: ${totalMeetings} 件`);
   log("INFO", `  statements: ${totalStatements} 件`);
 
