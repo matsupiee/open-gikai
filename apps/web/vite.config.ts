@@ -5,9 +5,13 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+const isCloudflare = process.env.CF_PAGES === "1" || process.argv.includes("build");
+
 export default defineConfig({
   plugins: [
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    ...(isCloudflare
+      ? [cloudflare({ viteEnvironment: { name: "ssr" } })]
+      : []),
     tsconfigPaths(),
     tailwindcss(),
     tanstackStart({

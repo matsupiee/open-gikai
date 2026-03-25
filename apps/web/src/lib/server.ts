@@ -1,38 +1,60 @@
 import { createDb, type Db } from "@open-gikai/db-auth";
-import { ShardedMinutesDb } from "@open-gikai/db-minutes";
+import { createMinutesDb, type MinutesDb } from "@open-gikai/db-minutes";
 import { createAuth, type Auth } from "@open-gikai/auth";
-import { env } from "cloudflare:workers";
+
+let cfEnv: Cloudflare.Env | undefined;
+
+try {
+  // Cloudflare Workers 環境（本番 + miniflare）
+  // @ts-expect-error cloudflare:workers は Cloudflare 環境でのみ利用可能
+  const cf = await import("cloudflare:workers");
+  cfEnv = cf.env;
+} catch {
+  // ローカル dev（Cloudflare plugin なし）
+}
+
+function getEnv(): Cloudflare.Env {
+  if (cfEnv) return cfEnv;
+  return {
+    HYPERDRIVE: { connectionString: process.env.DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres" },
+    CORS_ORIGIN: process.env.CORS_ORIGIN ?? "http://localhost:4030",
+    BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? "",
+    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? "http://localhost:4030",
+    LIBSQL_URL: process.env.LIBSQL_URL ?? "http://127.0.0.1:8181",
+    LIBSQL_AUTH_TOKEN: process.env.LIBSQL_AUTH_TOKEN ?? "",
+  } as unknown as Cloudflare.Env;
+}
 
 /**
  * Web アプリ用の DB 接続を取得する。
- * Hyperdrive 経由で接続する
- * Hyperdrive はリクエストごとに動的な接続文字列を返すため、毎回新しいクライアントを生成する。
  */
 export function getDb(): Db {
-  return createDb(env.HYPERDRIVE.connectionString);
+  return createDb(getEnv().HYPERDRIVE.connectionString);
 }
 
-let shardedMinutesDb: ShardedMinutesDb | undefined;
+let minutesDb: MinutesDb | undefined;
 
 /**
- * シャーディングされた議事録 DB を返す。
- * manifest.json を読み込み、フィルタ条件に応じて適切なシャードを選択する。
- * インスタンスはキャッシュして再利用する。
+ * 議事録 DB への接続を返す。
  */
-export function getMinutesDb(): ShardedMinutesDb {
-  if (!shardedMinutesDb) {
-    shardedMinutesDb = new ShardedMinutesDb(env.MINUTES_DB_DIR);
+export function getMinutesDb(): MinutesDb {
+  if (!minutesDb) {
+    const e = getEnv();
+    minutesDb = createMinutesDb({
+      url: e.LIBSQL_URL,
+      authToken: e.LIBSQL_AUTH_TOKEN || undefined,
+    });
   }
-  return shardedMinutesDb;
+  return minutesDb;
 }
 
 /**
  * Web アプリ用の auth インスタンスを取得する。
- * Hyperdrive の接続文字列はリクエストごとに変わるため、毎回新しい DB で生成する。
  */
 export function getAuth(): Auth {
+  const e = getEnv();
   return createAuth({
     db: getDb(),
-    trustedOrigins: env.CORS_ORIGIN,
+    trustedOrigins: e.CORS_ORIGIN,
   });
 }

@@ -16,7 +16,7 @@
 import { existsSync, mkdirSync, createWriteStream } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { municipalityRowsFromCsv } from "@open-gikai/db-minutes/seeds/municipalities-csv";
+import { municipalityRowsFromCsv } from "@open-gikai/db-minutes/seeds/parse-data/municipalities";
 import { createId } from "@paralleldrive/cuid2";
 import dotenv from "dotenv";
 import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";

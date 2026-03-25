@@ -1,4 +1,4 @@
-import type { Db, ShardedMinutesDb } from "@open-gikai/db-minutes";
+import type { MinutesDb } from "@open-gikai/db-minutes";
 import { meetings, municipalities, statements } from "@open-gikai/db-minutes";
 import { and, asc, desc, eq, gte, like, lte, lt } from "drizzle-orm";
 import { z } from "zod";
@@ -33,7 +33,7 @@ export interface MeetingDetail extends MeetingListItem {
   statements: MeetingStatement[];
 }
 
-function queryMeetingsFromShard(db: Db, input: z.infer<typeof meetingsListSchema>, limit: number) {
+function queryMeetings(db: MinutesDb, input: z.infer<typeof meetingsListSchema>, limit: number) {
   const conditions = [];
 
   if (input.heldOnFrom) conditions.push(gte(meetings.heldOn, input.heldOnFrom));
@@ -68,70 +68,46 @@ function queryMeetingsFromShard(db: Db, input: z.infer<typeof meetingsListSchema
 }
 
 export async function listMeetings(
-  shardedDb: ShardedMinutesDb,
+  db: MinutesDb,
   input: z.infer<typeof meetingsListSchema>,
 ): Promise<MeetingsListResponse> {
   const limit = input.limit ?? 20;
-  const dbs = shardedDb.getRelevantDbs({
-    heldOnFrom: input.heldOnFrom,
-    heldOnTo: input.heldOnTo,
-    prefecture: input.prefecture,
-  });
+  const results = await queryMeetings(db, input, limit + 1);
 
-  const shardResults = await Promise.all(
-    dbs.map((db) => queryMeetingsFromShard(db, input, limit + 1)),
-  );
-  const allResults: MeetingListItem[] = shardResults.flat() as MeetingListItem[];
-
-  allResults.sort((a, b) => {
-    const cmp = b.heldOn.localeCompare(a.heldOn);
-    if (cmp !== 0) return cmp;
-    return b.id.localeCompare(a.id);
-  });
-
-  const hasMore = allResults.length > limit;
-  const meetingsList = hasMore ? allResults.slice(0, limit) : allResults;
+  const hasMore = results.length > limit;
+  const meetingsList = hasMore ? results.slice(0, limit) : results;
 
   return {
-    meetings: meetingsList,
+    meetings: meetingsList as MeetingListItem[],
     nextCursor: hasMore ? meetingsList[meetingsList.length - 1]!.id : null,
   };
 }
 
 export async function getMeetingStatements(
-  shardedDb: ShardedMinutesDb,
+  db: MinutesDb,
   input: z.infer<typeof meetingStatementsSchema>,
 ): Promise<MeetingDetail> {
-  const dbs = shardedDb.getAllDbs();
+  const [meeting] = await db
+    .select({
+      id: meetings.id,
+      title: meetings.title,
+      meetingType: meetings.meetingType,
+      heldOn: meetings.heldOn,
+      prefecture: municipalities.prefecture,
+      municipality: municipalities.name,
+      sourceUrl: meetings.sourceUrl,
+      status: meetings.status,
+    })
+    .from(meetings)
+    .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
+    .where(eq(meetings.id, input.meetingId))
+    .limit(1);
 
-  // 全シャードを並列で検索し、meetingId が見つかったシャードを特定する
-  const meetingResults = await Promise.all(
-    dbs.map((db) =>
-      db
-        .select({
-          id: meetings.id,
-          title: meetings.title,
-          meetingType: meetings.meetingType,
-          heldOn: meetings.heldOn,
-          prefecture: municipalities.prefecture,
-          municipality: municipalities.name,
-          sourceUrl: meetings.sourceUrl,
-          status: meetings.status,
-        })
-        .from(meetings)
-        .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
-        .where(eq(meetings.id, input.meetingId))
-        .limit(1)
-        .then((rows) => ({ db, meeting: rows[0] })),
-    ),
-  );
-
-  const found = meetingResults.find((r) => r.meeting);
-  if (!found?.meeting) {
+  if (!meeting) {
     throw new Error("Meeting not found");
   }
 
-  const statementRows = await found.db
+  const statementRows = await db
     .select({
       id: statements.id,
       kind: statements.kind,
@@ -144,7 +120,7 @@ export async function getMeetingStatements(
     .orderBy(asc(statements.id));
 
   return {
-    ...(found.meeting as MeetingListItem),
+    ...(meeting as MeetingListItem),
     statements: statementRows as MeetingStatement[],
   };
 }

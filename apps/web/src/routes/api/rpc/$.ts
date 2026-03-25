@@ -35,7 +35,7 @@ async function handle({ request }: { request: Request }) {
     req: request,
     auth: getAuth(),
     authDb: getDb(),
-    shardedMinutesDb: getMinutesDb(),
+    minutesDb: getMinutesDb(),
   });
   const rpcResult = await rpcHandler.handle(request, {
     prefix: "/api/rpc",

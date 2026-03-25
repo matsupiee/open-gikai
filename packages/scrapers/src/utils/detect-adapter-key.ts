@@ -1,8 +1,8 @@
 export enum SharedSystemAdapterKey {
-  DISCUSSNET = "discussnet",
+  DISCUSSNET = "discussnet_ssp",
   DBSEARCH = "dbsearch",
   KENSAKUSYSTEM = "kensakusystem",
-  GIJIROKUCOM = "gijirokucom",
+  GIJIROKUCOM = "gijiroku_com",
 }
 
 export function detectAdapterKey(baseUrl: string, code: string): string {

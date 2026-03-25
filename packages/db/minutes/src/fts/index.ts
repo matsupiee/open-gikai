@@ -1,4 +1,5 @@
-import type { Db } from "../index";
+import { sql } from "drizzle-orm";
+import type { MinutesDb } from "../client";
 
 /**
  * テキストを 2-gram トークン列に変換する。
@@ -53,46 +54,14 @@ export function tokenizeSearchQuery(query: string): string {
  * - `statement_id`: statements.id（UNINDEXED = FTS インデックス対象外）
  * - `bigrams`: 2-gram トークン化済みの発言内容
  */
-export function setupFts(db: Db): void {
-  db.$client.run(`
+export async function setupFts(db: MinutesDb): Promise<void> {
+  await db.run(
+    sql.raw(`
     CREATE VIRTUAL TABLE IF NOT EXISTS statements_fts USING fts5(
       statement_id UNINDEXED,
       bigrams,
       tokenize = 'unicode61'
     )
-  `);
-}
-
-/**
- * statements テーブルの全レコードを FTS5 インデックスに投入する。
- * bigram 変換は JS 側で行い、SQLite に挿入する。
- *
- * 大量データの場合はバッチ処理で実行する。
- */
-export function populateFts(db: Db, batchSize = 1000): void {
-  const sqlite = db.$client;
-
-  const count =
-    sqlite
-      .query<{ count: number }, []>(
-        "SELECT COUNT(*) as count FROM statements"
-      )
-      .get()?.count ?? 0;
-
-  const insert = sqlite.prepare<void, [string, string]>(
-    "INSERT OR REPLACE INTO statements_fts(statement_id, bigrams) VALUES (?, ?)"
+  `),
   );
-
-  const select = sqlite.prepare<{ id: string; content: string }, [number, number]>(
-    "SELECT id, content FROM statements LIMIT ? OFFSET ?"
-  );
-
-  sqlite.transaction(() => {
-    for (let offset = 0; offset < count; offset += batchSize) {
-      const rows = select.all(batchSize, offset);
-      for (const row of rows) {
-        insert.run(row.id, tokenizeBigram(row.content));
-      }
-    }
-  })();
 }

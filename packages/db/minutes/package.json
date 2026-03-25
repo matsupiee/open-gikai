@@ -21,15 +21,14 @@
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "build:sqlite": "bun src/seeds/build-sqlite.ts",
-    "upload:r2": "bun src/upload-r2.ts"
+    "db:import": "bun src/seeds/import-libsql.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.2",
     "@paralleldrive/cuid2": "^3.3.0",
     "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.840.0",
     "@open-gikai/config": "workspace:*",
     "better-sqlite3": "^12.8.0",
     "bun-types": "catalog:",
