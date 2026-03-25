@@ -1,0 +1,71 @@
+/**
+ * 内灘町議会 — 共通ユーティリティ
+ *
+ * サイト: https://www.town.uchinada.lg.jp/site/gikai/list99-130.html
+ * 独自 CMS による PDF 公開（標準的な会議録検索システムは使用していない）。
+ */
+
+export const BASE_ORIGIN = "https://www.town.uchinada.lg.jp";
+
+const FETCH_TIMEOUT_MS = 30_000;
+const PDF_FETCH_TIMEOUT_MS = 60_000;
+
+/** fetch して UTF-8 テキストを返す */
+export async function fetchPage(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      console.warn(`fetchPage failed: ${url} status=${res.status}`);
+      return null;
+    }
+    return await res.text();
+  } catch (e) {
+    console.warn(
+      `fetchPage error: ${url}`,
+      e instanceof Error ? e.message : e
+    );
+    return null;
+  }
+}
+
+/** fetch して ArrayBuffer を返す（PDF ダウンロード用） */
+export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(PDF_FETCH_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      console.warn(`fetchBinary failed: ${url} status=${res.status}`);
+      return null;
+    }
+    return await res.arrayBuffer();
+  } catch (e) {
+    console.warn(
+      `fetchBinary error: ${url}`,
+      e instanceof Error ? e.message : e
+    );
+    return null;
+  }
+}
+
+/**
+ * 和暦テキストを西暦年に変換する。
+ * 「令和X年」「平成X年」「令和元年」「平成元年」に対応。
+ */
+export function eraToYear(eraText: string): number | null {
+  const match = eraText.match(/(令和|平成)(元|\d+)年/);
+  if (!match) return null;
+  const era = match[1]!;
+  const eraYear = match[2] === "元" ? 1 : parseInt(match[2]!, 10);
+  if (era === "令和") return 2018 + eraYear;
+  if (era === "平成") return 1988 + eraYear;
+  return null;
+}
+
+/** 会議タイプを検出 */
+export function detectMeetingType(title: string): "plenary" | "extraordinary" {
+  if (title.includes("臨時")) return "extraordinary";
+  return "plenary";
+}
