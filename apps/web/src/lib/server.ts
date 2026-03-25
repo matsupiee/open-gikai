@@ -1,4 +1,4 @@
-import { createDb, type Db } from "@open-gikai/db";
+import { createDb, type Db } from "@open-gikai/db-auth";
 import { createDb as createMinutesDb, type Db as MinutesDb } from "@open-gikai/db-minutes";
 import { createAuth, type Auth } from "@open-gikai/auth";
 import { env } from "cloudflare:workers";
