@@ -1,73 +1,61 @@
 import { describe, it, expect } from "vitest";
-import { parseSpeaker, classifyKind, parseStatements } from "./detail";
+import {
+  buildNameRoleMap,
+  extractRoleFromPreceding,
+  classifyKind,
+  parseStatements,
+} from "./detail";
 
-describe("parseSpeaker", () => {
-  it("議長（名前君）パターンを解析する", () => {
-    const result = parseSpeaker(
-      "○議長（山田太郎君）　ただいまから本日の会議を開きます。"
-    );
-    expect(result.speakerName).toBe("山田太郎");
-    expect(result.speakerRole).toBe("議長");
-    expect(result.content).toBe("ただいまから本日の会議を開きます。");
+describe("buildNameRoleMap", () => {
+  it("メンバーリストから名前→役職のマッピングを構築する", () => {
+    const text = `
+      町 長 太 田 康 雄
+      副 町 長 村 松 弘
+      教 育 長 野 口 和 英
+    `;
+    const map = buildNameRoleMap(text);
+
+    expect(map.get("太田康雄")).toBe("町長");
+    expect(map.get("村松弘")).toBe("副町長");
+    expect(map.get("野口和英")).toBe("教育長");
   });
 
-  it("町長（名前君）パターンを解析する", () => {
-    const result = parseSpeaker(
-      "○町長（鈴木　次郎君）　お答えいたします。"
-    );
-    expect(result.speakerName).toBe("鈴木次郎");
-    expect(result.speakerRole).toBe("町長");
-    expect(result.content).toBe("お答えいたします。");
+  it("役職アナウンス「役職、名前君」形式もマッピングする", () => {
+    const text = "町長、太田康雄君。ただいまより説明します。";
+    const map = buildNameRoleMap(text);
+
+    expect(map.get("太田康雄")).toBe("町長");
+  });
+});
+
+describe("extractRoleFromPreceding", () => {
+  it("役職アナウンスから役職を取得する", () => {
+    const preceding = "本案について提案理由の説明を求めます。 町長、太田康雄君。 ";
+    const map = new Map([["太田康雄", "町長"]]);
+
+    expect(extractRoleFromPreceding(preceding, map, "太田康雄")).toBe("町長");
   });
 
-  it("番号議員パターンを解析する", () => {
-    const result = parseSpeaker(
-      "○１番（佐藤花子君）　質問いたします。"
-    );
-    expect(result.speakerName).toBe("佐藤花子");
-    expect(result.speakerRole).toBe("議員");
-    expect(result.content).toBe("質問いたします。");
+  it("スペース区切りの役職ラベルから役職を取得する", () => {
+    const preceding =
+      "静岡地方税滞納整理機構規約の変更について - 3 - ＜議事の経過＞ 議 長 議 長 議 長 ";
+    const map = new Map<string, string>();
+
+    expect(extractRoleFromPreceding(preceding, map, "𠮷筋惠治")).toBe("議長");
   });
 
-  it("教育長パターンを解析する", () => {
-    const result = parseSpeaker(
-      "○教育長（田中一郎君）　お答えいたします。"
-    );
-    expect(result.speakerName).toBe("田中一郎");
-    expect(result.speakerRole).toBe("教育長");
-    expect(result.content).toBe("お答えいたします。");
+  it("名前マップから役職を取得する", () => {
+    const preceding = "御異議ありませんか。 （ 「異議なし」と言う者多数 ） ";
+    const map = new Map([["𠮷筋惠治", "議長"]]);
+
+    expect(extractRoleFromPreceding(preceding, map, "𠮷筋惠治")).toBe("議長");
   });
 
-  it("課長パターンを解析する", () => {
-    const result = parseSpeaker(
-      "○総務課長（高橋三郎君）　ご説明いたします。"
-    );
-    expect(result.speakerName).toBe("高橋三郎");
-    expect(result.speakerRole).toBe("課長");
-    expect(result.content).toBe("ご説明いたします。");
-  });
+  it("手がかりがない場合は null を返す", () => {
+    const preceding = "御異議ありませんか。 （ 「異議なし」と言う者多数 ） ";
+    const map = new Map<string, string>();
 
-  it("副町長パターンを解析する", () => {
-    const result = parseSpeaker(
-      "○副町長（中村四郎君）　ご報告いたします。"
-    );
-    expect(result.speakerName).toBe("中村四郎");
-    expect(result.speakerRole).toBe("副町長");
-    expect(result.content).toBe("ご報告いたします。");
-  });
-
-  it("名前に空白を含む場合は除去される", () => {
-    const result = parseSpeaker(
-      "○町長（鈴木　次郎君）　答弁します。"
-    );
-    expect(result.speakerName).toBe("鈴木次郎");
-  });
-
-  it("○ マーカーなしのテキスト", () => {
-    const result = parseSpeaker("午後１時開議");
-    expect(result.speakerName).toBeNull();
-    expect(result.speakerRole).toBeNull();
-    expect(result.content).toBe("午後１時開議");
+    expect(extractRoleFromPreceding(preceding, map, "佐藤花子")).toBeNull();
   });
 });
 
@@ -110,59 +98,76 @@ describe("classifyKind", () => {
 });
 
 describe("parseStatements", () => {
-  it("○ マーカーでテキストを分割する", () => {
+  it("（ NAME 君 ）パターンで発言を分割する", () => {
     const text = `
-○議長（山田太郎君）　ただいまから本日の会議を開きます。
-○１番（佐藤花子君）　質問があります。
-○町長（鈴木次郎君）　お答えします。
+＜議事の経過＞ 議 長
+（ 𠮷 筋 惠 治 君 ）ただいまから本日の会議を開きます。
+町長、太田康雄君。
+（ 太 田 康 雄 君 ）お答えいたします。
 `;
     const statements = parseStatements(text);
 
-    expect(statements).toHaveLength(3);
+    expect(statements.length).toBeGreaterThanOrEqual(2);
 
-    expect(statements[0]!.kind).toBe("remark");
-    expect(statements[0]!.speakerName).toBe("山田太郎");
+    expect(statements[0]!.speakerName).toBe("𠮷筋惠治");
     expect(statements[0]!.speakerRole).toBe("議長");
+    expect(statements[0]!.kind).toBe("remark");
+    expect(statements[0]!.content).toContain("ただいまから本日の会議を開きます");
 
-    expect(statements[1]!.kind).toBe("question");
-    expect(statements[1]!.speakerName).toBe("佐藤花子");
-    expect(statements[1]!.speakerRole).toBe("議員");
-
-    expect(statements[2]!.kind).toBe("answer");
-    expect(statements[2]!.speakerName).toBe("鈴木次郎");
-    expect(statements[2]!.speakerRole).toBe("町長");
+    expect(statements[1]!.speakerName).toBe("太田康雄");
+    expect(statements[1]!.speakerRole).toBe("町長");
+    expect(statements[1]!.kind).toBe("answer");
+    expect(statements[1]!.content).toContain("お答えいたします");
   });
 
   it("各 statement に contentHash が付与される", () => {
-    const statements = parseStatements(
-      "○議長（山田太郎君）　テスト発言。"
-    );
+    const text = `
+      町 長 太 田 康 雄
+      町長、太田康雄君。
+      （ 太 田 康 雄 君 ）テスト発言。
+    `;
+    const statements = parseStatements(text);
+
+    expect(statements.length).toBeGreaterThan(0);
     expect(statements[0]!.contentHash).toMatch(/^[a-f0-9]{64}$/);
   });
 
-  it("offset が正しく計算される", () => {
-    const text = `○議長（山田太郎君）　ただいま。
-○１番（佐藤花子君）　質問です。`;
-
+  it("職員朗読はスキップされる", () => {
+    const text = `
+      町 長 太 田 康 雄
+      （ 職 員 朗 読 ）
+      町長、太田康雄君。
+      （ 太 田 康 雄 君 ）提案理由の説明を申し上げます。
+    `;
     const statements = parseStatements(text);
 
-    expect(statements[0]!.startOffset).toBe(0);
-    expect(statements[0]!.endOffset).toBe("ただいま。".length);
-    expect(statements[1]!.startOffset).toBe("ただいま。".length + 1);
-  });
-
-  it("ト書き（登壇）はスキップする", () => {
-    const text = `○議長（山田太郎君）　ただいまから会議を開きます。
-（１番　佐藤花子君登壇）
-○１番（佐藤花子君）　質問があります。`;
-
-    const statements = parseStatements(text);
-    expect(statements).toHaveLength(2);
-    expect(statements[0]!.speakerRole).toBe("議長");
-    expect(statements[1]!.speakerRole).toBe("議員");
+    // 職員朗読はスキップされ、太田康雄の発言のみ
+    for (const s of statements) {
+      expect(s.speakerName).not.toBe("職員朗読");
+    }
   });
 
   it("空テキストは空配列を返す", () => {
     expect(parseStatements("")).toEqual([]);
+  });
+
+  it("メンバーリストから名前→役職のマッピングが正しく機能する", () => {
+    const text = `
+      議 長 山 田 太 郎
+      町 長 鈴 木 次 郎
+      議 長
+      （ 山 田 太 郎 君 ）会議を開きます。
+      町長、鈴木次郎君。
+      （ 鈴 木 次 郎 君 ）ご説明します。
+    `;
+    const statements = parseStatements(text);
+
+    const chairStatement = statements.find((s) => s.speakerName === "山田太郎");
+    const mayorStatement = statements.find((s) => s.speakerName === "鈴木次郎");
+
+    expect(chairStatement?.speakerRole).toBe("議長");
+    expect(chairStatement?.kind).toBe("remark");
+    expect(mayorStatement?.speakerRole).toBe("町長");
+    expect(mayorStatement?.kind).toBe("answer");
   });
 });

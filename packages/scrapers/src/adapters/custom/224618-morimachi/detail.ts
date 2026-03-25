@@ -1,13 +1,16 @@
 /**
  * 森町議会（静岡県）— detail フェーズ
  *
- * PDF をダウンロードしてテキストを抽出し、○ マーカーで発言を分割して
+ * PDF をダウンロードしてテキストを抽出し、（ NAME 君 ） マーカーで発言を分割して
  * ParsedStatement 配列を生成する。
  *
- * 発言フォーマット（想定）:
- *   ○議長（山田太郎君）　ただいまから本日の会議を開きます。
- *   ○町長（鈴木次郎君）　お答えいたします。
- *   ○１番（佐藤花子君）　質問いたします。
+ * 発言フォーマット（森町固有形式）:
+ *   （ 𠮷 筋 惠 治 君 ）ただいまから本日の会議を開きます。
+ *   （ 太 田 康 雄 君 ）お答えいたします。
+ *
+ * 名前はスペース区切りで表記される。役職は以下の方法で取得:
+ *   - PDF冒頭のメンバーリスト: "町 長 太 田 康 雄" 形式
+ *   - 役職アナウンス: "町長、太田康雄君。" 形式
  */
 
 import { createHash } from "node:crypto";
@@ -62,66 +65,6 @@ const ANSWER_ROLES = new Set([
   "補佐",
 ]);
 
-/**
- * ○ マーカー付きの発言ヘッダーから発言者情報を抽出する。
- *
- * 対応パターン:
- *   ○議長（山田太郎君）　→ role=議長, name=山田太郎
- *   ○町長（鈴木次郎君）　→ role=町長, name=鈴木次郎
- *   ○１番（佐藤花子君）　→ role=議員, name=佐藤花子
- *   ○教育課長（田中一郎君）→ role=課長, name=田中一郎
- */
-export function parseSpeaker(text: string): {
-  speakerName: string | null;
-  speakerRole: string | null;
-  content: string;
-} {
-  const stripped = text.replace(/^[○◯◎●]\s*/, "");
-
-  // パターン: role（name + 君|様|議員）content
-  const match = stripped.match(
-    /^(.+?)[（(](.+?)(?:君|様|議員)[）)]\s*([\s\S]*)/
-  );
-  if (match) {
-    const rolePart = match[1]!.trim();
-    const rawName = match[2]!.replace(/[\s　]+/g, "").trim();
-    const content = match[3]!.trim();
-
-    // 番号付き議員: ○３番（田中一郎君）
-    if (/^[\d０-９]+番$/.test(rolePart)) {
-      return { speakerName: rawName, speakerRole: "議員", content };
-    }
-
-    // 役職マッチ
-    for (const suffix of ROLE_SUFFIXES) {
-      if (rolePart === suffix || rolePart.endsWith(suffix)) {
-        return { speakerName: rawName, speakerRole: suffix, content };
-      }
-    }
-
-    return { speakerName: rawName, speakerRole: rolePart || null, content };
-  }
-
-  // ○ マーカーはあるがカッコパターンに合致しない場合
-  const headerMatch = stripped.match(/^([^\s　]{1,30})[\s　]+([\s\S]*)/);
-  if (headerMatch) {
-    const header = headerMatch[1]!;
-    const content = headerMatch[2]!.trim();
-
-    for (const suffix of ROLE_SUFFIXES) {
-      if (header.endsWith(suffix)) {
-        const name =
-          header.length > suffix.length
-            ? header.slice(0, -suffix.length)
-            : null;
-        return { speakerName: name, speakerRole: suffix, content };
-      }
-    }
-  }
-
-  return { speakerName: null, speakerRole: null, content: stripped.trim() };
-}
-
 /** 役職から発言種別を分類 */
 export function classifyKind(
   speakerRole: string | null
@@ -142,28 +85,158 @@ export function classifyKind(
 }
 
 /**
+ * PDF冒頭のメンバーリストから 名前→役職 のマッピングを構築する。
+ *
+ * フォーマット例: "町 長 太 田 康 雄" → { "太田康雄": "町長" }
+ */
+export function buildNameRoleMap(text: string): Map<string, string> {
+  const map = new Map<string, string>();
+
+  // メンバーリストは冒頭 2000 文字以内に収まる
+  const headerArea = text.slice(0, 2000);
+
+  for (const role of ROLE_SUFFIXES) {
+    // "役 職 氏 名" のスペース区切り形式を検索（改行をまたがない）
+    const spacedRole = role.split("").join("[ \\t]+");
+    const pattern = new RegExp(
+      `${spacedRole}[ \\t]+([\\u4e00-\\u9fff\\uD840-\\uDFFF](?:[ \\t]+[\\u4e00-\\u9fff\\uD840-\\uDFFF]){1,4})`,
+      "gu"
+    );
+    for (const m of headerArea.matchAll(pattern)) {
+      const name = m[1]!.replace(/\s+/g, "");
+      // 名前として妥当な長さ (2-8 文字) かつ役職キーワードを含まない
+      if (
+        name.length >= 2 &&
+        name.length <= 8 &&
+        !ROLE_SUFFIXES.some((r) => name.includes(r))
+      ) {
+        if (!map.has(name)) {
+          map.set(name, role);
+        }
+      }
+    }
+  }
+
+  // "役職、氏名君。" アナウンス形式も収集（本文全体から）
+  for (const role of ROLE_SUFFIXES) {
+    // "町長、太田康雄君。" など
+    const announcePattern = new RegExp(`${role}[、，,]([^。「」]{2,8})君`, "g");
+    for (const m of text.matchAll(announcePattern)) {
+      const name = m[1]!.trim();
+      if (name.length >= 2 && name.length <= 8) {
+        if (!map.has(name)) {
+          map.set(name, role);
+        }
+      }
+    }
+  }
+
+  return map;
+}
+
+/**
+ * 発言ブロック直前のテキストから役職を抽出する。
+ *
+ * 「議 長」「町 長」等のスペース区切りラベルを検索。
+ */
+export function extractRoleFromPreceding(
+  preceding: string,
+  nameRoleMap: Map<string, string>,
+  speakerName: string
+): string | null {
+  // 1. 役職アナウンス: "役職、名前君" パターン
+  for (const role of ROLE_SUFFIXES) {
+    const pattern = new RegExp(`${role}[、，,][^。]*${speakerName}`);
+    if (pattern.test(preceding)) {
+      return role;
+    }
+  }
+
+  // 2. スペース区切りの役職ラベルが末尾にある: "議 長 " "町 長 " 等
+  const trimmedEnd = preceding.trimEnd();
+  for (const role of ROLE_SUFFIXES) {
+    const spacedRole = role.split("").join("\\s*");
+    const spacedPattern = new RegExp(`(?:${spacedRole}\\s*)+$`);
+    if (spacedPattern.test(trimmedEnd)) {
+      return role;
+    }
+  }
+
+  // 3. 名前マップから照合
+  if (nameRoleMap.has(speakerName)) {
+    return nameRoleMap.get(speakerName)!;
+  }
+
+  return null;
+}
+
+/**
  * PDF から抽出したテキストを ParsedStatement 配列に変換する。
+ *
+ * 森町固有の（ NAME 君 ）形式の発言ブロックを解析する。
  */
 export function parseStatements(text: string): ParsedStatement[] {
-  const blocks = text.split(/(?=[○◯◎●])/);
   const statements: ParsedStatement[] = [];
+
+  // 名前→役職マップを構築
+  const nameRoleMap = buildNameRoleMap(text);
+
+  // （ NAME 君 ） パターンで発言ブロックを分割
+  // サロゲートペア文字に対応するため /u フラグを使用
+  const speakerPattern = /（\s+((?:.\s+)*)君\s+）/gu;
+
+  const allMatches = [...text.matchAll(speakerPattern)];
+
+  // 名前として妥当なブロックのみを対象とする
+  const validMatches = allMatches.filter((m) => {
+    const namePart = m[1]!.replace(/\s+/g, "");
+    // 有効な名前: 2-8 文字、数字・ASCII・引用符等を含まない
+    return (
+      namePart.length >= 2 &&
+      namePart.length <= 8 &&
+      !/[\d\u0020-\u007F「」！？、。０-９－]/.test(namePart)
+    );
+  });
+
   let offset = 0;
 
-  for (const block of blocks) {
-    const trimmed = block.trim();
-    if (!trimmed || !/^[○◯◎●]/.test(trimmed)) continue;
+  for (let i = 0; i < validMatches.length; i++) {
+    const m = validMatches[i]!;
+    const speakerName = m[1]!.replace(/\s+/g, "");
+    const speakerEnd = m.index! + m[0].length;
 
-    // ト書き（登壇等）をスキップ
-    if (/^[○◯◎●]\s*[（(].+?(?:登壇|退席|退場|着席)[）)]$/.test(trimmed))
-      continue;
+    // コンテンツ: 次の発言ブロック直前まで
+    const nextSpeakerStart = validMatches[i + 1]?.index ?? text.length;
+    const rawContent = text.slice(speakerEnd, nextSpeakerStart);
 
-    const normalized = trimmed.replace(/\s+/g, " ");
-    const { speakerName, speakerRole, content } = parseSpeaker(normalized);
+    // コンテンツのクリーニング:
+    // - ページ番号 "- N -" を除去
+    // - 役職ラベル行 "議 長 " 等を除去
+    // - 余分な空白を正規化
+    const content = rawContent
+      .replace(/- \d+ -/g, "")
+      .replace(/\s*(?:[\u4e00-\u9fff]{1,2}\s){1,3}\s*/g, (m) => {
+        // 「議 長 」「町 長 」のような短い役職ラベル行
+        const cleaned = m.replace(/\s+/g, "");
+        if (ROLE_SUFFIXES.some((r) => r === cleaned)) {
+          return " ";
+        }
+        return m;
+      })
+      .replace(/\s+/g, " ")
+      .trim();
+
     if (!content) continue;
+
+    // 発言ブロック直前のテキストから役職を取得
+    const preceding = text.slice(Math.max(0, m.index! - 500), m.index!);
+    const speakerRole =
+      extractRoleFromPreceding(preceding, nameRoleMap, speakerName) ?? null;
 
     const contentHash = createHash("sha256").update(content).digest("hex");
     const startOffset = offset;
     const endOffset = offset + content.length;
+
     statements.push({
       kind: classifyKind(speakerRole),
       speakerName,
@@ -173,6 +246,7 @@ export function parseStatements(text: string): ParsedStatement[] {
       startOffset,
       endOffset,
     });
+
     offset = endOffset + 1;
   }
 
@@ -211,15 +285,16 @@ export async function fetchMeetingData(
 
   const statements = parseStatements(text);
 
+  // statements が空の場合は null を返す
+  if (statements.length === 0) return null;
+
   // PDF ファイル名から externalId を生成
   const pathMatch = new URL(meeting.pdfUrl).pathname.match(/\/([^/]+)\.pdf$/i);
   const idKey = pathMatch ? pathMatch[1] : null;
   const externalId = idKey ? `morimachi_${idKey}` : null;
 
-  // heldOn が null の場合（parseJapaneseDate 失敗）はスキップ
+  // heldOn が null の場合はスキップ
   if (!meeting.heldOn) return null;
-
-  if (statements.length === 0) return null;
 
   return {
     municipalityId,
