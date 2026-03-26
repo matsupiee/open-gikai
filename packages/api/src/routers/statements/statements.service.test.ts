@@ -49,7 +49,7 @@ describe("searchStatements", () => {
     ]);
   });
 
-  it("diagnostic: nested and() pattern", async () => {
+  it("diagnostic: searchStatements direct call", async () => {
     await db.insert(statements).values({
       id: "diag-1",
       meetingId: "meeting-sapporo",
@@ -58,50 +58,37 @@ describe("searchStatements", () => {
       contentHash: "diag-hash",
     });
 
-    // Pattern 1: like() directly
-    const r1 = await db
-      .select({ id: statements.id })
+    // Verify data exists
+    const allStmts = await db.select().from(statements);
+    console.log("All statements:", allStmts.length);
+    console.log("Statement content:", allStmts[0]?.content);
+    console.log("Statement meetingId:", allStmts[0]?.meetingId);
+
+    // Verify join data
+    const joinResult = await db
+      .select({
+        id: statements.id,
+        content: statements.content,
+        meetingTitle: meetings.title,
+        municipality: municipalities.name,
+      })
       .from(statements)
       .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
-      .where(like(statements.content, "%budget%"));
-    console.log("Pattern 1 - like() directly:", r1.length);
+      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code));
+    console.log("Join result:", JSON.stringify(joinResult));
 
-    // Pattern 2: and(like()) - single arg
-    const r2 = await db
-      .select({ id: statements.id })
-      .from(statements)
-      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
-      .where(and(like(statements.content, "%budget%")));
-    console.log("Pattern 2 - and(like()):", r2.length);
+    // Call service function
+    const result = await searchStatements(db, { q: "budget" });
+    console.log(
+      "searchStatements result:",
+      JSON.stringify(result.statements.length),
+    );
+    console.log(
+      "searchStatements items:",
+      JSON.stringify(result.statements.map((s) => s.content)),
+    );
 
-    // Pattern 3: and(and(like())) - nested, as used by service
-    const innerAnd = and(like(statements.content, "%budget%"));
-    const r3 = await db
-      .select({ id: statements.id })
-      .from(statements)
-      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
-      .where(and(innerAnd!));
-    console.log("Pattern 3 - and(and(like())):", r3.length);
-
-    // Pattern 4: and() with non-null assertion (exact service pattern)
-    const allConditions = [
-      and(...["budget"].map((t) => like(statements.content, `%${t}%`)))!,
-    ];
-    const r4 = await db
-      .select({ id: statements.id })
-      .from(statements)
-      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
-      .where(and(...allConditions));
-    console.log("Pattern 4 - exact service pattern:", r4.length);
-
-    expect(r1).toHaveLength(1);
-    expect(r2).toHaveLength(1);
-    expect(r3).toHaveLength(1);
-    expect(r4).toHaveLength(1);
+    expect(result.statements).toHaveLength(1);
   });
 
   it("キーワード検索（q）で発言を検索できる", async () => {
