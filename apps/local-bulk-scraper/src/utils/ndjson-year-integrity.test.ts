@@ -6,7 +6,9 @@ import { checkYearNdjsonIntegrity } from "./ndjson-year-integrity";
 
 describe("checkYearNdjsonIntegrity", () => {
   function fixtureDir(): string {
-    return mkdtempSync(join(tmpdir(), "og-ndjson-integrity-"));
+    const dir = mkdtempSync(join(tmpdir(), "og-ndjson-integrity-"));
+    writeFileSync(join(dir, "_complete"), JSON.stringify({ completedAt: new Date().toISOString() }) + "\n");
+    return dir;
   }
 
   it("complete when every meeting has at least one statement", async () => {
@@ -28,6 +30,19 @@ describe("checkYearNdjsonIntegrity", () => {
 
     const r = await checkYearNdjsonIntegrity(dir);
     expect(r.complete).toBe(true);
+  });
+
+  it("incomplete when _complete marker is missing", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "og-ndjson-integrity-"));
+    writeFileSync(join(dir, "meetings.ndjson"), JSON.stringify({ id: "m1" }) + "\n");
+    writeFileSync(
+      join(dir, "statements.ndjson"),
+      JSON.stringify({ id: "s1", meetingId: "m1", kind: "remark", content: "x", contentHash: "h" }) + "\n",
+    );
+
+    const r = await checkYearNdjsonIntegrity(dir);
+    expect(r.complete).toBe(false);
+    expect(r.reason).toMatch(/_complete/);
   });
 
   it("incomplete when statements.ndjson is missing", async () => {
