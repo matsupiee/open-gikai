@@ -7,5 +7,6 @@ export default defineConfig({
     testTimeout: 15_000,
     fileParallelism: false,
     globalSetup: ["src/test-setup.ts"],
+    pool: "forks",
   },
 });
