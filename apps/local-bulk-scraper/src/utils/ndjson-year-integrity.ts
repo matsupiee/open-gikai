@@ -28,6 +28,11 @@ async function* ndjsonLines(
  * 各会議 id に対して少なくとも1件の statement（同一 meetingId）があるか検証する。
  */
 export async function checkYearNdjsonIntegrity(yearDir: string): Promise<YearNdjsonIntegrityResult> {
+  const completePath = resolve(yearDir, "_complete");
+  if (!existsSync(completePath)) {
+    return { complete: false, reason: "_complete マーカーがありません（前回のスクレイプが中断された可能性）" };
+  }
+
   const meetingsPath = resolve(yearDir, "meetings.ndjson");
   const statementsPath = resolve(yearDir, "statements.ndjson");
 
