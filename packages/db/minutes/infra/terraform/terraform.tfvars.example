@@ -1,0 +1,5 @@
+project         = "company-research-459805"
+region          = "us-central1"
+zone            = "us-central1-a"
+sqld_auth_token = "CHANGE_ME_generate_with_openssl_rand_hex_32"
+gcs_bucket_name = "open-gikai-minutes-db"
