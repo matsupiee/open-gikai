@@ -20,7 +20,8 @@
     "db:stop": "supabase stop",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:import": "bun run seeds/insert-to-pgsql.ts"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^3.3.0",
