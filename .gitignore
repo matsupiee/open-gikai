@@ -55,3 +55,9 @@ temp
 dbjson
 
 *.db
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
