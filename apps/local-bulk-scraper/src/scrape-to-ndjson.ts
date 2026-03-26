@@ -16,7 +16,6 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { municipalityRowsFromCsv } from "@open-gikai/db/seeds/parse-data/municipalities";
 import dotenv from "dotenv";
 import { detectAdapterKey, getAdapter, initAdapterRegistry } from "@open-gikai/scrapers";
 import { parseYear, parseMeetingLimit, parseTarget, parseSystemType } from "./utils/cli-args";
@@ -26,16 +25,14 @@ import {
   type NdjsonScrapeAccumulator,
 } from "./utils/run-municipality-ndjson-scrape";
 import { createScrapeRunLogger } from "./utils/scrape-run-logger";
+import { parseMunicipalitiesCsv } from "./utils/parse-municipalities-csv";
 
 // --- Setup ---
 
 const root = resolve(fileURLToPath(import.meta.url), "../../../../");
 dotenv.config({ path: resolve(root, ".env.local"), override: true });
 
-const municipalitiesCsvPath = resolve(
-  root,
-  "packages/db/minutes/src/seeds/data/municipalities.csv",
-);
+const municipalitiesCsvPath = resolve(root, "data/municipalities.csv");
 
 async function main() {
   await initAdapterRegistry();
@@ -67,9 +64,7 @@ async function main() {
     process.exit(1);
   }
 
-  let csvRows = municipalityRowsFromCsv(municipalitiesCsvPath).filter(
-    (r) => r.enabled && r.baseUrl,
-  );
+  let csvRows = parseMunicipalitiesCsv(municipalitiesCsvPath).filter((r) => r.baseUrl);
   if (targetCodes) {
     const set = new Set(targetCodes);
     csvRows = csvRows.filter((r) => set.has(r.code));
