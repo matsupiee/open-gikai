@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { getTestDb } from "@open-gikai/db-minutes/test-helpers";
 import { municipalities, meetings, statements } from "@open-gikai/db-minutes";
 import type { TestDb } from "@open-gikai/db-minutes/test-helpers";
-import { like, sql, eq } from "drizzle-orm";
+import { and, like, sql, eq } from "drizzle-orm";
 import {
   searchStatements,
   semanticSearchStatements,
@@ -49,7 +49,7 @@ describe("searchStatements", () => {
     ]);
   });
 
-  it("diagnostic: LIKE on content column", async () => {
+  it("diagnostic: nested and() pattern", async () => {
     await db.insert(statements).values({
       id: "diag-1",
       meetingId: "meeting-sapporo",
@@ -58,26 +58,50 @@ describe("searchStatements", () => {
       contentHash: "diag-hash",
     });
 
-    // Raw SQL LIKE
-    const rawResult = await db.all(
-      sql`SELECT id, content FROM statements WHERE content LIKE '%budget%'`,
-    );
-    console.log("Raw SQL LIKE result:", JSON.stringify(rawResult));
-
-    // Drizzle LIKE
-    const drizzleResult = await db
-      .select({ id: statements.id, content: statements.content })
+    // Pattern 1: like() directly
+    const r1 = await db
+      .select({ id: statements.id })
       .from(statements)
+      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
+      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
       .where(like(statements.content, "%budget%"));
-    console.log("Drizzle LIKE result:", JSON.stringify(drizzleResult));
+    console.log("Pattern 1 - like() directly:", r1.length);
 
-    // All rows
-    const allRows = await db
-      .select({ id: statements.id, content: statements.content })
-      .from(statements);
-    console.log("All rows:", JSON.stringify(allRows));
+    // Pattern 2: and(like()) - single arg
+    const r2 = await db
+      .select({ id: statements.id })
+      .from(statements)
+      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
+      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
+      .where(and(like(statements.content, "%budget%")));
+    console.log("Pattern 2 - and(like()):", r2.length);
 
-    expect(rawResult).toHaveLength(1);
+    // Pattern 3: and(and(like())) - nested, as used by service
+    const innerAnd = and(like(statements.content, "%budget%"));
+    const r3 = await db
+      .select({ id: statements.id })
+      .from(statements)
+      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
+      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
+      .where(and(innerAnd!));
+    console.log("Pattern 3 - and(and(like())):", r3.length);
+
+    // Pattern 4: and() with non-null assertion (exact service pattern)
+    const allConditions = [
+      and(...["budget"].map((t) => like(statements.content, `%${t}%`)))!,
+    ];
+    const r4 = await db
+      .select({ id: statements.id })
+      .from(statements)
+      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
+      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
+      .where(and(...allConditions));
+    console.log("Pattern 4 - exact service pattern:", r4.length);
+
+    expect(r1).toHaveLength(1);
+    expect(r2).toHaveLength(1);
+    expect(r3).toHaveLength(1);
+    expect(r4).toHaveLength(1);
   });
 
   it("キーワード検索（q）で発言を検索できる", async () => {
