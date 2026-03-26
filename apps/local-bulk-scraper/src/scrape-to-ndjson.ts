@@ -388,6 +388,7 @@ async function scrapeOneYear(
   baseUrl: string,
   year: number,
   meetingLimit?: number,
+  detailConcurrency = 5,
 ): Promise<MeetingData[]> {
   const results: MeetingData[] = [];
 
@@ -406,15 +407,23 @@ async function scrapeOneYear(
     `  [${adapter.name}] ${municipalityName}: ${year}年 → ${records.length} 件${limitNote}`,
   );
 
+  const executing = new Set<Promise<void>>();
   for (const record of limited) {
-    const meeting = await adapter.fetchDetail({
-      detailParams: record.detailParams,
-      municipalityCode,
-    });
-    if (meeting) {
-      results.push(meeting);
+    const p: Promise<void> = adapter
+      .fetchDetail({
+        detailParams: record.detailParams,
+        municipalityCode,
+      })
+      .then((meeting) => {
+        if (meeting) results.push(meeting);
+      })
+      .finally(() => executing.delete(p));
+    executing.add(p);
+    if (executing.size >= detailConcurrency) {
+      await Promise.race(executing);
     }
   }
+  await Promise.all(executing);
 
   return results;
 }
