@@ -19,13 +19,15 @@ import { fileURLToPath } from "node:url";
 import { municipalityRowsFromCsv } from "@open-gikai/db-minutes/seeds/parse-data/municipalities";
 import { createId } from "@paralleldrive/cuid2";
 import dotenv from "dotenv";
-import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";
+import type { MeetingData } from "@open-gikai/scrapers";
 import {
   detectAdapterKey,
   getAdapter,
   initAdapterRegistry,
-  SharedSystemAdapterKey,
 } from "@open-gikai/scrapers";
+import { getDetailConcurrency, runGroupedByHost } from "./utils/concurrency";
+import { parseYear, parseMeetingLimit, parseTarget, parseSystemType } from "./utils/cli-args";
+import { scrapeOneYear } from "./utils/scrape-one-year";
 
 // --- Setup ---
 
@@ -36,143 +38,6 @@ const municipalitiesCsvPath = resolve(
   root,
   "packages/db/minutes/src/seeds/data/municipalities.csv",
 );
-
-function parseYear(): number | undefined {
-  const idx = process.argv.indexOf("--year");
-  if (idx === -1) return undefined;
-  const val = Number(process.argv[idx + 1]);
-  if (Number.isNaN(val) || val < 2000 || val > 2100) {
-    console.error(`[scrape-to-ndjson] 無効な年: ${process.argv[idx + 1]}`);
-    process.exit(1);
-  }
-  return val;
-}
-
-function parseMeetingLimit(): number | undefined {
-  const idx = process.argv.indexOf("--meeting-limit");
-  if (idx === -1) return undefined;
-  const val = Number(process.argv[idx + 1]);
-  if (Number.isNaN(val) || val < 1) {
-    console.error(`[scrape-to-ndjson] 無効な meeting-limit: ${process.argv[idx + 1]}`);
-    process.exit(1);
-  }
-  return val;
-}
-
-function parseTarget(): string[] | undefined {
-  const idx = process.argv.indexOf("--target");
-  if (idx === -1) return undefined;
-  const val = process.argv[idx + 1];
-  if (!val) {
-    console.error(
-      `[scrape-to-ndjson] --target に自治体コードを指定してください（カンマ区切りで複数指定可）`,
-    );
-    process.exit(1);
-  }
-  return val.split(",").map((s) => s.trim());
-}
-
-const validSystemTypes = Object.values(SharedSystemAdapterKey);
-
-function parseSystemType(): SharedSystemAdapterKey | undefined {
-  const idx = process.argv.indexOf("--system-type");
-  if (idx === -1) return undefined;
-  const val = process.argv[idx + 1];
-  if (!val || !validSystemTypes.includes(val as SharedSystemAdapterKey)) {
-    console.error(`[scrape-to-ndjson] 無効なシステムタイプ: ${val}`);
-    console.error(`  有効な値: ${validSystemTypes.join(", ")}`);
-    process.exit(1);
-  }
-  return val as SharedSystemAdapterKey;
-}
-
-// 同一ホスト内のデフォルト並列数。
-// dbsr.jp 等の共有サービスでは、高すぎるとレート制限で 0 件応答が返るため控えめに設定。
-const DEFAULT_HOST_CONCURRENCY = 5;
-
-/**
- * グループキー単位の並列数オーバーライド。
- * サイトの耐性に応じて個別に設定する。キーは extractGroupKey() の戻り値に対応。
- */
-const HOST_CONCURRENCY_OVERRIDES: Record<string, number> = {
-  "kaigiroku.net": 20, // discussnet-ssp: 十分な耐性あり
-};
-
-function getHostConcurrency(groupKey: string): number {
-  return HOST_CONCURRENCY_OVERRIDES[groupKey] ?? DEFAULT_HOST_CONCURRENCY;
-}
-
-// --- fetchDetail の並列数（アダプター種別ごと） ---
-
-const DEFAULT_DETAIL_CONCURRENCY = 10;
-
-const DETAIL_CONCURRENCY_OVERRIDES: Record<string, number> = {
-  [SharedSystemAdapterKey.DISCUSSNET]: 4,
-  [SharedSystemAdapterKey.DBSEARCH]: 2,
-  [SharedSystemAdapterKey.KENSAKUSYSTEM]: 2,
-  [SharedSystemAdapterKey.GIJIROKUCOM]: 2,
-};
-
-function getDetailConcurrency(adapterKey: string): number {
-  // 共有システムは個別設定、カスタムアダプター（自治体コード）は高めに設定
-  return DETAIL_CONCURRENCY_OVERRIDES[adapterKey] ?? DEFAULT_DETAIL_CONCURRENCY;
-}
-
-/**
- * ホスト名からグループ化キーを抽出する。
- *
- * dbsr.jp のように複数の自治体がサブドメイン違いで同一サーバーを共有している
- * SaaS 型システムでは、フルホスト名ではなくサービスドメイン単位でグループ化する。
- * これにより同一サーバーへの過負荷を防ぐ。
- */
-const SHARED_SERVICE_DOMAINS = new Set([
-  "dbsr.jp",
-  "kaigiroku.net",
-  "kensakusystem.jp",
-  "gijiroku.com",
-]);
-
-function extractGroupKey(hostname: string): string {
-  const parts = hostname.split(".");
-  if (parts.length <= 2) return hostname;
-  const last2 = parts.slice(-2).join(".");
-  if (SHARED_SERVICE_DOMAINS.has(last2)) return last2;
-  return hostname;
-}
-
-/**
- * タスクをサーバー単位でグループ化し、同一サーバーは HOST_CONCURRENCY 並列・サーバー間は並列で実行する。
- *
- * dbsr.jp (*.dbsr.jp)、discussnet-ssp (ssp.kaigiroku.net)、kensakusystem (*.kensakusystem.jp) のように
- * 複数自治体が同一サーバーを共有するシステムでは、並列数を抑えて IP 制限を回避する。
- */
-async function runGroupedByHost(
-  targets: { baseUrl: string | null }[],
-  tasks: (() => Promise<void>)[],
-): Promise<void> {
-  const hostGroups = new Map<string, { groupKey: string; tasks: (() => Promise<void>)[] }>();
-
-  for (let i = 0; i < targets.length; i++) {
-    const groupKey = extractGroupKey(new URL(targets[i]!.baseUrl!).hostname);
-    if (!hostGroups.has(groupKey)) hostGroups.set(groupKey, { groupKey, tasks: [] });
-    hostGroups.get(groupKey)!.tasks.push(tasks[i]!);
-  }
-
-  const hostTasks = [...hostGroups.values()].map(({ groupKey, tasks: groupTasks }) => async () => {
-    const concurrency = getHostConcurrency(groupKey);
-    const executing = new Set<Promise<void>>();
-    for (const task of groupTasks) {
-      const p: Promise<void> = task().finally(() => executing.delete(p));
-      executing.add(p);
-      if (executing.size >= concurrency) {
-        await Promise.race(executing);
-      }
-    }
-    await Promise.all(executing);
-  });
-
-  return Promise.all(hostTasks.map((t) => t())).then(() => undefined);
-}
 
 async function main() {
   await initAdapterRegistry();
@@ -393,56 +258,6 @@ async function main() {
   await new Promise<void>((resolve) => logStream.end(resolve));
 
   process.exit(0);
-}
-
-/**
- * ScraperAdapter を使って単一年度の議事録を取得する。
- */
-async function scrapeOneYear(
-  adapter: ScraperAdapter,
-  municipalityCode: string,
-  municipalityName: string,
-  baseUrl: string,
-  year: number,
-  meetingLimit?: number,
-  detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
-): Promise<MeetingData[]> {
-  const results: MeetingData[] = [];
-
-  console.log(`  [${adapter.name}] ${municipalityName}: ${year}年の一覧を取得中...`);
-
-  const records = await adapter.fetchList({ baseUrl, year });
-  if (records.length === 0) {
-    console.log(`  [${adapter.name}] ${municipalityName}: ${year}年 → データなし`);
-    return results;
-  }
-
-  const limited = meetingLimit ? records.slice(0, meetingLimit) : records;
-  const limitNote = meetingLimit ? ` (${limited.length}/${records.length} 件処理)` : "";
-
-  console.log(
-    `  [${adapter.name}] ${municipalityName}: ${year}年 → ${records.length} 件${limitNote}`,
-  );
-
-  const executing = new Set<Promise<void>>();
-  for (const record of limited) {
-    const p: Promise<void> = adapter
-      .fetchDetail({
-        detailParams: record.detailParams,
-        municipalityCode,
-      })
-      .then((meeting) => {
-        if (meeting) results.push(meeting);
-      })
-      .finally(() => executing.delete(p));
-    executing.add(p);
-    if (executing.size >= detailConcurrency) {
-      await Promise.race(executing);
-    }
-  }
-  await Promise.all(executing);
-
-  return results;
 }
 
 main().catch((err) => {
