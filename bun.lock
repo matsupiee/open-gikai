@@ -21,7 +21,6 @@
     "apps/local-bulk-scraper": {
       "name": "@open-gikai/local-bulk-scraper",
       "dependencies": {
-        "@open-gikai/db": "workspace:*",
         "@open-gikai/scrapers": "workspace:*",
         "@paralleldrive/cuid2": "^3.3.0",
         "drizzle-orm": "^0.45.1",
