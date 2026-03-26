@@ -1,7 +1,12 @@
 import type { MinutesDb } from "@open-gikai/db-minutes";
-import { meetings, municipalities, statements } from "@open-gikai/db-minutes";
+import {
+  meetings,
+  municipalities,
+  statements,
+  tokenizeSearchQuery,
+} from "@open-gikai/db-minutes";
 import { ORPCError } from "@orpc/server";
-import { and, desc, eq, gte, like, lte, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, like, lte, lt, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { generateAnswer } from "../../shared/llm";
 import type {
@@ -77,6 +82,12 @@ function buildStatementFilters(input: z.infer<typeof statementsSearchSchema>) {
   return conditions;
 }
 
+function buildFtsMatchSubquery(q: string) {
+  const bigramQuery = tokenizeSearchQuery(q);
+  if (!bigramQuery) return null;
+  return sql<string>`(SELECT statement_id FROM statements_fts WHERE bigrams MATCH ${bigramQuery})`;
+}
+
 function queryStatements(
   db: MinutesDb,
   input: z.infer<typeof statementsSearchSchema>,
@@ -106,11 +117,9 @@ function queryStatements(
   const allConditions = [...statementFilters, ...meetingFilters];
 
   if (input.q) {
-    const terms = input.q.trim().split(/\s+/).filter(Boolean);
-    if (terms.length > 0) {
-      allConditions.push(
-        and(...terms.map((t) => like(statements.content, `%${t}%`)))!,
-      );
+    const ftsSubquery = buildFtsMatchSubquery(input.q);
+    if (ftsSubquery) {
+      allConditions.push(inArray(statements.id, ftsSubquery));
     }
   }
 
@@ -142,13 +151,11 @@ function querySemanticStatements(
   db: MinutesDb,
   input: z.infer<typeof statementsSemanticSearchSchema>,
 ) {
-  const terms = input.query.trim().split(/\s+/).filter(Boolean);
   const conditions = [];
 
-  if (terms.length > 0) {
-    conditions.push(
-      and(...terms.map((t) => like(statements.content, `%${t}%`)))!,
-    );
+  const ftsSubquery = buildFtsMatchSubquery(input.query);
+  if (ftsSubquery) {
+    conditions.push(inArray(statements.id, ftsSubquery));
   }
   if (input.filters?.heldOnFrom) {
     conditions.push(gte(meetings.heldOn, input.filters.heldOnFrom));
