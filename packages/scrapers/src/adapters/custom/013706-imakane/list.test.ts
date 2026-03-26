@@ -70,6 +70,39 @@ describe("parsePageLinks", () => {
     expect(pdfLinks).toHaveLength(1);
   });
 
+  it("相対パス（../）を含む PDF リンクは正しく解決される", () => {
+    const html = `
+      <a href="../dayori/../test.pdf">議会だより</a>
+    `;
+
+    const { pdfLinks } = parsePageLinks(
+      html,
+      "https://www.town.imakane.lg.jp/ass/kaigiroku/",
+    );
+
+    expect(pdfLinks).toHaveLength(1);
+    expect(pdfLinks[0]!.url).toBe(
+      "https://www.town.imakane.lg.jp/ass/test.pdf",
+    );
+  });
+
+  it("dayori（議会だより）のカテゴリリンクは除外される", () => {
+    const html = `
+      <a href="/ass/dayori/index.html">議会だより</a>
+      <a href="/ass/cat/post_15.html">合同委員会</a>
+    `;
+
+    const { categoryLinks } = parsePageLinks(
+      html,
+      "https://www.town.imakane.lg.jp/ass/kaigiroku/",
+    );
+
+    expect(categoryLinks).toHaveLength(1);
+    expect(categoryLinks[0]).toBe(
+      "https://www.town.imakane.lg.jp/ass/cat/post_15.html",
+    );
+  });
+
   it("外部サイトのリンクはカテゴリリンクに含まれない", () => {
     const html = `
       <a href="https://example.com/other.html">外部リンク</a>

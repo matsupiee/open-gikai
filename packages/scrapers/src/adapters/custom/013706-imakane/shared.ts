@@ -116,15 +116,12 @@ export function extractPdfLinks(
       .replace(/&amp;/g, "&")
       .trim();
 
+    // new URL() で相対パス（../）を正しく解決する
     let url: string;
-    if (href.startsWith("http://") || href.startsWith("https://")) {
-      url = href;
-    } else if (href.startsWith("/")) {
-      url = `${BASE_ORIGIN}${href}`;
-    } else {
-      // 相対パス: baseUrl のディレクトリ部分と結合
-      const base = baseUrl.replace(/\/[^/]*$/, "/");
-      url = `${base}${href}`;
+    try {
+      url = decodeURI(new URL(href, baseUrl).href);
+    } catch {
+      continue;
     }
 
     if (!seen.has(url)) {
@@ -153,21 +150,21 @@ export function extractCategoryLinks(
     if (!rawHref) continue;
     const href = rawHref.replace(/&amp;/g, "&");
 
+    // new URL() で相対パス（../）を正しく解決する
     let url: string;
-    if (href.startsWith("http://") || href.startsWith("https://")) {
-      if (!href.includes("town.imakane.lg.jp")) continue;
-      url = href;
-    } else if (href.startsWith("/")) {
-      url = `${BASE_ORIGIN}${href}`;
-    } else {
-      // 相対パス
-      const base = baseUrl.replace(/\/[^/]*$/, "/");
-      url = `${base}${href}`;
+    try {
+      url = new URL(href, baseUrl).href;
+    } catch {
+      continue;
     }
 
+    if (!url.includes("town.imakane.lg.jp")) continue;
+
     // /ass/ 配下のみ対象 & PDF は除く & 一覧ページ自身は除く
+    // /dayori/ (議会だより) は会議録ではないため除外
     if (
       url.includes("/ass/") &&
+      !url.includes("/dayori/") &&
       !url.endsWith(".pdf") &&
       !seen.has(url) &&
       url !== LIST_URL &&
