@@ -1,5 +1,5 @@
 {
-  "name": "@open-gikai/db-auth",
+  "name": "@open-gikai/db",
   "type": "module",
   "exports": {
     ".": {

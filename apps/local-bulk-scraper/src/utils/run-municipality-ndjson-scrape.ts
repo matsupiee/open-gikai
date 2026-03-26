@@ -1,6 +1,6 @@
 import { createWriteStream, existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
-import type { MunicipalityRow } from "@open-gikai/db-minutes/seeds/parse-data/municipalities";
+import type { MunicipalityRow } from "@open-gikai/db/seeds/parse-data/municipalities";
 import { createId } from "@paralleldrive/cuid2";
 import type { MeetingData } from "@open-gikai/scrapers";
 import { detectAdapterKey, getAdapter } from "@open-gikai/scrapers";
