@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { getTestDb } from "@open-gikai/db-minutes/test-helpers";
 import { municipalities, meetings, statements } from "@open-gikai/db-minutes";
 import type { TestDb } from "@open-gikai/db-minutes/test-helpers";
+import { like, sql, eq } from "drizzle-orm";
 import {
   searchStatements,
   semanticSearchStatements,
@@ -46,6 +47,37 @@ describe("searchStatements", () => {
         sourceUrl: "https://example.com/tokyo",
       },
     ]);
+  });
+
+  it("diagnostic: LIKE on content column", async () => {
+    await db.insert(statements).values({
+      id: "diag-1",
+      meetingId: "meeting-sapporo",
+      kind: "question",
+      content: "budget test content",
+      contentHash: "diag-hash",
+    });
+
+    // Raw SQL LIKE
+    const rawResult = await db.all(
+      sql`SELECT id, content FROM statements WHERE content LIKE '%budget%'`,
+    );
+    console.log("Raw SQL LIKE result:", JSON.stringify(rawResult));
+
+    // Drizzle LIKE
+    const drizzleResult = await db
+      .select({ id: statements.id, content: statements.content })
+      .from(statements)
+      .where(like(statements.content, "%budget%"));
+    console.log("Drizzle LIKE result:", JSON.stringify(drizzleResult));
+
+    // All rows
+    const allRows = await db
+      .select({ id: statements.id, content: statements.content })
+      .from(statements);
+    console.log("All rows:", JSON.stringify(allRows));
+
+    expect(rawResult).toHaveLength(1);
   });
 
   it("キーワード検索（q）で発言を検索できる", async () => {
