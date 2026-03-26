@@ -17,7 +17,7 @@ export const Route = createFileRoute("/search/")({
   component: RouteComponent,
 });
 
-function RouteComponent() {
+export function RouteComponent() {
   const {
     pageMode,
     setPageMode,
