@@ -1,6 +1,12 @@
 import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";
 import { getDetailConcurrency } from "./concurrency";
 
+export interface ScrapeOneYearResult {
+  meetings: MeetingData[];
+  /** meeting-limit により一部の会議のみ取得した場合 true */
+  truncated: boolean;
+}
+
 /**
  * ScraperAdapter を使って単一年度の議事録を取得する。
  */
@@ -11,7 +17,7 @@ export async function scrapeOneYear(
   baseUrl: string,
   year: number,
   meetingLimit?: number,
-): Promise<MeetingData[]> {
+): Promise<ScrapeOneYearResult> {
   const results: MeetingData[] = [];
 
   console.log(`  [${adapter.name}] ${municipalityName}: ${year}年の一覧を取得中...`);
@@ -19,10 +25,11 @@ export async function scrapeOneYear(
   const records = await adapter.fetchList({ baseUrl, year });
   if (records.length === 0) {
     console.log(`  [${adapter.name}] ${municipalityName}: ${year}年 → データなし`);
-    return results;
+    return { meetings: results, truncated: false };
   }
 
   const limited = meetingLimit ? records.slice(0, meetingLimit) : records;
+  const truncated = meetingLimit !== undefined && limited.length < records.length;
   const limitNote = meetingLimit ? ` (${limited.length}/${records.length} 件処理)` : "";
 
   console.log(
@@ -49,5 +56,5 @@ export async function scrapeOneYear(
   }
   await Promise.all(executing);
 
-  return results;
+  return { meetings: results, truncated };
 }

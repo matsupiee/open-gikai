@@ -47,7 +47,8 @@ describe("scrapeOneYear", () => {
 
     const result = await scrapeOneYear(adapter, "011002", "テスト市", "https://example.com", 2024);
 
-    expect(result).toEqual([]);
+    expect(result.meetings).toEqual([]);
+    expect(result.truncated).toBe(false);
     expect(adapter.fetchDetail).not.toHaveBeenCalled();
   });
 
@@ -63,8 +64,9 @@ describe("scrapeOneYear", () => {
 
     const result = await scrapeOneYear(adapter, "011002", "テスト市", "https://example.com", 2024);
 
-    expect(result).toHaveLength(1);
-    expect(result[0]).toBe(meeting);
+    expect(result.meetings).toHaveLength(1);
+    expect(result.meetings[0]).toBe(meeting);
+    expect(result.truncated).toBe(false);
     expect(adapter.fetchDetail).toHaveBeenCalledWith({
       detailParams: { id: "1" },
       municipalityCode: "011002",
@@ -82,7 +84,8 @@ describe("scrapeOneYear", () => {
 
     const result = await scrapeOneYear(adapter, "011002", "テスト市", "https://example.com", 2024);
 
-    expect(result).toEqual([]);
+    expect(result.meetings).toEqual([]);
+    expect(result.truncated).toBe(false);
   });
 
   it("meetingLimit で取得件数を制限する", async () => {
@@ -99,8 +102,27 @@ describe("scrapeOneYear", () => {
       adapter, "011002", "テスト市", "https://example.com", 2024, 2,
     );
 
-    expect(result).toHaveLength(2);
+    expect(result.meetings).toHaveLength(2);
+    expect(result.truncated).toBe(true);
     expect(adapter.fetchDetail).toHaveBeenCalledTimes(2);
+  });
+
+  it("meetingLimit が全件数以上なら truncated は false", async () => {
+    const records = Array.from({ length: 3 }, (_, i) => ({
+      detailParams: { id: String(i) },
+    }));
+    const adapter: ScraperAdapter = {
+      name: "test-adapter",
+      fetchList: vi.fn().mockResolvedValue(records),
+      fetchDetail: vi.fn().mockResolvedValue(createMeetingData()),
+    };
+
+    const result = await scrapeOneYear(
+      adapter, "011002", "テスト市", "https://example.com", 2024, 5,
+    );
+
+    expect(result.meetings).toHaveLength(3);
+    expect(result.truncated).toBe(false);
   });
 
   it("getDetailConcurrency(adapter.name) の上限で同時実行数が制御される", async () => {
@@ -131,7 +153,7 @@ describe("scrapeOneYear", () => {
       2024,
     );
 
-    expect(result).toHaveLength(10);
+    expect(result.meetings).toHaveLength(10);
     expect(maxConcurrent).toBeLessThanOrEqual(2);
   });
 });
