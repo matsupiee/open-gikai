@@ -30,7 +30,9 @@ resource "google_compute_instance" "sqld_server" {
   network_interface {
     network = "default"
     # access_config を空で指定すると、エフェメラル（一時的）な外部 IP が自動で割り当てられる。
-    # VM を削除・再作成しない限り IP は変わらない。固定 IP より月 $3 ほど安い。
+    # エフェメラル IP は VM を stop → start するだけで変わることに注意。
+    # 固定 IP が必要な場合は google_compute_address リソースを使い、address フィールドで指定する。
+    # 固定 IP を使わない場合は、apps/web の LIBSQL_URL を手動で更新する運用が必要。
     access_config {}
   }
 

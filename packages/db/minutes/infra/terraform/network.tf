@@ -17,7 +17,8 @@ resource "google_compute_firewall" "allow_sqld" {
 
   # source_ranges: どこからのアクセスを許可するか。
   # "0.0.0.0/0" = インターネット上のすべての IP からアクセス可能。
-  # sqld の認証トークン (Bearer token) でアクセス制御を行うため、IP 制限はしていない。
+  # sqld の認証トークンでアクセス制御を行うため、IP 制限はしていない。
+  # TODO: 将来的には Cloud Armor や Vercel Edge Network の IP レンジでアクセス元を絞る。
   source_ranges = ["0.0.0.0/0"]
 
   # target_tags: このルールを適用する VM を絞り込む。

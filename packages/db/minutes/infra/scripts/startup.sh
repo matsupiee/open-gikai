@@ -87,9 +87,14 @@ User=sqld
 ExecStart=${SQLD_BIN} \\
   --db-path ${DB_PATH} \\
   --http-listen-addr 0.0.0.0:8080
-# SQLD_AUTH_TOKEN: Bearer:<トークン> の形式で設定。
-# apps/web 側の LIBSQL_AUTH_TOKEN と同じ値でないと認証エラーになる。
-Environment=SQLD_AUTH_TOKEN=Bearer:${AUTH_TOKEN}
+# 注意: sqld には --read-only フラグがない。
+# 書き込みリクエストが来た場合は SQLite レベルでエラーになるが、
+# 本構成では apps/web が読み取りクエリのみ発行するため問題ない。
+# SQLD_HTTP_AUTH: basic:<base64> の形式で設定。
+# sqld の HTTP 認証は Basic 認証方式を使う。
+# apps/web の @libsql/client は authToken をそのまま Authorization ヘッダーに送るため、
+# クライアント側の設定と合わせる必要がある。
+Environment=SQLD_HTTP_AUTH=basic:${AUTH_TOKEN}
 Environment=RUST_LOG=info
 Restart=always
 RestartSec=5

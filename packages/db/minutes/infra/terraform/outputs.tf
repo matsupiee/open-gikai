@@ -29,3 +29,15 @@ output "ssh_command" {
   description = "SSH command to connect to the VM"
   value       = "gcloud compute ssh sqld-server --zone=${var.zone} --project=${var.project}"
 }
+
+# VM が配置されるゾーン。deploy-db.sh で SSH 接続に使う。
+output "zone" {
+  description = "GCP zone where the VM is located"
+  value       = var.zone
+}
+
+# GCP プロジェクト ID。deploy-db.sh で SSH 接続に使う。
+output "project" {
+  description = "GCP project ID"
+  value       = var.project
+}

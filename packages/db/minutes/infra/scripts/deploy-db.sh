@@ -27,10 +27,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TERRAFORM_DIR="${SCRIPT_DIR}/../terraform"
 
 # terraform output から VM 接続情報を取得
-# ssh_command の出力例: "gcloud compute ssh sqld-server --zone=us-central1-a --project=xxx"
-# ここから --zone= と --project= の値を正規表現で抽出する
-ZONE=$(cd "${TERRAFORM_DIR}" && terraform output -raw ssh_command | grep -oP '(?<=--zone=)\S+')
-PROJECT=$(cd "${TERRAFORM_DIR}" && terraform output -raw ssh_command | grep -oP '(?<=--project=)\S+')
+# grep -oP が macOS で使えないため、各値を個別に取得する
+ZONE=$(cd "${TERRAFORM_DIR}" && terraform output -raw zone)
+PROJECT=$(cd "${TERRAFORM_DIR}" && terraform output -raw project)
 VM_IP=$(cd "${TERRAFORM_DIR}" && terraform output -raw vm_external_ip)
 BUCKET=$(cd "${TERRAFORM_DIR}" && terraform output -raw gcs_bucket_name)
 
