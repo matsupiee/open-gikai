@@ -5,8 +5,7 @@ on:
     branches: [main]
     paths:
       - "packages/api/**"
-      - "packages/db-minutes/**"
-      - "packages/db-auth/**"
+      - "packages/db/**"
       - "packages/auth/**"
       - "package.json"
       - "bun.lock"
@@ -21,6 +20,24 @@ jobs:
   test-api:
     runs-on: ubuntu-latest
     timeout-minutes: 3
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 54322:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres_test
 
     steps:
       - uses: actions/checkout@v4

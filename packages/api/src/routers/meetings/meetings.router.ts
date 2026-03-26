@@ -5,9 +5,9 @@ import { listMeetings, getMeetingStatements } from "./meetings.service";
 export const meetingsRouter = {
   list: publicProcedure
     .input(meetingsListSchema)
-    .handler(({ input, context }) => listMeetings(context.minutesDb, input)),
+    .handler(({ input, context }) => listMeetings(context.db, input)),
 
   statements: publicProcedure
     .input(meetingStatementsSchema)
-    .handler(({ input, context }) => getMeetingStatements(context.minutesDb, input)),
+    .handler(({ input, context }) => getMeetingStatements(context.db, input)),
 };
