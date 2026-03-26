@@ -1,4 +1,4 @@
-import { createWriteStream, existsSync, mkdirSync, rmSync } from "node:fs";
+import { createWriteStream, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { MunicipalityRow } from "@open-gikai/db/seeds/parse-data/municipalities";
 import { createId } from "@paralleldrive/cuid2";
@@ -139,6 +139,15 @@ export async function runMunicipalityNdjsonScrape(params: {
       new Promise<void>((r) => meetingsStream.end(r)),
       new Promise<void>((r) => statementsStream.end(r)),
     ]);
+
+    writeFileSync(
+      resolve(yearDir, "_complete"),
+      JSON.stringify({
+        completedAt: new Date().toISOString(),
+        meetings: meetingDataList.length,
+        statements: meetingDataList.reduce((sum, m) => sum + m.statements.length, 0),
+      }) + "\n",
+    );
 
     log.info(`${target.name}: ${year}年 → ${meetingDataList.length} 件`);
   }
