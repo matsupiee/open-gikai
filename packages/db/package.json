@@ -9,7 +9,7 @@
       "default": "./src/schema/index.ts"
     },
     "./test-helpers": {
-      "default": "./src/test-helpers/index.ts"
+      "default": "./test/index.ts"
     },
     "./*": {
       "default": "./src/*.ts"

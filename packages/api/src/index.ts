@@ -13,7 +13,7 @@ const requireAuth = o.middleware(async ({ context, next }) => {
   return next({
     context: {
       session: context.session,
-      db: context.authDb,
+      db: context.db,
     },
   });
 });
@@ -28,7 +28,7 @@ const requireAdmin = o.middleware(async ({ context, next }) => {
     throw new ORPCError("FORBIDDEN");
   }
   return next({
-    context: { session: context.session, db: context.authDb },
+    context: { session: context.session, db: context.db },
   });
 });
 

@@ -1,4 +1,4 @@
-import { createTestDatabase, getTestDb, runMigrations, closeTestDb } from "../../db/test";
+import { createTestDatabase, getTestDb, runMigrations, closeTestDb } from "@open-gikai/db/test-helpers";
 
 export async function setup() {
   console.log("[test-setup] Creating test database...");

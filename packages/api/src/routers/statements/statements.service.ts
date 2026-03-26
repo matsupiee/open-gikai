@@ -1,12 +1,11 @@
-import type { MinutesDb } from "@open-gikai/db-minutes";
+import type { Db } from "@open-gikai/db";
 import {
   meetings,
   municipalities,
   statements,
-  tokenizeSearchQuery,
-} from "@open-gikai/db-minutes";
+} from "@open-gikai/db/schema";
 import { ORPCError } from "@orpc/server";
-import { and, desc, eq, gte, like, lte, lt, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, like, lte, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { generateAnswer } from "../../shared/llm";
 import type {
@@ -47,7 +46,7 @@ export interface AskResponse {
   sources: SemanticSearchResult[];
 }
 
-function buildMeetingFilters(input: z.infer<typeof statementsSearchSchema>) {
+function buildMeetingFilters(input: z.input<typeof statementsSearchSchema>) {
   const conditions = [];
 
   if (input.heldOnFrom) {
@@ -66,7 +65,7 @@ function buildMeetingFilters(input: z.infer<typeof statementsSearchSchema>) {
   return conditions;
 }
 
-function buildStatementFilters(input: z.infer<typeof statementsSearchSchema>) {
+function buildStatementFilters(input: z.input<typeof statementsSearchSchema>) {
   const conditions = [];
 
   if (input.kind) {
@@ -82,15 +81,19 @@ function buildStatementFilters(input: z.infer<typeof statementsSearchSchema>) {
   return conditions;
 }
 
-function buildFtsMatchSubquery(q: string) {
-  const bigramQuery = tokenizeSearchQuery(q);
-  if (!bigramQuery) return null;
-  return sql<string>`(SELECT statement_id FROM statements_fts WHERE bigrams MATCH ${bigramQuery})`;
+/**
+ * PostgreSQL tsvector を使った全文検索条件を構築する。
+ * 入力をスペース区切りで分割し、各トークンを plainto_tsquery で AND 検索する。
+ */
+function buildFtsCondition(q: string) {
+  const trimmed = q.trim();
+  if (!trimmed) return null;
+  return sql`${statements.contentTsv} @@ plainto_tsquery('simple', ${trimmed})`;
 }
 
 function queryStatements(
-  db: MinutesDb,
-  input: z.infer<typeof statementsSearchSchema>,
+  db: Db,
+  input: z.input<typeof statementsSearchSchema>,
   limit: number,
 ) {
   const meetingFilters = buildMeetingFilters(input);
@@ -117,9 +120,9 @@ function queryStatements(
   const allConditions = [...statementFilters, ...meetingFilters];
 
   if (input.q) {
-    const ftsSubquery = buildFtsMatchSubquery(input.q);
-    if (ftsSubquery) {
-      allConditions.push(inArray(statements.id, ftsSubquery));
+    const ftsCondition = buildFtsCondition(input.q);
+    if (ftsCondition) {
+      allConditions.push(ftsCondition);
     }
   }
 
@@ -132,8 +135,8 @@ function queryStatements(
 }
 
 export async function searchStatements(
-  db: MinutesDb,
-  input: z.infer<typeof statementsSearchSchema>,
+  db: Db,
+  input: z.input<typeof statementsSearchSchema>,
 ): Promise<SearchResponse> {
   const limit = input.limit ?? 20;
   const results = await queryStatements(db, input, limit + 1);
@@ -148,14 +151,14 @@ export async function searchStatements(
 }
 
 function querySemanticStatements(
-  db: MinutesDb,
-  input: z.infer<typeof statementsSemanticSearchSchema>,
+  db: Db,
+  input: z.input<typeof statementsSemanticSearchSchema>,
 ) {
   const conditions = [];
 
-  const ftsSubquery = buildFtsMatchSubquery(input.query);
-  if (ftsSubquery) {
-    conditions.push(inArray(statements.id, ftsSubquery));
+  const ftsCondition = buildFtsCondition(input.query);
+  if (ftsCondition) {
+    conditions.push(ftsCondition);
   }
   if (input.filters?.heldOnFrom) {
     conditions.push(gte(meetings.heldOn, input.filters.heldOnFrom));
@@ -197,20 +200,20 @@ function querySemanticStatements(
 
   return finalQuery
     .orderBy(desc(statements.createdAt), desc(statements.id))
-    .limit(input.topK);
+    .limit(input.topK ?? 5);
 }
 
 export async function semanticSearchStatements(
-  db: MinutesDb,
-  input: z.infer<typeof statementsSemanticSearchSchema>,
+  db: Db,
+  input: z.input<typeof statementsSemanticSearchSchema>,
 ): Promise<SemanticSearchResponse> {
   const results = await querySemanticStatements(db, input);
   return { statements: results as SemanticSearchResult[] };
 }
 
 export async function askStatements(
-  db: MinutesDb,
-  input: z.infer<typeof statementsAskSchema>,
+  db: Db,
+  input: z.input<typeof statementsAskSchema>,
 ): Promise<AskResponse> {
   try {
     const { statements: sources } = await semanticSearchStatements(db, {

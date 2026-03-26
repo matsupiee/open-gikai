@@ -1,5 +1,5 @@
-import type { MinutesDb } from "@open-gikai/db-minutes";
-import { meetings, municipalities, statements } from "@open-gikai/db-minutes";
+import type { Db } from "@open-gikai/db";
+import { meetings, municipalities, statements } from "@open-gikai/db/schema";
 import { and, asc, desc, eq, gte, like, lte, lt } from "drizzle-orm";
 import { z } from "zod";
 
@@ -13,7 +13,6 @@ export interface MeetingListItem {
   prefecture: string;
   municipality: string;
   sourceUrl: string | null;
-  status: string;
 }
 
 export interface MeetingsListResponse {
@@ -33,7 +32,7 @@ export interface MeetingDetail extends MeetingListItem {
   statements: MeetingStatement[];
 }
 
-function queryMeetings(db: MinutesDb, input: z.infer<typeof meetingsListSchema>, limit: number) {
+function queryMeetings(db: Db, input: z.input<typeof meetingsListSchema>, limit: number) {
   const conditions = [];
 
   if (input.heldOnFrom) conditions.push(gte(meetings.heldOn, input.heldOnFrom));
@@ -57,7 +56,6 @@ function queryMeetings(db: MinutesDb, input: z.infer<typeof meetingsListSchema>,
       prefecture: municipalities.prefecture,
       municipality: municipalities.name,
       sourceUrl: meetings.sourceUrl,
-      status: meetings.status,
     })
     .from(meetings)
     .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code));
@@ -68,8 +66,8 @@ function queryMeetings(db: MinutesDb, input: z.infer<typeof meetingsListSchema>,
 }
 
 export async function listMeetings(
-  db: MinutesDb,
-  input: z.infer<typeof meetingsListSchema>,
+  db: Db,
+  input: z.input<typeof meetingsListSchema>,
 ): Promise<MeetingsListResponse> {
   const limit = input.limit ?? 20;
   const results = await queryMeetings(db, input, limit + 1);
@@ -84,8 +82,8 @@ export async function listMeetings(
 }
 
 export async function getMeetingStatements(
-  db: MinutesDb,
-  input: z.infer<typeof meetingStatementsSchema>,
+  db: Db,
+  input: z.input<typeof meetingStatementsSchema>,
 ): Promise<MeetingDetail> {
   const [meeting] = await db
     .select({
@@ -96,7 +94,6 @@ export async function getMeetingStatements(
       prefecture: municipalities.prefecture,
       municipality: municipalities.name,
       sourceUrl: meetings.sourceUrl,
-      status: meetings.status,
     })
     .from(meetings)
     .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
