@@ -1,0 +1,34 @@
+name: Test Bulk Scraper
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/local-bulk-scraper/**"
+      - "packages/scrapers/**"
+      - "packages/db-minutes/**"
+      - "package.json"
+      - "bun.lock"
+      - "tsconfig.json"
+      - "turbo.json"
+
+concurrency:
+  group: test-bulk-scraper-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-bulk-scraper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.10"
+
+      - run: bun install --frozen-lockfile
+
+      - name: Run bulk scraper tests
+        run: bun run --cwd apps/local-bulk-scraper vitest run

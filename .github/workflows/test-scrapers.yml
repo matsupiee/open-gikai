@@ -1,18 +1,17 @@
-name: Test
+name: Test Scrapers
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - "apps/**"
-      - "packages/**"
+      - "packages/scrapers/**"
       - "package.json"
       - "bun.lock"
       - "tsconfig.json"
       - "turbo.json"
 
 concurrency:
-  group: test-${{ github.ref }}
+  group: test-scrapers-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -34,19 +33,3 @@ jobs:
 
       - name: Run scraper tests (shard ${{ matrix.shard }})
         run: bun run --cwd packages/scrapers vitest run --shard=${{ matrix.shard }}
-
-  test-other:
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: "1.3.10"
-
-      - run: bun install --frozen-lockfile
-
-      - name: Run tests (excluding scrapers)
-        run: bun run --cwd packages/api vitest run && bun run --cwd apps/local-bulk-scraper vitest run
