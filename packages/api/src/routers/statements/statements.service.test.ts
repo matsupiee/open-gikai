@@ -49,7 +49,7 @@ describe("searchStatements", () => {
     ]);
   });
 
-  it("diagnostic: replicate exact service query", async () => {
+  it("diagnostic: SQL from service", async () => {
     await db.insert(statements).values({
       id: "diag-1",
       meetingId: "meeting-sapporo",
@@ -58,28 +58,8 @@ describe("searchStatements", () => {
       contentHash: "diag-hash",
     });
 
-    // Step 1: minimal select + where (PASSED before)
-    const r1 = await db
-      .select({ id: statements.id })
-      .from(statements)
-      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
-      .where(and(and(like(statements.content, "%budget%"))!));
-    console.log("Step 1 (minimal select+where):", r1.length);
-
-    // Step 2: add orderBy
-    const r2 = await db
-      .select({ id: statements.id })
-      .from(statements)
-      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
-      .where(and(and(like(statements.content, "%budget%"))!))
-      .orderBy(desc(statements.createdAt), desc(statements.id))
-      .limit(21);
-    console.log("Step 2 (+ orderBy + limit):", r2.length);
-
-    // Step 3: full select (same as service)
-    const r3 = await db
+    // Also log SQL from test-side query for comparison
+    const testQuery = db
       .select({
         id: statements.id,
         meetingId: statements.meetingId,
@@ -99,16 +79,16 @@ describe("searchStatements", () => {
       .where(and(and(like(statements.content, "%budget%"))!))
       .orderBy(desc(statements.createdAt), desc(statements.id))
       .limit(21);
-    console.log("Step 3 (full select):", r3.length);
+    console.log("[test] SQL:", testQuery.toSQL());
 
-    // Step 4: actual searchStatements call
-    const r4 = await searchStatements(db, { q: "budget" });
-    console.log("Step 4 (searchStatements):", r4.statements.length);
+    const testResult = await testQuery;
+    console.log("[test] result count:", testResult.length);
 
-    expect(r1).toHaveLength(1);
-    expect(r2).toHaveLength(1);
-    expect(r3).toHaveLength(1);
-    expect(r4.statements).toHaveLength(1);
+    // Service call (will also log via the added console.log)
+    const result = await searchStatements(db, { q: "budget" });
+    console.log("[service] result count:", result.statements.length);
+
+    expect(result.statements).toHaveLength(1);
   });
 
   it("キーワード検索（q）で発言を検索できる", async () => {
