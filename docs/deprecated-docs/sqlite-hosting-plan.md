@@ -88,3 +88,8 @@ sqld --db-path /data/minutes.db --http-listen-addr 0.0.0.0:8080 --read-only
 
 - [ ] 動作検証（検索クエリの応答速度、メモリ使用量）
 - [ ] SQLite ファイル更新の自動化（CI/CD or cron）
+
+
+※ 結局、Supabaseの方がコスパいいと言う判断になりました。
+- Teamプラン：$25
+- ストレージ：200Gb * $0.125/Gb = $25
