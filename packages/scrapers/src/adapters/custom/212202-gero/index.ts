@@ -16,7 +16,7 @@ import type { ListRecord, ScraperAdapter } from "../../adapter";
 import { collectPdfEntries, parseStatements } from "./detail";
 import { fetchMeetingList } from "./list";
 import { detectMeetingType, fetchBinary } from "./shared";
-import { extractText, getDocumentProxy } from "unpdf";
+import { extractText, getDocumentProxy } from "../../../utils/pdf";
 
 export const adapter: ScraperAdapter = {
   name: "212202",

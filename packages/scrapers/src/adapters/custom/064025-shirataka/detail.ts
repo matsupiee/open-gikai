@@ -6,7 +6,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { extractText, getDocumentProxy } from "unpdf";
+import { extractText, getDocumentProxy } from "../../../utils/pdf";
 import type { MeetingData, ParsedStatement } from "../../../utils/types";
 import type { ShiratakaMeeting } from "./list";
 import { detectMeetingType, extractExternalIdKey, fetchBinary } from "./shared";

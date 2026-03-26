@@ -9,7 +9,7 @@
  */
 
 import { buildListUrl, buildPdfUrl, fetchPage, fetchBinary } from "./shared";
-import { getDocumentProxy, extractText } from "unpdf";
+import { extractText, getDocumentProxy } from "../../../utils/pdf";
 import { parseSessions } from "./detail";
 
 export interface AogashimaPdf {
