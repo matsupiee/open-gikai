@@ -102,6 +102,22 @@ function getHostConcurrency(groupKey: string): number {
   return HOST_CONCURRENCY_OVERRIDES[groupKey] ?? DEFAULT_HOST_CONCURRENCY;
 }
 
+// --- fetchDetail の並列数（アダプター種別ごと） ---
+
+const DEFAULT_DETAIL_CONCURRENCY = 10;
+
+const DETAIL_CONCURRENCY_OVERRIDES: Record<string, number> = {
+  [SharedSystemAdapterKey.DISCUSSNET]: 4,
+  [SharedSystemAdapterKey.DBSEARCH]: 2,
+  [SharedSystemAdapterKey.KENSAKUSYSTEM]: 2,
+  [SharedSystemAdapterKey.GIJIROKUCOM]: 2,
+};
+
+function getDetailConcurrency(adapterKey: string): number {
+  // 共有システムは個別設定、カスタムアダプター（自治体コード）は高めに設定
+  return DETAIL_CONCURRENCY_OVERRIDES[adapterKey] ?? DEFAULT_DETAIL_CONCURRENCY;
+}
+
 /**
  * ホスト名からグループ化キーを抽出する。
  *
@@ -275,6 +291,7 @@ async function main() {
           target.baseUrl,
           year,
           remaining,
+          getDetailConcurrency(adapterKey),
         );
       } catch (err) {
         const reason = err instanceof Error ? err.message : String(err);
@@ -388,7 +405,7 @@ async function scrapeOneYear(
   baseUrl: string,
   year: number,
   meetingLimit?: number,
-  detailConcurrency = 5,
+  detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
 ): Promise<MeetingData[]> {
   const results: MeetingData[] = [];
 
