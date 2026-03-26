@@ -52,7 +52,7 @@ apps/local-bulk-scraper/output/
 tmp
 temp
 
-dbjson
+data/minutes
 
 *.db
 

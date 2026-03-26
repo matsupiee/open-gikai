@@ -6,6 +6,6 @@ export default defineConfig({
   dialect: "sqlite",
   casing: "snake_case",
   dbCredentials: {
-    url: process.env.LIBSQL_URL ?? "file:./dbjson/minutes.db",
+    url: process.env.LIBSQL_URL ?? "file:../../../data/minutes/minutes.db",
   },
 });

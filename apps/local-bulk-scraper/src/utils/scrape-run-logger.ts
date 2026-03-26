@@ -26,7 +26,7 @@ export function createScrapeRunLogger(scriptImportMetaUrl: string, root: string)
   if (!existsSync(logDir)) {
     mkdirSync(logDir, { recursive: true });
   }
-  const ndjsonDir = resolve(root, "packages/db/minutes/dbjson");
+  const ndjsonDir = resolve(root, "data/minutes");
   if (!existsSync(ndjsonDir)) {
     mkdirSync(ndjsonDir, { recursive: true });
   }

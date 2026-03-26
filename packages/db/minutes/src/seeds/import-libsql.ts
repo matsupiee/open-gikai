@@ -1,7 +1,7 @@
 /**
  * NDJSON から単一 libSQL DB にインポートするスクリプト
  *
- * packages/db/minutes/dbjson/ の meetings.ndjson / statements.ndjson を読み込み、
+ * data/minutes/ の meetings.ndjson / statements.ndjson を読み込み、
  * 単一の SQLite DB にインポートする。
  *
  * 使い方:
@@ -33,7 +33,7 @@ dotenv.config({ path: resolve(root, ".env.local"), override: true });
 
 const municipalitiesCsvPath = resolve(seedsDir, "data", "municipalities.csv");
 
-const dbjsonDir = resolve(root, "packages/db/minutes/dbjson");
+const dbjsonDir = resolve(root, "data/minutes");
 const dbPath = resolve(dbjsonDir, "minutes.db");
 
 const migrationsFolder = resolve(seedsDir, "../migrations");
@@ -43,7 +43,7 @@ const BATCH_SIZE = 100;
 // --- Main ---
 
 /**
- * dbjson/ 配下の {year}/{municipalityCode}/ ディレクトリを走査し、
+ * data/minutes/ 配下の {year}/{municipalityCode}/ ディレクトリを走査し、
  * 全 NDJSON ファイルのパスを収集する。
  */
 function collectNdjsonPaths(): { meetingsPaths: string[]; statementsPaths: string[] } {
