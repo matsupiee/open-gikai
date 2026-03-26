@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - "apps/**"
+      - "!apps/local-bulk-scraper/**"
       - "!apps/**/*.test.ts"
+      - "!apps/**/vitest.config.ts"
       - "packages/**"
       - "!packages/**/*.test.ts"
       - "package.json"
