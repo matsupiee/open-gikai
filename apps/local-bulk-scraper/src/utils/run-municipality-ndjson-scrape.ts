@@ -65,9 +65,10 @@ export async function runMunicipalityNdjsonScrape(params: {
     }
 
     let meetingDataList: MeetingData[];
+    let truncated: boolean;
     try {
       const remaining = meetingLimit ? meetingLimit - municipalityMeetingCount : undefined;
-      meetingDataList = await scrapeOneYear(
+      const result = await scrapeOneYear(
         adapter,
         target.code,
         target.name,
@@ -75,6 +76,8 @@ export async function runMunicipalityNdjsonScrape(params: {
         year,
         remaining,
       );
+      meetingDataList = result.meetings;
+      truncated = result.truncated;
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       log.error(`${target.name}: ${year}年 スクレイピング失敗: ${reason}`);
@@ -140,15 +143,20 @@ export async function runMunicipalityNdjsonScrape(params: {
       new Promise<void>((r) => statementsStream.end(r)),
     ]);
 
-    writeFileSync(
-      resolve(yearDir, "_complete"),
-      JSON.stringify({
-        completedAt: new Date().toISOString(),
-        meetings: meetingDataList.length,
-        statements: meetingDataList.reduce((sum, m) => sum + m.statements.length, 0),
-      }) + "\n",
-    );
-
-    log.info(`${target.name}: ${year}年 → ${meetingDataList.length} 件`);
+    if (truncated) {
+      log.info(
+        `${target.name}: ${year}年 → ${meetingDataList.length} 件（meeting-limit により部分取得・_complete スキップ）`,
+      );
+    } else {
+      writeFileSync(
+        resolve(yearDir, "_complete"),
+        JSON.stringify({
+          completedAt: new Date().toISOString(),
+          meetings: meetingDataList.length,
+          statements: meetingDataList.reduce((sum, m) => sum + m.statements.length, 0),
+        }) + "\n",
+      );
+      log.info(`${target.name}: ${year}年 → ${meetingDataList.length} 件`);
+    }
   }
 }
