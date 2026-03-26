@@ -94,16 +94,24 @@ async function main() {
     failedMunicipalities: [],
   };
 
+  let completedCount = 0;
+  const totalCount = enabledTargets.length;
+
   const tasks = enabledTargets.map(
-    (target) => () =>
-      runMunicipalityNdjsonScrape({
+    (target) => async () => {
+      await runMunicipalityNdjsonScrape({
         target,
         years,
         meetingLimit,
         ndjsonDir,
         log,
         acc,
-      }),
+      });
+      completedCount++;
+      if (completedCount % 100 === 0 || completedCount === totalCount) {
+        log.info(`[scrape-to-ndjson] 進捗: ${completedCount} / ${totalCount} 自治体完了`);
+      }
+    },
   );
 
   await runGroupedByHost(enabledTargets, tasks);
