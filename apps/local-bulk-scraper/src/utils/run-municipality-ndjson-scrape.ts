@@ -1,12 +1,12 @@
 import { createWriteStream, existsSync, mkdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
-import type { MunicipalityRow } from "@open-gikai/db/seeds/parse-data/municipalities";
 import { createId } from "@paralleldrive/cuid2";
 import type { MeetingData } from "@open-gikai/scrapers";
 import { detectAdapterKey, getAdapter } from "@open-gikai/scrapers";
 import { checkYearNdjsonIntegrity } from "./ndjson-year-integrity";
 import type { ScrapeLogger } from "./scrape-run-logger";
 import { scrapeOneYear } from "./scrape-one-year";
+import type { MunicipalityCsvRow } from "./parse-municipalities-csv";
 
 export interface FailedMunicipalityEntry {
   name: string;
@@ -27,7 +27,7 @@ export interface NdjsonScrapeAccumulator {
  * 再開時は meetings / statements が揃い、全会議に対応する発言があるときのみスキップ。
  */
 export async function runMunicipalityNdjsonScrape(params: {
-  target: MunicipalityRow;
+  target: MunicipalityCsvRow;
   years: number[];
   meetingLimit: number | undefined;
   ndjsonDir: string;

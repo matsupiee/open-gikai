@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-type MunicipalityCsvRow = {
+export type MunicipalityCsvRow = {
   code: string;
   prefecture: string;
   name: string;
