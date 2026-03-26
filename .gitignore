@@ -52,8 +52,6 @@ apps/local-bulk-scraper/output/
 tmp
 temp
 
-data/minutes
-
 *.db
 
 # Terraform
@@ -62,3 +60,5 @@ data/minutes
 *.tfstate.*
 terraform.tfvars
 
+# 議会データが入っているフォルダ
+data/minutes

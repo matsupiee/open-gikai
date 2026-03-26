@@ -3,15 +3,14 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 import type { Sql } from "postgres";
-import * as schema from "../schema";
+import * as schema from "../src/schema";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const migrationsFolder = path.resolve(__dirname, "../migrations");
 
-const DEFAULT_TEST_DATABASE_URL =
-  "postgresql://postgres:postgres@127.0.0.1:54322/postgres_test";
+const DEFAULT_TEST_DATABASE_URL = "postgresql://postgres:postgres@127.0.0.1:54322/postgres_test";
 
 type TestDb = ReturnType<typeof drizzle<typeof schema>> & { $client: Sql };
 
@@ -88,10 +87,7 @@ export async function closeTestDb(db: TestDb) {
  *
  * fn には Db 互換の型を渡すため、サービス関数をキャストなしで呼べる。
  */
-export async function withRollback<T>(
-  db: TestDb,
-  fn: (tx: TestDb) => Promise<T>,
-): Promise<T> {
+export async function withRollback<T>(db: TestDb, fn: (tx: TestDb) => Promise<T>): Promise<T> {
   let result: T;
   try {
     await db.transaction(async (tx) => {

@@ -16,7 +16,7 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { municipalityRowsFromCsv } from "@open-gikai/db-minutes/seeds/parse-data/municipalities";
+import { municipalityRowsFromCsv } from "@open-gikai/db/seeds/parse-data/municipalities";
 import dotenv from "dotenv";
 import { detectAdapterKey, getAdapter, initAdapterRegistry } from "@open-gikai/scrapers";
 import { parseYear, parseMeetingLimit, parseTarget, parseSystemType } from "./utils/cli-args";
@@ -97,22 +97,20 @@ async function main() {
   let completedCount = 0;
   const totalCount = enabledTargets.length;
 
-  const tasks = enabledTargets.map(
-    (target) => async () => {
-      await runMunicipalityNdjsonScrape({
-        target,
-        years,
-        meetingLimit,
-        ndjsonDir,
-        log,
-        acc,
-      });
-      completedCount++;
-      if (completedCount % 100 === 0 || completedCount === totalCount) {
-        log.info(`[scrape-to-ndjson] 進捗: ${completedCount} / ${totalCount} 自治体完了`);
-      }
-    },
-  );
+  const tasks = enabledTargets.map((target) => async () => {
+    await runMunicipalityNdjsonScrape({
+      target,
+      years,
+      meetingLimit,
+      ndjsonDir,
+      log,
+      acc,
+    });
+    completedCount++;
+    if (completedCount % 100 === 0 || completedCount === totalCount) {
+      log.info(`[scrape-to-ndjson] 進捗: ${completedCount} / ${totalCount} 自治体完了`);
+    }
+  });
 
   await runGroupedByHost(enabledTargets, tasks);
 

@@ -21,22 +21,22 @@
       "cache": false,
       "persistent": true
     },
-    "db:auth:start": {
+    "db:start": {
       "cache": false,
       "persistent": true
     },
-    "db:auth:stop": {
+    "db:stop": {
       "cache": false,
       "persistent": true
     },
-    "db:auth:generate": {
+    "db:generate": {
       "cache": false
     },
-    "db:auth:migrate": {
+    "db:migrate": {
       "cache": false,
       "env": ["DATABASE_URL"]
     },
-    "db:auth:studio": {
+    "db:studio": {
       "cache": false,
       "persistent": true
     }

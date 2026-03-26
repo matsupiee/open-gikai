@@ -1,4 +1,4 @@
-import { createDb, type Db } from "@open-gikai/db-auth";
+import { createDb, type Db } from "../../../../packages/db/src";
 import { createMinutesDb, type MinutesDb } from "@open-gikai/db-minutes";
 import { createAuth, type Auth } from "@open-gikai/auth";
 
@@ -16,7 +16,10 @@ try {
 function getEnv(): Cloudflare.Env {
   if (cfEnv) return cfEnv;
   return {
-    HYPERDRIVE: { connectionString: process.env.DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres" },
+    HYPERDRIVE: {
+      connectionString:
+        process.env.DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+    },
     CORS_ORIGIN: process.env.CORS_ORIGIN ?? "http://localhost:4030",
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? "",
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? "http://localhost:4030",
