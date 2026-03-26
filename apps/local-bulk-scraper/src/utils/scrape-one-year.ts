@@ -1,5 +1,5 @@
 import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";
-import { DEFAULT_DETAIL_CONCURRENCY } from "./concurrency";
+import { getDetailConcurrency } from "./concurrency";
 
 /**
  * ScraperAdapter を使って単一年度の議事録を取得する。
@@ -11,7 +11,6 @@ export async function scrapeOneYear(
   baseUrl: string,
   year: number,
   meetingLimit?: number,
-  detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
 ): Promise<MeetingData[]> {
   const results: MeetingData[] = [];
 
@@ -29,6 +28,8 @@ export async function scrapeOneYear(
   console.log(
     `  [${adapter.name}] ${municipalityName}: ${year}年 → ${records.length} 件${limitNote}`,
   );
+
+  const detailConcurrency = getDetailConcurrency(adapter.name);
 
   const executing = new Set<Promise<void>>();
   for (const record of limited) {

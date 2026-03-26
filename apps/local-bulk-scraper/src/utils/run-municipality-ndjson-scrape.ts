@@ -4,7 +4,6 @@ import type { MunicipalityRow } from "@open-gikai/db-minutes/seeds/parse-data/mu
 import { createId } from "@paralleldrive/cuid2";
 import type { MeetingData } from "@open-gikai/scrapers";
 import { detectAdapterKey, getAdapter } from "@open-gikai/scrapers";
-import { getDetailConcurrency } from "./concurrency";
 import { checkYearNdjsonIntegrity } from "./ndjson-year-integrity";
 import type { ScrapeLogger } from "./scrape-run-logger";
 import { scrapeOneYear } from "./scrape-one-year";
@@ -74,7 +73,6 @@ export async function runMunicipalityNdjsonScrape(params: {
         baseUrl,
         year,
         remaining,
-        getDetailConcurrency(adapterKey),
       );
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);

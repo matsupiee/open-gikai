@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";
+import {
+  type MeetingData,
+  type ScraperAdapter,
+  SharedSystemAdapterKey,
+} from "@open-gikai/scrapers";
 import { scrapeOneYear } from "./scrape-one-year";
 
 beforeEach(() => {
@@ -99,7 +103,7 @@ describe("scrapeOneYear", () => {
     expect(adapter.fetchDetail).toHaveBeenCalledTimes(2);
   });
 
-  it("detailConcurrency で同時実行数を制御する", async () => {
+  it("getDetailConcurrency(adapter.name) の上限で同時実行数が制御される", async () => {
     let current = 0;
     let maxConcurrent = 0;
 
@@ -107,7 +111,8 @@ describe("scrapeOneYear", () => {
       detailParams: { id: String(i) },
     }));
     const adapter: ScraperAdapter = {
-      name: "test-adapter",
+      // dbsearch は getDetailConcurrency で 2（共有システム用の控えめな値）
+      name: SharedSystemAdapterKey.DBSEARCH,
       fetchList: vi.fn().mockResolvedValue(records),
       fetchDetail: vi.fn().mockImplementation(async () => {
         current++;
@@ -119,7 +124,11 @@ describe("scrapeOneYear", () => {
     };
 
     const result = await scrapeOneYear(
-      adapter, "011002", "テスト市", "https://example.com", 2024, undefined, 2,
+      adapter,
+      "011002",
+      "テスト市",
+      "https://example.com",
+      2024,
     );
 
     expect(result).toHaveLength(10);
