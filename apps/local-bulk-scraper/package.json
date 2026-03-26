@@ -5,7 +5,7 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "scrape:ndjson": "bun src/scrape-to-ndjson.ts"
+    "scrape:ndjson": "caffeinate -i bun src/scrape-to-ndjson.ts"
   },
   "dependencies": {
     "@open-gikai/db-minutes": "workspace:*",
@@ -14,9 +14,9 @@
     "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {
+    "@open-gikai/config": "workspace:*",
     "bun-types": "catalog:",
     "dotenv": "catalog:",
-    "@open-gikai/config": "workspace:*",
     "typescript": "catalog:",
     "vitest": "^4.1.0"
   }
