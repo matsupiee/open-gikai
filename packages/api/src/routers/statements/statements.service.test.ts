@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { getTestDb } from "@open-gikai/db-minutes/test-helpers";
 import { municipalities, meetings, statements } from "@open-gikai/db-minutes";
 import type { TestDb } from "@open-gikai/db-minutes/test-helpers";
-import { and, like, sql, eq } from "drizzle-orm";
+import { and, desc, like, sql, eq } from "drizzle-orm";
 import {
   searchStatements,
   semanticSearchStatements,
@@ -49,7 +49,7 @@ describe("searchStatements", () => {
     ]);
   });
 
-  it("diagnostic: searchStatements direct call", async () => {
+  it("diagnostic: replicate exact service query", async () => {
     await db.insert(statements).values({
       id: "diag-1",
       meetingId: "meeting-sapporo",
@@ -58,37 +58,57 @@ describe("searchStatements", () => {
       contentHash: "diag-hash",
     });
 
-    // Verify data exists
-    const allStmts = await db.select().from(statements);
-    console.log("All statements:", allStmts.length);
-    console.log("Statement content:", allStmts[0]?.content);
-    console.log("Statement meetingId:", allStmts[0]?.meetingId);
+    // Step 1: minimal select + where (PASSED before)
+    const r1 = await db
+      .select({ id: statements.id })
+      .from(statements)
+      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
+      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
+      .where(and(and(like(statements.content, "%budget%"))!));
+    console.log("Step 1 (minimal select+where):", r1.length);
 
-    // Verify join data
-    const joinResult = await db
+    // Step 2: add orderBy
+    const r2 = await db
+      .select({ id: statements.id })
+      .from(statements)
+      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
+      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
+      .where(and(and(like(statements.content, "%budget%"))!))
+      .orderBy(desc(statements.createdAt), desc(statements.id))
+      .limit(21);
+    console.log("Step 2 (+ orderBy + limit):", r2.length);
+
+    // Step 3: full select (same as service)
+    const r3 = await db
       .select({
         id: statements.id,
+        meetingId: statements.meetingId,
+        kind: statements.kind,
+        speakerName: statements.speakerName,
         content: statements.content,
+        createdAt: statements.createdAt,
         meetingTitle: meetings.title,
+        heldOn: meetings.heldOn,
+        prefecture: municipalities.prefecture,
         municipality: municipalities.name,
+        sourceUrl: meetings.sourceUrl,
       })
       .from(statements)
       .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code));
-    console.log("Join result:", JSON.stringify(joinResult));
+      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
+      .where(and(and(like(statements.content, "%budget%"))!))
+      .orderBy(desc(statements.createdAt), desc(statements.id))
+      .limit(21);
+    console.log("Step 3 (full select):", r3.length);
 
-    // Call service function
-    const result = await searchStatements(db, { q: "budget" });
-    console.log(
-      "searchStatements result:",
-      JSON.stringify(result.statements.length),
-    );
-    console.log(
-      "searchStatements items:",
-      JSON.stringify(result.statements.map((s) => s.content)),
-    );
+    // Step 4: actual searchStatements call
+    const r4 = await searchStatements(db, { q: "budget" });
+    console.log("Step 4 (searchStatements):", r4.statements.length);
 
-    expect(result.statements).toHaveLength(1);
+    expect(r1).toHaveLength(1);
+    expect(r2).toHaveLength(1);
+    expect(r3).toHaveLength(1);
+    expect(r4.statements).toHaveLength(1);
   });
 
   it("キーワード検索（q）で発言を検索できる", async () => {
