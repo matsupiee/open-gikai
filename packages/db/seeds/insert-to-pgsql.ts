@@ -17,6 +17,7 @@ import {
   existsSync,
   readdirSync,
   statSync,
+  unlinkSync,
 } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -142,6 +143,8 @@ async function main() {
   console.log("[import] meetings.ndjson を読み込み中...");
   const insertedMeetingIds = new Set<string>();
   const skippedMeetingIds = new Set<string>();
+  // 全 meetings.ndjson に存在する meetingId を記録（FK 検証用）
+  const allKnownMeetingIds = new Set<string>();
   let totalMeetings = 0;
   let meetingBatch: MeetingNdjsonRow[] = [];
 
@@ -152,6 +155,7 @@ async function main() {
     })) {
       const m = parseMeetingNdjsonLine(line);
       if (!m) continue;
+      allKnownMeetingIds.add(m.id);
       if (!m.heldOn) {
         skippedMeetingIds.add(m.id);
         continue;
@@ -180,15 +184,53 @@ async function main() {
     );
   }
 
-  // 2. statements（全ディレクトリを順に読み込み）
-  // insertedMeetingIds に含まれない meetingId の発言はスキップする
+  // 2. statements の事前スキャン
+  // allKnownMeetingIds に存在しない meetingId を含むファイルを特定し、
+  // そのファイル（自治体）をまるごとスキップ＆削除する
+  console.log("[import] statements.ndjson を検証中...");
+  const corruptedStatementFiles = new Set<string>();
+
+  for (const filePath of statementsPaths) {
+    for await (const line of createInterface({
+      input: createReadStream(filePath),
+      crlfDelay: Infinity,
+    })) {
+      const s = parseStatementNdjsonLine(line);
+      if (!s) continue;
+      if (!allKnownMeetingIds.has(s.meetingId)) {
+        corruptedStatementFiles.add(filePath);
+        break;
+      }
+    }
+  }
+
+  // 不正な meetingId を含む NDJSON ファイルを削除
+  if (corruptedStatementFiles.size > 0) {
+    console.log(
+      `[import] ${corruptedStatementFiles.size} ファイルに存在しない meetingId を検出 → 削除します`,
+    );
+    for (const statementsFile of corruptedStatementFiles) {
+      const meetingsFile = resolve(dirname(statementsFile), "meetings.ndjson");
+      console.log(`[import]   削除: ${statementsFile}`);
+      unlinkSync(statementsFile);
+      if (existsSync(meetingsFile)) {
+        console.log(`[import]   削除: ${meetingsFile}`);
+        unlinkSync(meetingsFile);
+      }
+    }
+  }
+
+  // 3. statements（検証済みファイルのみ読み込み）
+  const validStatementsPaths = statementsPaths.filter(
+    (p) => !corruptedStatementFiles.has(p),
+  );
   console.log("[import] statements.ndjson を読み込み中...");
   let totalStatements = 0;
   let skippedStatements = 0;
   let failedBatches = 0;
   let stmtBatch: StatementNdjsonRow[] = [];
 
-  for (const filePath of statementsPaths) {
+  for (const filePath of validStatementsPaths) {
     for await (const line of createInterface({
       input: createReadStream(filePath),
       crlfDelay: Infinity,
