@@ -8,6 +8,7 @@
  *   bun run scrape:ndjson
  *   bun run scrape:ndjson -- --year 2025
  *   bun run scrape:ndjson -- --system-type dbsearch
+ *   bun run scrape:ndjson -- --system-type custom
  *   bun run scrape:ndjson -- --year 2025 --system-type discussnet
  *   bun run scrape:ndjson -- --system-type kensakusystem --meeting-limit 2
  *   bun run scrape:ndjson -- --target 011002,012025
@@ -17,8 +18,19 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
-import { detectAdapterKey, getAdapter, initAdapterRegistry } from "@open-gikai/scrapers";
-import { parseYear, parseMeetingLimit, parseTarget, parseSystemType } from "./utils/cli-args";
+import {
+  SharedSystemAdapterKey,
+  detectAdapterKey,
+  getAdapter,
+  initAdapterRegistry,
+} from "@open-gikai/scrapers";
+import {
+  CUSTOM_SYSTEM_TYPE,
+  parseYear,
+  parseMeetingLimit,
+  parseTarget,
+  parseSystemType,
+} from "./utils/cli-args";
 import { runGroupedByHost } from "./utils/concurrency";
 import {
   runMunicipalityNdjsonScrape,
@@ -70,8 +82,14 @@ async function main() {
     csvRows = csvRows.filter((r) => set.has(r.code));
   }
 
+  const sharedSystemTypes = new Set<string>(Object.values(SharedSystemAdapterKey));
+
   let enabledTargets = csvRows.filter((t) => getAdapter(detectAdapterKey(t.baseUrl, t.code)));
-  if (targetSystemType) {
+  if (targetSystemType === CUSTOM_SYSTEM_TYPE) {
+    enabledTargets = enabledTargets.filter(
+      (t) => !sharedSystemTypes.has(detectAdapterKey(t.baseUrl, t.code)),
+    );
+  } else if (targetSystemType) {
     enabledTargets = enabledTargets.filter(
       (t) => detectAdapterKey(t.baseUrl, t.code) === targetSystemType,
     );

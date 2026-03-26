@@ -1,5 +1,8 @@
 import { SharedSystemAdapterKey } from "@open-gikai/scrapers";
 
+export const CUSTOM_SYSTEM_TYPE = "custom" as const;
+export type SystemTypeFilter = SharedSystemAdapterKey | typeof CUSTOM_SYSTEM_TYPE;
+
 export function parseYear(): number | undefined {
   const idx = process.argv.indexOf("--year");
   if (idx === -1) return undefined;
@@ -35,16 +38,16 @@ export function parseTarget(): string[] | undefined {
   return val.split(",").map((s) => s.trim());
 }
 
-const validSystemTypes = Object.values(SharedSystemAdapterKey);
+const validSystemTypes: string[] = [...Object.values(SharedSystemAdapterKey), CUSTOM_SYSTEM_TYPE];
 
-export function parseSystemType(): SharedSystemAdapterKey | undefined {
+export function parseSystemType(): SystemTypeFilter | undefined {
   const idx = process.argv.indexOf("--system-type");
   if (idx === -1) return undefined;
   const val = process.argv[idx + 1];
-  if (!val || !validSystemTypes.includes(val as SharedSystemAdapterKey)) {
+  if (!val || !validSystemTypes.includes(val)) {
     console.error(`[scrape-to-ndjson] 無効なシステムタイプ: ${val}`);
     console.error(`  有効な値: ${validSystemTypes.join(", ")}`);
     process.exit(1);
   }
-  return val as SharedSystemAdapterKey;
+  return val as SystemTypeFilter;
 }
