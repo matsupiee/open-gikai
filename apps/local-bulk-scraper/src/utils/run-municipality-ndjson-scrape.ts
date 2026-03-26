@@ -1,4 +1,4 @@
-import { createWriteStream, existsSync, mkdirSync } from "node:fs";
+import { createWriteStream, existsSync, mkdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import type { MunicipalityRow } from "@open-gikai/db/seeds/parse-data/municipalities";
 import { createId } from "@paralleldrive/cuid2";
@@ -61,6 +61,7 @@ export async function runMunicipalityNdjsonScrape(params: {
       log.warn(
         `${target.name}: ${year}年 → 既存 NDJSON が不完全のため再スクレイプします（${integrity.reason}）`,
       );
+      rmSync(yearDir, { recursive: true, force: true });
     }
 
     let meetingDataList: MeetingData[];
