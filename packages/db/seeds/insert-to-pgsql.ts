@@ -1,223 +1,291 @@
-// /**
-//  * NDJSON から PostgreSQL DB にインサートするスクリプト
-//  *
-//  * data/minutes/ の meetings.ndjson / statements.ndjson を読み込み、インサートする
-//  *
-//  * 使い方:
-//  *   bun run db:import
-//  */
+/**
+ * NDJSON から PostgreSQL DB にインサートするスクリプト
+ *
+ * data/minutes/ の meetings.ndjson / statements.ndjson を読み込み、
+ * バッチ INSERT でデータベースに投入する。
+ *
+ * 使い方:
+ *   DATABASE_URL="postgresql://..." bun run db:import
+ *
+ * - 直接 PostgreSQL 接続のため Supabase API 課金なし
+ * - onConflictDoNothing で冪等（何度でも安全に再実行可能）
+ */
 
-// import { createClient } from "@libsql/client";
-// import { drizzle } from "drizzle-orm/libsql";
-// import { migrate } from "drizzle-orm/libsql/migrator";
-// import { sql } from "drizzle-orm";
-// import { createReadStream, existsSync, unlinkSync, readdirSync, statSync } from "node:fs";
-// import { resolve, dirname } from "node:path";
-// import { fileURLToPath } from "node:url";
-// import { createInterface } from "node:readline";
-// import { tokenizeBigram } from "../fts/index";
-// import dotenv from "dotenv";
-// import * as schema from "../src/schema";
-// import type { MinutesDb } from "../client";
-// import { municipalityRowsFromCsv } from "./parse-data/municipalities";
-// import { parseMeetingNdjsonLine, type MeetingNdjsonRow } from "./parse-data/meetings";
-// import { parseStatementNdjsonLine, type StatementNdjsonRow } from "./parse-data/statements";
+import {
+  createReadStream,
+  readFileSync,
+  existsSync,
+  readdirSync,
+  statSync,
+} from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createInterface } from "node:readline";
+import dotenv from "dotenv";
+import { createDb, type Db } from "../src/index";
+import { municipalities } from "../src/schema/municipalities";
+import { meetings } from "../src/schema/meetings";
+import { statements } from "../src/schema/statements";
+import {
+  parseMeetingNdjsonLine,
+  type MeetingNdjsonRow,
+} from "./parse-data/meetings";
+import {
+  parseStatementNdjsonLine,
+  type StatementNdjsonRow,
+} from "./parse-data/statements";
 
-// // --- Setup ---
+// --- Setup ---
 
-// const seedsDir = dirname(fileURLToPath(import.meta.url));
-// const root = resolve(seedsDir, "../../../../../");
+const seedsDir = dirname(fileURLToPath(import.meta.url));
+const root = resolve(seedsDir, "../../..");
 
-// dotenv.config({ path: resolve(root, ".env.local"), override: true });
+dotenv.config({ path: resolve(root, ".env.local"), override: true });
 
-// const municipalitiesCsvPath = resolve(seedsDir, "data", "municipalities.csv");
+const dataDir = process.env.DATA_DIR
+  ? resolve(process.env.DATA_DIR)
+  : resolve(root, "data/minutes");
 
-// const dbjsonDir = resolve(root, "packages/db/minutes/dbjson");
-// const dbPath = resolve(dbjsonDir, "minutes.db");
+const municipalitiesCsvPath = resolve(seedsDir, "data", "municipalities.csv");
 
-// const migrationsFolder = resolve(seedsDir, "../migrations");
+const BATCH_SIZE = 100;
 
-// const BATCH_SIZE = 100;
+// --- Main ---
 
-// // --- Main ---
+/**
+ * data/minutes/ 配下の {year}/{municipalityCode}/ ディレクトリを走査し、
+ * 全 NDJSON ファイルのパスを収集する。
+ */
+function collectNdjsonPaths(): {
+  meetingsPaths: string[];
+  statementsPaths: string[];
+} {
+  const meetingsPaths: string[] = [];
+  const statementsPaths: string[] = [];
 
-// /**
-//  * dbjson/ 配下の {year}/{municipalityCode}/ ディレクトリを走査し、
-//  * 全 NDJSON ファイルのパスを収集する。
-//  */
-// function collectNdjsonPaths(): { meetingsPaths: string[]; statementsPaths: string[] } {
-//   const meetingsPaths: string[] = [];
-//   const statementsPaths: string[] = [];
+  if (!existsSync(dataDir)) return { meetingsPaths, statementsPaths };
 
-//   if (!existsSync(dbjsonDir)) return { meetingsPaths, statementsPaths };
+  for (const yearEntry of readdirSync(dataDir)) {
+    const yearDir = resolve(dataDir, yearEntry);
+    if (!statSync(yearDir).isDirectory() || !/^\d{4}$/.test(yearEntry))
+      continue;
 
-//   for (const yearEntry of readdirSync(dbjsonDir)) {
-//     const yearDir = resolve(dbjsonDir, yearEntry);
-//     if (!statSync(yearDir).isDirectory() || !/^\d{4}$/.test(yearEntry)) continue;
+    for (const codeEntry of readdirSync(yearDir)) {
+      const codeDir = resolve(yearDir, codeEntry);
+      if (!statSync(codeDir).isDirectory()) continue;
 
-//     for (const codeEntry of readdirSync(yearDir)) {
-//       const codeDir = resolve(yearDir, codeEntry);
-//       if (!statSync(codeDir).isDirectory()) continue;
+      const mp = resolve(codeDir, "meetings.ndjson");
+      const sp = resolve(codeDir, "statements.ndjson");
+      if (existsSync(mp)) meetingsPaths.push(mp);
+      if (existsSync(sp)) statementsPaths.push(sp);
+    }
+  }
 
-//       const mp = resolve(codeDir, "meetings.ndjson");
-//       const sp = resolve(codeDir, "statements.ndjson");
-//       if (existsSync(mp)) meetingsPaths.push(mp);
-//       if (existsSync(sp)) statementsPaths.push(sp);
-//     }
-//   }
+  return { meetingsPaths, statementsPaths };
+}
 
-//   return { meetingsPaths, statementsPaths };
-// }
+async function main() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    console.error("[import] DATABASE_URL が設定されていません");
+    process.exit(1);
+  }
 
-// async function main() {
-//   if (!existsSync(municipalitiesCsvPath)) {
-//     console.error(`[import-libsql] municipalities.csv が見つかりません: ${municipalitiesCsvPath}`);
-//     process.exit(1);
-//   }
+  const { meetingsPaths, statementsPaths } = collectNdjsonPaths();
 
-//   const { meetingsPaths, statementsPaths } = collectNdjsonPaths();
+  if (meetingsPaths.length === 0) {
+    console.error(
+      `[import] NDJSON ファイルが見つかりません: ${dataDir}/{year}/{code}/`,
+    );
+    console.error("  先に scrape:ndjson を実行してください。");
+    process.exit(1);
+  }
 
-//   if (meetingsPaths.length === 0) {
-//     console.error(`[import-libsql] NDJSON ファイルが見つかりません: ${dbjsonDir}/{year}/{code}/`);
-//     console.error("  先に scrape:ndjson を実行してください。");
-//     process.exit(1);
-//   }
+  console.log(
+    `[import] ${meetingsPaths.length} ディレクトリの NDJSON を検出`,
+  );
 
-//   console.log(`[import-libsql] ${meetingsPaths.length} ディレクトリの NDJSON を検出`);
+  const db = createDb(databaseUrl);
 
-//   // 既存 DB を削除して再作成
-//   for (const suffix of ["", "-shm", "-wal"]) {
-//     const p = dbPath + suffix;
-//     if (existsSync(p)) unlinkSync(p);
-//   }
+  // 0. municipalities（FK 制約を満たすため先にインサート）
+  if (existsSync(municipalitiesCsvPath)) {
+    console.log("[import] municipalities.csv を読み込み中...");
+    const csvContent = readFileSync(municipalitiesCsvPath, "utf-8");
+    const csvLines = csvContent.split(/\r?\n/).slice(1);
+    const municipalityRows = csvLines.flatMap((line) => {
+      if (!line.trim()) return [];
+      const cols = line.split(",");
+      const code = cols[0]?.trim() ?? "";
+      const prefecture = cols[1]?.replace(/"/g, "").trim() ?? "";
+      const name = cols[2]?.replace(/"/g, "").trim() || prefecture;
+      const baseUrl = cols[5]?.replace(/"/g, "").trim() || null;
+      const populationRaw = cols[6]?.replace(/"/g, "").trim();
+      const populationYearRaw = cols[7]?.replace(/"/g, "").trim();
+      const population = populationRaw
+        ? parseInt(populationRaw, 10) || null
+        : null;
+      const populationYear = populationYearRaw
+        ? parseInt(populationYearRaw, 10) || null
+        : null;
+      return [{ code, name, prefecture, baseUrl, population, populationYear }];
+    });
 
-//   console.log("[import-libsql] DB を初期化中...");
-//   const client = createClient({ url: `file:${dbPath}` });
-//   const db = drizzle(client, { schema, casing: "snake_case" });
-//   await migrate(db, { migrationsFolder });
+    for (let i = 0; i < municipalityRows.length; i += BATCH_SIZE) {
+      const chunk = municipalityRows.slice(i, i + BATCH_SIZE);
+      await db.insert(municipalities).values(chunk).onConflictDoNothing();
+    }
+    console.log(`[import] ${municipalityRows.length} 自治体 INSERT 完了`);
+  }
 
-//   // 1. municipalities
-//   console.log("[import-libsql] municipalities.csv を読み込み中...");
-//   const municipalityRows = municipalityRowsFromCsv(municipalitiesCsvPath);
-//   console.log(`[import-libsql] ${municipalityRows.length} 自治体`);
+  // 1. meetings（全ディレクトリを順に読み込み）
+  // heldOn が null の会議はスキップし、そのIDを記録して statements でもフィルタする
+  console.log("[import] meetings.ndjson を読み込み中...");
+  const insertedMeetingIds = new Set<string>();
+  const skippedMeetingIds = new Set<string>();
+  let totalMeetings = 0;
+  let meetingBatch: MeetingNdjsonRow[] = [];
 
-//   for (let i = 0; i < municipalityRows.length; i += BATCH_SIZE) {
-//     const chunk = municipalityRows.slice(i, i + BATCH_SIZE);
-//     await db.insert(schema.municipalities).values(
-//       chunk.map((m) => ({
-//         code: m.code,
-//         name: m.name,
-//         prefecture: m.prefecture,
-//         regionSlug: m.regionSlug,
-//         baseUrl: m.baseUrl || null,
-//         enabled: m.enabled,
-//         population: m.population ?? null,
-//         populationYear: m.populationYear ?? null,
-//       })),
-//     );
-//   }
-//   console.log(`[import-libsql] ${municipalityRows.length} 自治体 INSERT 完了`);
+  for (const filePath of meetingsPaths) {
+    for await (const line of createInterface({
+      input: createReadStream(filePath),
+      crlfDelay: Infinity,
+    })) {
+      const m = parseMeetingNdjsonLine(line);
+      if (!m) continue;
+      if (!m.heldOn) {
+        skippedMeetingIds.add(m.id);
+        continue;
+      }
+      meetingBatch.push(m);
+      totalMeetings++;
 
-//   // 2. meetings（全ディレクトリを順に読み込み）
-//   console.log("[import-libsql] meetings.ndjson を読み込み中...");
-//   let totalMeetings = 0;
-//   let meetingBatch: MeetingNdjsonRow[] = [];
+      if (meetingBatch.length >= BATCH_SIZE) {
+        const inserted = await insertMeetings(db, meetingBatch);
+        for (const id of inserted) insertedMeetingIds.add(id);
+        meetingBatch = [];
+      }
+    }
+  }
+  if (meetingBatch.length > 0) {
+    const inserted = await insertMeetings(db, meetingBatch);
+    for (const id of inserted) insertedMeetingIds.add(id);
+  }
+  const duplicateMeetings = totalMeetings - insertedMeetingIds.size;
+  console.log(
+    `[import] ${insertedMeetingIds.size} 会議 INSERT 完了（${totalMeetings} 件中、重複 ${duplicateMeetings} 件スキップ）`,
+  );
+  if (skippedMeetingIds.size > 0) {
+    console.log(
+      `[import] ${skippedMeetingIds.size} 会議スキップ（heldOn が null）`,
+    );
+  }
 
-//   for (const filePath of meetingsPaths) {
-//     for await (const line of createInterface({
-//       input: createReadStream(filePath),
-//       crlfDelay: Infinity,
-//     })) {
-//       const m = parseMeetingNdjsonLine(line);
-//       if (!m) continue;
-//       meetingBatch.push(m);
-//       totalMeetings++;
+  // 2. statements（全ディレクトリを順に読み込み）
+  // insertedMeetingIds に含まれない meetingId の発言はスキップする
+  console.log("[import] statements.ndjson を読み込み中...");
+  let totalStatements = 0;
+  let skippedStatements = 0;
+  let failedBatches = 0;
+  let stmtBatch: StatementNdjsonRow[] = [];
 
-//       if (meetingBatch.length >= BATCH_SIZE) {
-//         await insertMeetings(db, meetingBatch);
-//         meetingBatch = [];
-//       }
-//     }
-//   }
-//   if (meetingBatch.length > 0) await insertMeetings(db, meetingBatch);
-//   console.log(`[import-libsql] ${totalMeetings} 会議 INSERT 完了`);
+  for (const filePath of statementsPaths) {
+    for await (const line of createInterface({
+      input: createReadStream(filePath),
+      crlfDelay: Infinity,
+    })) {
+      const s = parseStatementNdjsonLine(line);
+      if (!s) continue;
+      if (!insertedMeetingIds.has(s.meetingId)) {
+        skippedStatements++;
+        continue;
+      }
+      stmtBatch.push(s);
+      totalStatements++;
 
-//   // 3. statements + FTS（全ディレクトリを順に読み込み）
-//   console.log("[import-libsql] statements.ndjson を読み込み中...");
-//   let totalStatements = 0;
-//   let stmtBatch: StatementNdjsonRow[] = [];
+      if (stmtBatch.length >= BATCH_SIZE) {
+        const ok = await insertStatements(db, stmtBatch);
+        if (!ok) failedBatches++;
+        stmtBatch = [];
+      }
+    }
+  }
+  if (stmtBatch.length > 0) {
+    const ok = await insertStatements(db, stmtBatch);
+    if (!ok) failedBatches++;
+  }
+  console.log(`[import] ${totalStatements} 発言 INSERT 完了`);
+  if (skippedStatements > 0) {
+    console.log(
+      `[import] ${skippedStatements} 発言スキップ（会議が除外済み）`,
+    );
+  }
+  if (failedBatches > 0) {
+    console.log(`[import] ${failedBatches} バッチ失敗（FK 違反等）`);
+  }
 
-//   for (const filePath of statementsPaths) {
-//     for await (const line of createInterface({
-//       input: createReadStream(filePath),
-//       crlfDelay: Infinity,
-//     })) {
-//       const s = parseStatementNdjsonLine(line);
-//       if (!s) continue;
-//       stmtBatch.push(s);
-//       totalStatements++;
+  console.log("[import] 完了!");
+  console.log(`  会議: ${totalMeetings}`);
+  console.log(`  発言: ${totalStatements}`);
 
-//       if (stmtBatch.length >= BATCH_SIZE) {
-//         await insertStatements(db, stmtBatch);
-//         stmtBatch = [];
-//       }
-//     }
-//   }
-//   if (stmtBatch.length > 0) await insertStatements(db, stmtBatch);
-//   console.log(`[import-libsql] ${totalStatements} 発言 INSERT 完了`);
+  process.exit(0);
+}
 
-//   console.log("[import-libsql] 完了!");
-//   console.log(`  DB: ${dbPath}`);
-//   console.log(`  自治体: ${municipalityRows.length}`);
-//   console.log(`  会議: ${totalMeetings}`);
-//   console.log(`  発言: ${totalStatements}`);
+async function insertMeetings(
+  db: Db,
+  rows: MeetingNdjsonRow[],
+): Promise<string[]> {
+  const result = await db
+    .insert(meetings)
+    .values(
+      rows.map((m) => ({
+        id: m.id,
+        municipalityCode: m.municipalityCode,
+        title: m.title,
+        meetingType: m.meetingType,
+        heldOn: m.heldOn,
+        sourceUrl: m.sourceUrl ?? null,
+        externalId: m.externalId ?? null,
+      })),
+    )
+    .onConflictDoNothing()
+    .returning({ id: meetings.id });
+  return result.map((r) => r.id);
+}
 
-//   process.exit(0);
-// }
+async function insertStatements(
+  db: Db,
+  rows: StatementNdjsonRow[],
+): Promise<boolean> {
+  try {
+    await db
+      .insert(statements)
+      .values(
+        rows.map((s) => ({
+          id: s.id,
+          meetingId: s.meetingId,
+          kind: s.kind,
+          speakerName: s.speakerName ?? null,
+          speakerRole: s.speakerRole ?? null,
+          content: s.content,
+          contentHash: s.contentHash,
+          startOffset: s.startOffset ?? null,
+          endOffset: s.endOffset ?? null,
+        })),
+      )
+      .onConflictDoNothing();
+    return true;
+  } catch (err: unknown) {
+    const cause =
+      err && typeof err === "object" && "cause" in err ? (err as { cause: unknown }).cause : err;
+    const msg = cause instanceof Error ? cause.message : String(cause);
+    console.warn(
+      `[import] バッチ INSERT 失敗（${rows.length}件）: ${msg.slice(0, 300)}`,
+    );
+    return false;
+  }
+}
 
-// async function insertMeetings(db: MinutesDb, rows: MeetingNdjsonRow[]): Promise<void> {
-//   await db.insert(schema.meetings).values(
-//     rows.map((m) => ({
-//       id: m.id,
-//       municipalityCode: m.municipalityCode,
-//       title: m.title,
-//       meetingType: m.meetingType,
-//       heldOn: m.heldOn,
-//       sourceUrl: m.sourceUrl ?? null,
-//       externalId: m.externalId ?? null,
-//       status: m.status,
-//       scrapedAt: m.scrapedAt ? new Date(m.scrapedAt) : null,
-//     })),
-//   );
-// }
-
-// async function insertStatements(db: MinutesDb, rows: StatementNdjsonRow[]): Promise<void> {
-//   await db
-//     .insert(schema.statements)
-//     .values(
-//       rows.map((s) => ({
-//         id: s.id,
-//         meetingId: s.meetingId,
-//         kind: s.kind,
-//         speakerName: s.speakerName ?? null,
-//         speakerRole: s.speakerRole ?? null,
-//         content: s.content,
-//         contentHash: s.contentHash,
-//         startOffset: s.startOffset ?? null,
-//         endOffset: s.endOffset ?? null,
-//       })),
-//     )
-//     .onConflictDoNothing();
-
-//   // FTS インデックスの投入（Drizzle は FTS5 virtual table をサポートしていないため raw SQL）
-//   for (const s of rows) {
-//     await db.run(
-//       sql`INSERT OR REPLACE INTO statements_fts (statement_id, bigrams) VALUES (${s.id}, ${tokenizeBigram(s.content)})`,
-//     );
-//   }
-// }
-
-// main().catch((err) => {
-//   console.error("[import-libsql] Fatal error:", err);
-//   process.exit(1);
-// });
+main().catch((err) => {
+  console.error("[import] Fatal error:", err);
+  process.exit(1);
+});
