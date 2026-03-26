@@ -1,35 +1,12 @@
 import { SharedSystemAdapterKey } from "@open-gikai/scrapers";
 import { extractGroupKey } from "./group-key";
 
-// 同一ホスト内のデフォルト並列数。
-// dbsr.jp 等の共有サービスでは、高すぎるとレート制限で 0 件応答が返るため控えめに設定。
-export const DEFAULT_HOST_CONCURRENCY = 5;
-
-/**
- * グループキー単位の並列数オーバーライド。
- * サイトの耐性に応じて個別に設定する。キーは extractGroupKey() の戻り値に対応。
- */
-export const HOST_CONCURRENCY_OVERRIDES: Record<string, number> = {
-  "kaigiroku.net": 20, // discussnet-ssp: 十分な耐性あり
-};
-
 export function getHostConcurrency(groupKey: string): number {
-  return HOST_CONCURRENCY_OVERRIDES[groupKey] ?? DEFAULT_HOST_CONCURRENCY;
-}
+  // discussnet-ssp: 十分な耐性がありそうなので増やす
+  if (groupKey === "kaigiroku.net") return 10;
 
-// --- fetchDetail の並列数（アダプター種別ごと） ---
-
-export const DEFAULT_DETAIL_CONCURRENCY = 10;
-
-const DETAIL_CONCURRENCY_OVERRIDES: Record<string, number> = {
-  [SharedSystemAdapterKey.DISCUSSNET]: 4,
-  [SharedSystemAdapterKey.DBSEARCH]: 2,
-  [SharedSystemAdapterKey.KENSAKUSYSTEM]: 2,
-  [SharedSystemAdapterKey.GIJIROKUCOM]: 2,
-};
-
-export function getDetailConcurrency(adapterKey: string): number {
-  return DETAIL_CONCURRENCY_OVERRIDES[adapterKey] ?? DEFAULT_DETAIL_CONCURRENCY;
+  // デフォルトは 3件に抑える
+  return 3;
 }
 
 /**
@@ -64,4 +41,15 @@ export async function runGroupedByHost(
   });
 
   return Promise.all(hostTasks.map((t) => t())).then(() => undefined);
+}
+
+// --- fetchDetail の並列数（アダプター種別ごと） ---
+export function getDetailConcurrency(adapterKey: string): number {
+  if (adapterKey === SharedSystemAdapterKey.DISCUSSNET) return 2;
+  if (adapterKey === SharedSystemAdapterKey.DBSEARCH) return 2;
+  if (adapterKey === SharedSystemAdapterKey.KENSAKUSYSTEM) return 2;
+  if (adapterKey === SharedSystemAdapterKey.GIJIROKUCOM) return 2;
+
+  // カスタムアダプターはそのサイト単体なので負荷をかけても問題ない
+  return 5;
 }
