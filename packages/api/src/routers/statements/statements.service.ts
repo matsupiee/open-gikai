@@ -126,14 +126,9 @@ function queryStatements(
   const finalQuery =
     allConditions.length > 0 ? query.where(and(...allConditions)) : query;
 
-  const built = finalQuery
+  return finalQuery
     .orderBy(desc(statements.createdAt), desc(statements.id))
     .limit(limit);
-
-  // DEBUG: log SQL for CI investigation
-  console.log("[queryStatements] SQL:", built.toSQL());
-
-  return built;
 }
 
 export async function searchStatements(

@@ -1,12 +1,30 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { getTestDb } from "@open-gikai/db-minutes/test-helpers";
-import { municipalities, meetings, statements } from "@open-gikai/db-minutes";
+import {
+  municipalities,
+  meetings,
+  statements,
+  tokenizeBigram,
+} from "@open-gikai/db-minutes";
 import type { TestDb } from "@open-gikai/db-minutes/test-helpers";
-import { and, desc, like, sql, eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   searchStatements,
   semanticSearchStatements,
 } from "./statements.service";
+
+/**
+ * statements_fts に bigram インデックスを挿入する
+ */
+async function insertFts(
+  db: TestDb,
+  statementId: string,
+  content: string,
+) {
+  await db.run(
+    sql`INSERT INTO statements_fts (statement_id, bigrams) VALUES (${statementId}, ${tokenizeBigram(content)})`,
+  );
+}
 
 describe("searchStatements", () => {
   let db: TestDb;
@@ -49,48 +67,6 @@ describe("searchStatements", () => {
     ]);
   });
 
-  it("diagnostic: SQL from service", async () => {
-    await db.insert(statements).values({
-      id: "diag-1",
-      meetingId: "meeting-sapporo",
-      kind: "question",
-      content: "budget test content",
-      contentHash: "diag-hash",
-    });
-
-    // Also log SQL from test-side query for comparison
-    const testQuery = db
-      .select({
-        id: statements.id,
-        meetingId: statements.meetingId,
-        kind: statements.kind,
-        speakerName: statements.speakerName,
-        content: statements.content,
-        createdAt: statements.createdAt,
-        meetingTitle: meetings.title,
-        heldOn: meetings.heldOn,
-        prefecture: municipalities.prefecture,
-        municipality: municipalities.name,
-        sourceUrl: meetings.sourceUrl,
-      })
-      .from(statements)
-      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-      .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
-      .where(and(and(like(statements.content, "%budget%"))!))
-      .orderBy(desc(statements.createdAt), desc(statements.id))
-      .limit(21);
-    console.log("[test] SQL:", testQuery.toSQL());
-
-    const testResult = await testQuery;
-    console.log("[test] result count:", testResult.length);
-
-    // Service call (will also log via the added console.log)
-    const result = await searchStatements(db, { q: "budget" });
-    console.log("[service] result count:", result.statements.length);
-
-    expect(result.statements).toHaveLength(1);
-  });
-
   it("キーワード検索（q）で発言を検索できる", async () => {
     await db.insert(statements).values([
       {
@@ -98,7 +74,7 @@ describe("searchStatements", () => {
         meetingId: "meeting-sapporo",
         kind: "question",
         speakerName: "田中太郎",
-        content: "budget question about expenses",
+        content: "予算について質問します",
         contentHash: "hash-1",
       },
       {
@@ -106,17 +82,17 @@ describe("searchStatements", () => {
         meetingId: "meeting-sapporo",
         kind: "answer",
         speakerName: "市長",
-        content: "education policy response",
+        content: "教育政策について回答します",
         contentHash: "hash-2",
       },
     ]);
+    await insertFts(db, "stmt-1", "予算について質問します");
+    await insertFts(db, "stmt-2", "教育政策について回答します");
 
-    const result = await searchStatements(db, { q: "budget" });
+    const result = await searchStatements(db, { q: "予算" });
 
     expect(result.statements).toHaveLength(1);
-    expect(result.statements[0]!.content).toBe(
-      "budget question about expenses",
-    );
+    expect(result.statements[0]!.content).toBe("予算について質問します");
     expect(result.statements[0]!.meetingTitle).toBe("札幌定例会");
     expect(result.statements[0]!.prefecture).toBe("北海道");
     expect(result.statements[0]!.municipality).toBe("札幌市");
@@ -128,23 +104,25 @@ describe("searchStatements", () => {
         id: "stmt-1",
         meetingId: "meeting-sapporo",
         kind: "question",
-        content: "budget and education question",
+        content: "予算と教育について質問します",
         contentHash: "hash-1",
       },
       {
         id: "stmt-2",
         meetingId: "meeting-sapporo",
         kind: "question",
-        content: "budget only question",
+        content: "予算について質問します",
         contentHash: "hash-2",
       },
     ]);
+    await insertFts(db, "stmt-1", "予算と教育について質問します");
+    await insertFts(db, "stmt-2", "予算について質問します");
 
-    const result = await searchStatements(db, { q: "budget education" });
+    const result = await searchStatements(db, { q: "予算 教育" });
 
     expect(result.statements).toHaveLength(1);
     expect(result.statements[0]!.content).toBe(
-      "budget and education question",
+      "予算と教育について質問します",
     );
   });
 
@@ -319,7 +297,7 @@ describe("searchStatements", () => {
         meetingId: "meeting-sapporo",
         kind: "question",
         speakerName: "田中太郎",
-        content: "budget question from tanaka",
+        content: "予算について質問します",
         contentHash: "hash-match",
       },
       {
@@ -327,7 +305,7 @@ describe("searchStatements", () => {
         meetingId: "meeting-sapporo",
         kind: "answer",
         speakerName: "田中太郎",
-        content: "budget answer from tanaka",
+        content: "予算について回答します",
         contentHash: "hash-wrong-kind",
       },
       {
@@ -335,13 +313,16 @@ describe("searchStatements", () => {
         meetingId: "meeting-sapporo",
         kind: "question",
         speakerName: "鈴木花子",
-        content: "budget question from suzuki",
+        content: "予算について質問します",
         contentHash: "hash-wrong-speaker",
       },
     ]);
+    await insertFts(db, "stmt-match", "予算について質問します");
+    await insertFts(db, "stmt-wrong-kind", "予算について回答します");
+    await insertFts(db, "stmt-wrong-speaker", "予算について質問します");
 
     const result = await searchStatements(db, {
-      q: "budget",
+      q: "予算",
       kind: "question",
       speakerName: "田中",
     });
@@ -351,7 +332,7 @@ describe("searchStatements", () => {
   });
 
   it("データが0件のとき空配列を返す", async () => {
-    const result = await searchStatements(db, { q: "nonexistent" });
+    const result = await searchStatements(db, { q: "存在しないキーワード" });
 
     expect(result.statements).toHaveLength(0);
     expect(result.nextCursor).toBeNull();
@@ -386,27 +367,27 @@ describe("semanticSearchStatements", () => {
         meetingId: "meeting-1",
         kind: "question",
         speakerName: "田中太郎",
-        content: "budget question about city expenses",
+        content: "予算について質問します",
         contentHash: "hash-1",
       },
       {
         id: "stmt-2",
         meetingId: "meeting-1",
         kind: "answer",
-        content: "education policy details",
+        content: "教育政策について",
         contentHash: "hash-2",
       },
     ]);
+    await insertFts(db, "stmt-1", "予算について質問します");
+    await insertFts(db, "stmt-2", "教育政策について");
 
     const result = await semanticSearchStatements(db, {
-      query: "budget",
+      query: "予算",
       topK: 5,
     });
 
     expect(result.statements).toHaveLength(1);
-    expect(result.statements[0]!.content).toBe(
-      "budget question about city expenses",
-    );
+    expect(result.statements[0]!.content).toBe("予算について質問します");
     expect(result.statements[0]!.similarity).toBe(0.5);
   });
 
@@ -416,27 +397,30 @@ describe("semanticSearchStatements", () => {
         id: "stmt-1",
         meetingId: "meeting-1",
         kind: "question",
-        content: "budget topic alpha",
+        content: "予算について質問1",
         contentHash: "hash-1",
       },
       {
         id: "stmt-2",
         meetingId: "meeting-1",
         kind: "question",
-        content: "budget topic beta",
+        content: "予算について質問2",
         contentHash: "hash-2",
       },
       {
         id: "stmt-3",
         meetingId: "meeting-1",
         kind: "question",
-        content: "budget topic gamma",
+        content: "予算について質問3",
         contentHash: "hash-3",
       },
     ]);
+    await insertFts(db, "stmt-1", "予算について質問1");
+    await insertFts(db, "stmt-2", "予算について質問2");
+    await insertFts(db, "stmt-3", "予算について質問3");
 
     const result = await semanticSearchStatements(db, {
-      query: "budget",
+      query: "予算",
       topK: 2,
     });
 
@@ -463,20 +447,22 @@ describe("semanticSearchStatements", () => {
         id: "stmt-hokkaido",
         meetingId: "meeting-1",
         kind: "question",
-        content: "budget question hokkaido",
+        content: "予算の質問（北海道）",
         contentHash: "hash-hk",
       },
       {
         id: "stmt-tokyo",
         meetingId: "meeting-tokyo",
         kind: "question",
-        content: "budget question tokyo",
+        content: "予算の質問（東京）",
         contentHash: "hash-tk",
       },
     ]);
+    await insertFts(db, "stmt-hokkaido", "予算の質問（北海道）");
+    await insertFts(db, "stmt-tokyo", "予算の質問（東京）");
 
     const result = await semanticSearchStatements(db, {
-      query: "budget",
+      query: "予算",
       topK: 10,
       filters: { prefecture: "東京都" },
     });
@@ -505,20 +491,22 @@ describe("semanticSearchStatements", () => {
         id: "stmt-sapporo",
         meetingId: "meeting-1",
         kind: "question",
-        content: "budget question sapporo",
+        content: "予算の質問（札幌）",
         contentHash: "hash-sp",
       },
       {
         id: "stmt-asahikawa",
         meetingId: "meeting-asahikawa",
         kind: "question",
-        content: "budget question asahikawa",
+        content: "予算の質問（旭川）",
         contentHash: "hash-ak",
       },
     ]);
+    await insertFts(db, "stmt-sapporo", "予算の質問（札幌）");
+    await insertFts(db, "stmt-asahikawa", "予算の質問（旭川）");
 
     const result = await semanticSearchStatements(db, {
-      query: "budget",
+      query: "予算",
       topK: 10,
       filters: { municipality: "旭川市" },
     });
@@ -540,20 +528,22 @@ describe("semanticSearchStatements", () => {
         id: "stmt-old",
         meetingId: "meeting-old",
         kind: "question",
-        content: "budget question old",
+        content: "予算の質問（古い）",
         contentHash: "hash-old",
       },
       {
         id: "stmt-new",
         meetingId: "meeting-1",
         kind: "question",
-        content: "budget question new",
+        content: "予算の質問（新しい）",
         contentHash: "hash-new",
       },
     ]);
+    await insertFts(db, "stmt-old", "予算の質問（古い）");
+    await insertFts(db, "stmt-new", "予算の質問（新しい）");
 
     const result = await semanticSearchStatements(db, {
-      query: "budget",
+      query: "予算",
       topK: 10,
       filters: {
         heldOnFrom: "2024-01-01",
@@ -562,12 +552,12 @@ describe("semanticSearchStatements", () => {
     });
 
     expect(result.statements).toHaveLength(1);
-    expect(result.statements[0]!.content).toBe("budget question new");
+    expect(result.statements[0]!.content).toBe("予算の質問（新しい）");
   });
 
   it("マッチ0件で空配列を返す", async () => {
     const result = await semanticSearchStatements(db, {
-      query: "nonexistent",
+      query: "存在しないキーワード",
       topK: 5,
     });
 
