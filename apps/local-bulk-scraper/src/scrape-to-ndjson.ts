@@ -172,7 +172,7 @@ async function main() {
   if (!existsSync(logDir)) {
     mkdirSync(logDir, { recursive: true });
   }
-  // NDJSON は packages/db/minutes/dbjson/ に出力（R2 構造と一致）
+  // NDJSON は packages/db/minutes/dbjson/{year}/{municipalityCode}/ に出力
   const ndjsonDir = resolve(root, "packages/db/minutes/dbjson");
   if (!existsSync(ndjsonDir)) {
     mkdirSync(ndjsonDir, { recursive: true });
@@ -228,12 +228,12 @@ async function main() {
 
   log("INFO", `[scrape-to-ndjson] ${enabledTargets.length} 自治体を処理します`);
 
-  // 3. NDJSON 出力ストリームの準備
-  const meetingsStream = createWriteStream(resolve(ndjsonDir, "meetings.ndjson"));
-  const statementsStream = createWriteStream(resolve(ndjsonDir, "statements.ndjson"));
+  const currentYear = new Date().getFullYear();
+  const years = targetYear ? [targetYear] : Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   let totalMeetings = 0;
   let totalStatements = 0;
+  let totalSkipped = 0;
   const failedMunicipalities: {
     name: string;
     prefecture: string;
@@ -241,7 +241,7 @@ async function main() {
     reason: string;
   }[] = [];
 
-  // 4. 自治体を並列スクレイピング
+  // 3. 自治体を並列スクレイピング（年度ごとにディレクトリ分割）
   const tasks = enabledTargets.map((target) => async () => {
     if (!target.baseUrl) throw new Error(); // この分岐に入ることはないが型安全のため書く
 
@@ -251,100 +251,115 @@ async function main() {
 
     log("INFO", `[scrape-to-ndjson] ${target.prefecture} ${target.name} (${adapterKey})`);
 
-    let meetingDataList: MeetingData[];
-    try {
-      meetingDataList = await scrapeWithAdapter(
-        adapter,
-        target.code,
-        target.name,
-        target.baseUrl,
-        targetYear,
-        meetingLimit,
-      );
-    } catch (err) {
-      const reason = err instanceof Error ? err.message : String(err);
-      log("ERROR", `${target.name}: スクレイピング失敗: ${reason}`);
-      failedMunicipalities.push({
-        name: target.name,
-        prefecture: target.prefecture,
-        systemType: adapterKey,
-        reason,
-      });
-      return;
-    }
+    let municipalityMeetingCount = 0;
 
-    if (meetingDataList.length === 0) {
-      log("INFO", `${target.name}: 0 件`);
-      failedMunicipalities.push({
-        name: target.name,
-        prefecture: target.prefecture,
-        systemType: adapterKey,
-        reason: "0 件（データなし）",
-      });
-      return;
-    }
+    for (const year of years) {
+      if (meetingLimit && municipalityMeetingCount >= meetingLimit) break;
 
-    log("INFO", `${target.name}: ${meetingDataList.length} 件の会議を処理中...`);
+      // 既存データがあればスキップ（再開性）
+      const yearDir = resolve(ndjsonDir, String(year), target.code);
+      const meetingsPath = resolve(yearDir, "meetings.ndjson");
+      if (existsSync(meetingsPath)) {
+        log("INFO", `${target.name}: ${year}年 → スキップ（既存データあり）`);
+        totalSkipped++;
+        continue;
+      }
 
-    // 4. 各会議を NDJSON に書き出す
-    for (const meetingData of meetingDataList) {
-      const meetingId = createId();
-      const now = new Date().toISOString();
+      let meetingDataList: MeetingData[];
+      try {
+        const remaining = meetingLimit ? meetingLimit - municipalityMeetingCount : undefined;
+        meetingDataList = await scrapeOneYear(
+          adapter,
+          target.code,
+          target.name,
+          target.baseUrl,
+          year,
+          remaining,
+        );
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        log("ERROR", `${target.name}: ${year}年 スクレイピング失敗: ${reason}`);
+        failedMunicipalities.push({
+          name: target.name,
+          prefecture: target.prefecture,
+          systemType: adapterKey,
+          reason: `${year}年: ${reason}`,
+        });
+        continue;
+      }
 
-      // meetings.ndjson
-      meetingsStream.write(
-        JSON.stringify({
-          id: meetingId,
-          municipalityCode: meetingData.municipalityCode,
-          title: meetingData.title,
-          meetingType: meetingData.meetingType,
-          heldOn: meetingData.heldOn,
-          sourceUrl: meetingData.sourceUrl,
-          externalId: meetingData.externalId,
-          status: "processed",
-          scrapedAt: now,
-        }) + "\n",
-      );
-      totalMeetings++;
+      if (meetingDataList.length === 0) {
+        log("INFO", `${target.name}: ${year}年 → 0 件`);
+        continue;
+      }
 
-      // statements の ID を生成して NDJSON に書き出し
-      for (const s of meetingData.statements) {
-        const stmtId = createId();
-        statementsStream.write(
+      // ディレクトリを作成して NDJSON を書き出す
+      mkdirSync(yearDir, { recursive: true });
+      const meetingsStream = createWriteStream(meetingsPath);
+      const statementsStream = createWriteStream(resolve(yearDir, "statements.ndjson"));
+
+      for (const meetingData of meetingDataList) {
+        const meetingId = createId();
+        const now = new Date().toISOString();
+
+        meetingsStream.write(
           JSON.stringify({
-            id: stmtId,
-            meetingId,
-            kind: s.kind,
-            speakerName: s.speakerName,
-            speakerRole: s.speakerRole,
-            content: s.content,
-            contentHash: s.contentHash,
-            startOffset: s.startOffset,
-            endOffset: s.endOffset,
+            id: meetingId,
+            municipalityCode: meetingData.municipalityCode,
+            title: meetingData.title,
+            meetingType: meetingData.meetingType,
+            heldOn: meetingData.heldOn,
+            sourceUrl: meetingData.sourceUrl,
+            externalId: meetingData.externalId,
+            status: "processed",
+            scrapedAt: now,
           }) + "\n",
         );
-        totalStatements++;
+        totalMeetings++;
+        municipalityMeetingCount++;
+
+        for (const s of meetingData.statements) {
+          const stmtId = createId();
+          statementsStream.write(
+            JSON.stringify({
+              id: stmtId,
+              meetingId,
+              kind: s.kind,
+              speakerName: s.speakerName,
+              speakerRole: s.speakerRole,
+              content: s.content,
+              contentHash: s.contentHash,
+              startOffset: s.startOffset,
+              endOffset: s.endOffset,
+            }) + "\n",
+          );
+          totalStatements++;
+        }
       }
+
+      await Promise.all([
+        new Promise<void>((r) => meetingsStream.end(r)),
+        new Promise<void>((r) => statementsStream.end(r)),
+      ]);
+
+      log("INFO", `${target.name}: ${year}年 → ${meetingDataList.length} 件`);
     }
   });
 
   await runGroupedByHost(enabledTargets, tasks);
 
-  // ストリームを閉じる
-  await Promise.all([
-    new Promise<void>((resolve) => meetingsStream.end(resolve)),
-    new Promise<void>((resolve) => statementsStream.end(resolve)),
-  ]);
-
   log("INFO", "[scrape-to-ndjson] 完了!");
-  log("INFO", `  NDJSON 出力先: ${ndjsonDir}`);
+  log("INFO", `  NDJSON 出力先: ${ndjsonDir}/{year}/{municipalityCode}/`);
   log("INFO", `  ログ出力先: ${logDir}`);
   log("INFO", `  meetings: ${totalMeetings} 件`);
   log("INFO", `  statements: ${totalStatements} 件`);
+  if (totalSkipped > 0) {
+    log("INFO", `  スキップ（既存データ）: ${totalSkipped} 件`);
+  }
 
   if (failedMunicipalities.length > 0) {
     log("INFO", "");
-    log("INFO", `[scrape-to-ndjson] 失敗・0件の自治体: ${failedMunicipalities.length} 件`);
+    log("INFO", `[scrape-to-ndjson] 失敗した自治体: ${failedMunicipalities.length} 件`);
     const byType = new Map<string, number>();
     for (const f of failedMunicipalities) {
       byType.set(f.systemType, (byType.get(f.systemType) ?? 0) + 1);
@@ -364,49 +379,40 @@ async function main() {
 }
 
 /**
- * ScraperAdapter を使った汎用バルクスクレイピング。
- * 指定年度（未指定時は直近5年）の議事録を取得する。
+ * ScraperAdapter を使って単一年度の議事録を取得する。
  */
-async function scrapeWithAdapter(
+async function scrapeOneYear(
   adapter: ScraperAdapter,
   municipalityCode: string,
   municipalityName: string,
   baseUrl: string,
-  targetYear?: number,
+  year: number,
   meetingLimit?: number,
 ): Promise<MeetingData[]> {
   const results: MeetingData[] = [];
 
-  const currentYear = new Date().getFullYear();
-  const years = targetYear ? [targetYear] : Array.from({ length: 5 }, (_, i) => currentYear - i);
+  console.log(`  [${adapter.name}] ${municipalityName}: ${year}年の一覧を取得中...`);
 
-  for (const year of years) {
-    if (meetingLimit && results.length >= meetingLimit) break;
+  const records = await adapter.fetchList({ baseUrl, year });
+  if (records.length === 0) {
+    console.log(`  [${adapter.name}] ${municipalityName}: ${year}年 → データなし`);
+    return results;
+  }
 
-    console.log(`  [${adapter.name}] ${municipalityName}: ${year}年の一覧を取得中...`);
+  const limited = meetingLimit ? records.slice(0, meetingLimit) : records;
+  const limitNote = meetingLimit ? ` (${limited.length}/${records.length} 件処理)` : "";
 
-    const records = await adapter.fetchList({ baseUrl, year });
-    if (records.length === 0) {
-      console.log(`  [${adapter.name}] ${municipalityName}: ${year}年 → データなし`);
-      continue;
-    }
+  console.log(
+    `  [${adapter.name}] ${municipalityName}: ${year}年 → ${records.length} 件${limitNote}`,
+  );
 
-    const remaining = meetingLimit ? meetingLimit - results.length : records.length;
-    const limited = records.slice(0, remaining);
-    const limitNote = meetingLimit ? ` (${limited.length}/${records.length} 件処理)` : "";
-
-    console.log(
-      `  [${adapter.name}] ${municipalityName}: ${year}年 → ${records.length} 件${limitNote}`,
-    );
-
-    for (const record of limited) {
-      const meeting = await adapter.fetchDetail({
-        detailParams: record.detailParams,
-        municipalityCode,
-      });
-      if (meeting) {
-        results.push(meeting);
-      }
+  for (const record of limited) {
+    const meeting = await adapter.fetchDetail({
+      detailParams: record.detailParams,
+      municipalityCode,
+    });
+    if (meeting) {
+      results.push(meeting);
     }
   }
 
