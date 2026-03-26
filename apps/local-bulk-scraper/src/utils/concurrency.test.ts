@@ -1,27 +1,19 @@
 import { describe, expect, it } from "vitest";
-import {
-  getHostConcurrency,
-  getDetailConcurrency,
-  runGroupedByHost,
-} from "./concurrency";
+import { getHostConcurrency, getDetailConcurrency, runGroupedByHost } from "./concurrency";
 
 describe("getHostConcurrency", () => {
-  it("kaigiroku.net はオーバーライド値 20 を返す", () => {
-    expect(getHostConcurrency("kaigiroku.net")).toBe(20);
+  it("kaigiroku.net は 10 を返す", () => {
+    expect(getHostConcurrency("kaigiroku.net")).toBe(10);
   });
 
-  it("オーバーライド未設定のキーはデフォルト 5 を返す", () => {
-    expect(getHostConcurrency("dbsr.jp")).toBe(5);
-  });
-
-  it("任意のキーはデフォルト 5 を返す", () => {
-    expect(getHostConcurrency("example.com")).toBe(5);
+  it("任意のキーはデフォルト 3 を返す", () => {
+    expect(getHostConcurrency("example.com")).toBe(3);
   });
 });
 
 describe("getDetailConcurrency", () => {
-  it("discussnet_ssp は 4 を返す", () => {
-    expect(getDetailConcurrency("discussnet_ssp")).toBe(4);
+  it("discussnet_ssp は 2 を返す", () => {
+    expect(getDetailConcurrency("discussnet_ssp")).toBe(2);
   });
 
   it("dbsearch は 2 を返す", () => {
@@ -50,9 +42,15 @@ describe("runGroupedByHost", () => {
       { baseUrl: "https://example.com/c" },
     ];
     const tasks = [
-      async () => { results.push(1); },
-      async () => { results.push(2); },
-      async () => { results.push(3); },
+      async () => {
+        results.push(1);
+      },
+      async () => {
+        results.push(2);
+      },
+      async () => {
+        results.push(3);
+      },
     ];
 
     await runGroupedByHost(targets, tasks);
@@ -65,10 +63,7 @@ describe("runGroupedByHost", () => {
 
   it("異なるホストのタスクが並列に開始される", async () => {
     const events: string[] = [];
-    const targets = [
-      { baseUrl: "https://a.example.com/" },
-      { baseUrl: "https://b.example.org/" },
-    ];
+    const targets = [{ baseUrl: "https://a.example.com/" }, { baseUrl: "https://b.example.org/" }];
     const tasks = [
       async () => {
         events.push("a-start");

@@ -5,6 +5,7 @@ import { createId } from "@paralleldrive/cuid2";
 import type { MeetingData } from "@open-gikai/scrapers";
 import { detectAdapterKey, getAdapter } from "@open-gikai/scrapers";
 import { getDetailConcurrency } from "./concurrency";
+import { checkYearNdjsonIntegrity } from "./ndjson-year-integrity";
 import type { ScrapeLogger } from "./scrape-run-logger";
 import { scrapeOneYear } from "./scrape-one-year";
 
@@ -23,7 +24,8 @@ export interface NdjsonScrapeAccumulator {
 }
 
 /**
- * 1 自治体について、年度ごとにスクレイプして NDJSON を書き出す（再開時は meetings.ndjson があればスキップ）。
+ * 1 自治体について、年度ごとにスクレイプして NDJSON を書き出す。
+ * 再開時は meetings / statements が揃い、全会議に対応する発言があるときのみスキップ。
  */
 export async function runMunicipalityNdjsonScrape(params: {
   target: MunicipalityRow;
@@ -51,9 +53,15 @@ export async function runMunicipalityNdjsonScrape(params: {
     const yearDir = resolve(ndjsonDir, String(year), target.code);
     const meetingsPath = resolve(yearDir, "meetings.ndjson");
     if (existsSync(meetingsPath)) {
-      log.info(`${target.name}: ${year}年 → スキップ（既存データあり）`);
-      acc.totalSkipped++;
-      continue;
+      const integrity = await checkYearNdjsonIntegrity(yearDir);
+      if (integrity.complete) {
+        log.info(`${target.name}: ${year}年 → スキップ（既存データあり・発言整合OK）`);
+        acc.totalSkipped++;
+        continue;
+      }
+      log.warn(
+        `${target.name}: ${year}年 → 既存 NDJSON が不完全のため再スクレイプします（${integrity.reason}）`,
+      );
     }
 
     let meetingDataList: MeetingData[];
