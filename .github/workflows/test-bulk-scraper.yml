@@ -6,7 +6,6 @@ on:
     paths:
       - "apps/local-bulk-scraper/**"
       - "packages/scrapers/**"
-      - "packages/db-minutes/**"
       - "package.json"
       - "bun.lock"
       - "tsconfig.json"
