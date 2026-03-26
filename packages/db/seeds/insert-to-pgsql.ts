@@ -184,15 +184,10 @@ async function main() {
     );
   }
 
-  // 2. statements（全ディレクトリを順に読み込み）
-  // insertedMeetingIds に含まれない meetingId の発言はスキップする
-  // allKnownMeetingIds にも存在しない meetingId があるファイルは削除する
-  console.log("[import] statements.ndjson を読み込み中...");
-  let totalStatements = 0;
-  let skippedStatements = 0;
-  let failedBatches = 0;
-  let stmtBatch: StatementNdjsonRow[] = [];
-  // 存在しない meetingId を参照している statements.ndjson のパスを記録
+  // 2. statements の事前スキャン
+  // allKnownMeetingIds に存在しない meetingId を含むファイルを特定し、
+  // そのファイル（自治体）をまるごとスキップ＆削除する
+  console.log("[import] statements.ndjson を検証中...");
   const corruptedStatementFiles = new Set<string>();
 
   for (const filePath of statementsPaths) {
@@ -204,7 +199,44 @@ async function main() {
       if (!s) continue;
       if (!allKnownMeetingIds.has(s.meetingId)) {
         corruptedStatementFiles.add(filePath);
+        break;
       }
+    }
+  }
+
+  // 不正な meetingId を含む NDJSON ファイルを削除
+  if (corruptedStatementFiles.size > 0) {
+    console.log(
+      `[import] ${corruptedStatementFiles.size} ファイルに存在しない meetingId を検出 → 削除します`,
+    );
+    for (const statementsFile of corruptedStatementFiles) {
+      const meetingsFile = resolve(dirname(statementsFile), "meetings.ndjson");
+      console.log(`[import]   削除: ${statementsFile}`);
+      unlinkSync(statementsFile);
+      if (existsSync(meetingsFile)) {
+        console.log(`[import]   削除: ${meetingsFile}`);
+        unlinkSync(meetingsFile);
+      }
+    }
+  }
+
+  // 3. statements（検証済みファイルのみ読み込み）
+  const validStatementsPaths = statementsPaths.filter(
+    (p) => !corruptedStatementFiles.has(p),
+  );
+  console.log("[import] statements.ndjson を読み込み中...");
+  let totalStatements = 0;
+  let skippedStatements = 0;
+  let failedBatches = 0;
+  let stmtBatch: StatementNdjsonRow[] = [];
+
+  for (const filePath of validStatementsPaths) {
+    for await (const line of createInterface({
+      input: createReadStream(filePath),
+      crlfDelay: Infinity,
+    })) {
+      const s = parseStatementNdjsonLine(line);
+      if (!s) continue;
       if (!insertedMeetingIds.has(s.meetingId)) {
         skippedStatements++;
         continue;
@@ -231,23 +263,6 @@ async function main() {
   }
   if (failedBatches > 0) {
     console.log(`[import] ${failedBatches} バッチ失敗（FK 違反等）`);
-  }
-
-  // 3. 不正な meetingId を含む NDJSON ファイルを削除
-  if (corruptedStatementFiles.size > 0) {
-    console.log(
-      `[import] ${corruptedStatementFiles.size} ファイルに存在しない meetingId を検出 → 削除します`,
-    );
-    for (const statementsFile of corruptedStatementFiles) {
-      // 同じディレクトリの meetings.ndjson も一緒に削除
-      const meetingsFile = resolve(dirname(statementsFile), "meetings.ndjson");
-      console.log(`[import]   削除: ${statementsFile}`);
-      unlinkSync(statementsFile);
-      if (existsSync(meetingsFile)) {
-        console.log(`[import]   削除: ${meetingsFile}`);
-        unlinkSync(meetingsFile);
-      }
-    }
   }
 
   console.log("[import] 完了!");
