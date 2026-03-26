@@ -1,6 +1,6 @@
-import type { MinutesDb } from "@open-gikai/db-minutes";
-import { municipalities } from "@open-gikai/db-minutes";
-import { and, asc, count, eq, like, or, sql } from "drizzle-orm";
+import type { Db } from "@open-gikai/db";
+import { municipalities } from "@open-gikai/db/schema";
+import { asc, count, like, or, sql, and } from "drizzle-orm";
 import { z } from "zod";
 
 import type { municipalitiesListSchema } from "./_schemas";
@@ -22,14 +22,14 @@ export interface MunicipalitiesListResponse {
 }
 
 export async function listMunicipalities(
-  db: MinutesDb,
-  input: z.infer<typeof municipalitiesListSchema>,
+  db: Db,
+  input: z.input<typeof municipalitiesListSchema>,
   isAdmin: boolean
 ): Promise<MunicipalitiesListResponse> {
   const limit = input.limit ?? 50;
   const offset = input.offset ?? 0;
 
-  const conditions = [eq(municipalities.enabled, true)];
+  const conditions = [];
 
   if (input.query) {
     const tokens = input.query.trim().split(/\s+/).filter(Boolean);
@@ -44,7 +44,7 @@ export async function listMunicipalities(
     }
   }
 
-  const where = and(...conditions);
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
 
   const orderBy =
     input.sortBy === "population"

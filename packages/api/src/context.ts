@@ -1,25 +1,22 @@
 import type { Auth } from "@open-gikai/auth";
-import type { Db } from "../../db/src";
-import type { MinutesDb } from "@open-gikai/db-minutes";
+import type { Db } from "@open-gikai/db";
 
 export interface CreateContextParams {
   req: Request;
   auth: Auth;
-  authDb: Db;
-  minutesDb: MinutesDb;
+  db: Db;
 }
 
 /**
  * フロントから認証トークンつきでアクセスする際に使う
  */
-export async function createContext({ req, auth, authDb, minutesDb }: CreateContextParams) {
+export async function createContext({ req, auth, db }: CreateContextParams) {
   const session = await auth.api.getSession({
     headers: req.headers,
   });
   return {
     session,
-    authDb,
-    minutesDb,
+    db,
   };
 }
 

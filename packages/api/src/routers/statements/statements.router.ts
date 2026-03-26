@@ -13,15 +13,15 @@ import {
 export const statementsRouter = {
   search: publicProcedure
     .input(statementsSearchSchema)
-    .handler(({ input, context }) => searchStatements(context.minutesDb, input)),
+    .handler(({ input, context }) => searchStatements(context.db, input)),
 
   semanticSearch: publicProcedure
     .input(statementsSemanticSearchSchema)
     .handler(({ input, context }) =>
-      semanticSearchStatements(context.minutesDb, input)
+      semanticSearchStatements(context.db, input)
     ),
 
   ask: publicProcedure
     .input(statementsAskSchema)
-    .handler(({ input, context }) => askStatements(context.minutesDb, input)),
+    .handler(({ input, context }) => askStatements(context.db, input)),
 };
