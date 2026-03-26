@@ -444,7 +444,7 @@ describe("semanticSearchStatements", () => {
 
       expect(result.statements).toHaveLength(1);
       expect(result.statements[0]!.content).toBe("予算について質問します");
-      expect(result.statements[0]!.similarity).toBe(0.5);
+      expect(Number(result.statements[0]!.similarity)).toBe(0.5);
     });
   });
 

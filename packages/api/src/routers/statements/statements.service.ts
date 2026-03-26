@@ -82,13 +82,15 @@ function buildStatementFilters(input: z.input<typeof statementsSearchSchema>) {
 }
 
 /**
- * PostgreSQL tsvector を使った全文検索条件を構築する。
- * 入力をスペース区切りで分割し、各トークンを plainto_tsquery で AND 検索する。
+ * 全文検索条件を構築する。
+ * スペース区切りの各トークンを LIKE で AND 検索する。
+ * PostgreSQL の tsvector (simple 辞書) は日本語をトークン分割できないため、
+ * LIKE ベースの部分一致検索を使用する。
  */
-function buildFtsCondition(q: string) {
-  const trimmed = q.trim();
-  if (!trimmed) return null;
-  return sql`${statements.contentTsv} @@ plainto_tsquery('simple', ${trimmed})`;
+function buildFtsConditions(q: string) {
+  const tokens = q.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return [];
+  return tokens.map((token) => like(statements.content, `%${token}%`));
 }
 
 function queryStatements(
@@ -120,10 +122,7 @@ function queryStatements(
   const allConditions = [...statementFilters, ...meetingFilters];
 
   if (input.q) {
-    const ftsCondition = buildFtsCondition(input.q);
-    if (ftsCondition) {
-      allConditions.push(ftsCondition);
-    }
+    allConditions.push(...buildFtsConditions(input.q));
   }
 
   const finalQuery =
@@ -156,10 +155,7 @@ function querySemanticStatements(
 ) {
   const conditions = [];
 
-  const ftsCondition = buildFtsCondition(input.query);
-  if (ftsCondition) {
-    conditions.push(ftsCondition);
-  }
+  conditions.push(...buildFtsConditions(input.query));
   if (input.filters?.heldOnFrom) {
     conditions.push(gte(meetings.heldOn, input.filters.heldOnFrom));
   }
