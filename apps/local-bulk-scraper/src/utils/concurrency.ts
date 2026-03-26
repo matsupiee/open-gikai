@@ -51,5 +51,5 @@ export function getDetailConcurrency(adapterKey: string): number {
   if (adapterKey === SharedSystemAdapterKey.GIJIROKUCOM) return 2;
 
   // カスタムアダプターはそのサイト単体なので負荷をかけても問題ない
-  return 5;
+  return 10;
 }

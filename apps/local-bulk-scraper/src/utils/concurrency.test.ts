@@ -12,8 +12,8 @@ describe("getHostConcurrency", () => {
 });
 
 describe("getDetailConcurrency", () => {
-  it("discussnet_ssp は 3 を返す", () => {
-    expect(getDetailConcurrency("discussnet_ssp")).toBe(3);
+  it("discussnet_ssp は 2 を返す", () => {
+    expect(getDetailConcurrency("discussnet_ssp")).toBe(2);
   });
 
   it("dbsearch は 2 を返す", () => {
