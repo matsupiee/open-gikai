@@ -1,5 +1,5 @@
-import type { Db } from "@open-gikai/db-auth";
-import * as schema from "@open-gikai/db-auth/schema/auth";
+import type { Db } from "../../db/src";
+import * as schema from "../../db/src/schema/auth";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin } from "better-auth/plugins/admin";

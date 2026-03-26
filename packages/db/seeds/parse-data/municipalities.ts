@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import type { RegionSlug } from "../../schema/municipalities";
+import type { RegionSlug } from "../../../../src/schema/municipalities";
 import { prefectureToRegionSlug } from "../../utils/region";
 
 export { prefectureToRegionSlug };

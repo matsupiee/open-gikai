@@ -14,8 +14,7 @@
   },
   "dependencies": {
     "@open-gikai/auth": "workspace:*",
-    "@open-gikai/db-auth": "workspace:*",
-    "@open-gikai/db-minutes": "workspace:*",
+    "@open-gikai/db": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
