@@ -11,7 +11,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { extractText, getDocumentProxy } from "unpdf";
+import { extractText, getDocumentProxy } from "../../../utils/pdf";
 import type { MeetingData, ParsedStatement } from "../../../utils/types";
 import type { HappoMeeting } from "./list";
 import { detectMeetingType, extractExternalId, fetchBinary } from "./shared";

@@ -8,7 +8,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { extractText } from "unpdf";
+import { extractText } from "../../../utils/pdf";
 import type { MeetingData, ParsedStatement } from "../../../utils/types";
 import { detectMeetingType, fetchBinary } from "./shared";
 

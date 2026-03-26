@@ -18,7 +18,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { getDocumentProxy } from "unpdf";
+import { getDocumentProxy } from "../../../utils/pdf";
 import type { MeetingData, ParsedStatement } from "../../../utils/types";
 import { fetchBinary } from "./shared";
 
