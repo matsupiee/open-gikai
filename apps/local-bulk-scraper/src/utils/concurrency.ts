@@ -1,6 +1,9 @@
 import { SharedSystemAdapterKey } from "@open-gikai/scrapers";
 import { extractGroupKey } from "./group-key";
 
+/** 全ホストグループを通じた同時実行数の上限 */
+const GLOBAL_HOST_GROUP_CONCURRENCY = 30;
+
 export function getHostConcurrency(groupKey: string): number {
   // discussnet-ssp: 十分な耐性がありそうなので増やす
   if (groupKey === "kaigiroku.net") return 10;
@@ -40,7 +43,19 @@ export async function runGroupedByHost(
     await Promise.all(executing);
   });
 
-  return Promise.all(hostTasks.map((t) => t())).then(() => undefined);
+  // ホストグループ間も並列数を制限する。
+  // カスタムアダプターは各自治体がそれぞれ独立したホストグループになるため、
+  // 制限なしだと数百の同時 HTTP 接続が発生し、タイムアウトや接続エラーで
+  // サイレントに 0 件になる自治体が多発する。
+  const executing = new Set<Promise<void>>();
+  for (const task of hostTasks) {
+    const p: Promise<void> = task().finally(() => executing.delete(p));
+    executing.add(p);
+    if (executing.size >= GLOBAL_HOST_GROUP_CONCURRENCY) {
+      await Promise.race(executing);
+    }
+  }
+  await Promise.all(executing);
 }
 
 // --- fetchDetail の並列数（アダプター種別ごと） ---
