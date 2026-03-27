@@ -1,4 +1,4 @@
-import { createReadStream, existsSync, unlinkSync } from "node:fs";
+import { createReadStream } from "node:fs";
 import { createInterface } from "node:readline";
 import type { Db } from "../../src/index";
 import { municipalities } from "../../src/schema/municipalities";
@@ -82,9 +82,13 @@ async function importDirectory(
     crlfDelay: Infinity,
   })) {
     const m = parseMeetingNdjsonLine(line);
-    if (!m) continue;
+    if (!m) {
+      throw new Error(`meetings.ndjson のパースに失敗: ${line.slice(0, 200)}`);
+    }
     allKnownMeetingIds.add(m.id);
-    if (!m.heldOn) continue;
+    if (!m.heldOn) {
+      throw new Error(`meetings.ndjson に heldOn が未設定の会議があります: id=${m.id}`);
+    }
     meetingRows.push(m);
   }
 
@@ -98,15 +102,19 @@ async function importDirectory(
       crlfDelay: Infinity,
     })) {
       const s = parseStatementNdjsonLine(line);
-      if (!s) continue;
-      if (!allKnownMeetingIds.has(s.meetingId)) {
-        // meetings.ndjson に存在しない meetingId → データ不整合
-        console.log(`[import]   ${label}: 存在しない meetingId を検出 → NDJSON 削除`);
-        unlinkSync(statementsPath);
-        if (existsSync(meetingsPath)) unlinkSync(meetingsPath);
-        return;
+      if (!s) {
+        throw new Error(`statements.ndjson のパースに失敗: ${line.slice(0, 200)}`);
       }
-      if (!insertableMeetingIds.has(s.meetingId)) continue; // heldOn が null の会議に紐づく発言はスキップ
+      if (!allKnownMeetingIds.has(s.meetingId)) {
+        throw new Error(
+          `statements.ndjson に meetings.ndjson に存在しない meetingId があります: meetingId=${s.meetingId}`,
+        );
+      }
+      if (!insertableMeetingIds.has(s.meetingId)) {
+        throw new Error(
+          `statements.ndjson に heldOn 未設定の会議に紐づく発言があります: meetingId=${s.meetingId}`,
+        );
+      }
       statementRows.push(s);
     }
   }
