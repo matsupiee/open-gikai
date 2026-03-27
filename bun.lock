@@ -149,6 +149,7 @@
         "drizzle-kit": "^0.31.8",
         "pg": "^8.17.1",
         "typescript": "catalog:",
+        "vitest": "^4.1.0",
       },
     },
     "packages/notification": {
