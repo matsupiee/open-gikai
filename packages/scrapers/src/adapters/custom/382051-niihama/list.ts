@@ -51,8 +51,9 @@ export function parseListPage(html: string, _year: number): NiihamaDocument[] {
     const sectionHtml = html.slice(startIdx, endIdx);
 
     // セクション内のリンクを抽出
+    // 2024以降は /site/gikai/、2023以前は /soshiki/gikai/ パスを使用する
     const linkRegex =
-      /<a\s+href="(\/site\/gikai\/kaigiroku(\d{4})-(\d+)-(\d+)\.html)"[^>]*>([^<]+)<\/a>/gi;
+      /<a\s+href="(\/(?:site|soshiki)\/gikai\/kaigiroku(\d{4})-(\d+)-(\d+)\.html)"[^>]*>([^<]+)<\/a>/gi;
 
     for (const linkMatch of sectionHtml.matchAll(linkRegex)) {
       const path = linkMatch[1]!;
