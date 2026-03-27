@@ -137,6 +137,18 @@ describe("isMeetingMinutes", () => {
   it("単なる「日程」は false", () => {
     expect(isMeetingMinutes("日程")).toBe(false);
   });
+
+  it("「定例会」を含む月日テキスト（第1回定例会　3月5日）は true", () => {
+    expect(isMeetingMinutes("第1回定例会　3月5日")).toBe(true);
+  });
+
+  it("「臨時会」を含む月日テキストは true", () => {
+    expect(isMeetingMinutes("第2回臨時会　5月1日")).toBe(true);
+  });
+
+  it("「会議録」なしの月日のみのテキスト（3月5日）は true", () => {
+    expect(isMeetingMinutes("3月5日")).toBe(true);
+  });
 });
 
 describe("parseIndexPage", () => {
