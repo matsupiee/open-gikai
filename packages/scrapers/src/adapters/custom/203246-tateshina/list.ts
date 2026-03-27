@@ -45,9 +45,9 @@ export interface TateshinaSessionInfo {
  */
 export function parseYearPageUrls(html: string): string[] {
   const urls: string[] = [];
-  // li.dir 内の a タグを抽出（href に kaigiroku/ を含む index.html）
+  // li 内の a タグを抽出（href に kaigiroku/ を含む index.html）
   const pattern =
-    /<li[^>]*class="[^"]*dir[^"]*"[^>]*>[\s\S]*?<a\s+href="([^"]*kaigiroku\/[^"]+\/index\.html)"[^>]*>/gi;
+    /<li[^>]*>[\s\S]*?<a\s+href="([^"]*kaigiroku\/[^"]+\/index\.html)"[^>]*>/gi;
   let m: RegExpExecArray | null;
 
   while ((m = pattern.exec(html)) !== null) {
@@ -108,9 +108,9 @@ export function parsePdfLinks(
 ): Array<{ url: string; text: string }> {
   const links: Array<{ url: string; text: string }> = [];
 
-  // a.pdf クラスを持つリンクを抽出
+  // href が .pdf で終わる a タグを抽出
   const pattern =
-    /<a\s[^>]*class="[^"]*\bpdf\b[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+    /<a\s[^>]*href="([^"]+\.pdf)"[^>]*>([\s\S]*?)<\/a>/gi;
   let m: RegExpExecArray | null;
 
   while ((m = pattern.exec(html)) !== null) {
