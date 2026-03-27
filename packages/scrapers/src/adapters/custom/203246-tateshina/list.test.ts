@@ -77,7 +77,7 @@ describe("parseYearPageUrls", () => {
     `;
 
     const result = parseYearPageUrls(html);
-    expect(result).toHaveLength(1);
+    expect(result).toHaveLength(2);
   });
 
   it("li.dir がない場合は空配列を返す", () => {
@@ -116,7 +116,7 @@ describe("parseSessionLinks", () => {
 
     const result = parseSessionLinks(html, "6");
 
-    expect(result).toHaveLength(1);
+    expect(result).toHaveLength(2);
     expect(result[0]!.title).toBe("令和6年第1回");
   });
 
@@ -128,7 +128,7 @@ describe("parseSessionLinks", () => {
 
     const result = parseSessionLinks(html, "2335");
 
-    expect(result).toHaveLength(1);
+    expect(result).toHaveLength(2);
     expect(result[0]!.title).toBe("令和7年");
   });
 
@@ -177,14 +177,15 @@ describe("parsePdfLinks", () => {
     );
   });
 
-  it("a.pdf クラスがない場合は除外する", () => {
+  it("PDF 拡張子のすべてのリンクを抽出する", () => {
     const html = `
-      <a href="/material/files/group/3/test.pdf">PDF リンク（クラスなし）</a>
+      <a href="/material/files/group/3/test.pdf">PDF リンク</a>
       <a class="pdf" href="//www.town.tateshina.nagano.jp/material/files/group/3/valid.pdf">有効</a>
     `;
     const result = parsePdfLinks(html);
-    expect(result).toHaveLength(1);
-    expect(result[0]!.text).toBe("有効");
+    expect(result).toHaveLength(2);
+    expect(result[0]!.text).toBe("PDF リンク");
+    expect(result[1]!.text).toBe("有効");
   });
 
   it("PDF リンクがない場合は空配列を返す", () => {
