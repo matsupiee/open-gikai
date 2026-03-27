@@ -5,7 +5,12 @@
  * 〇 / ◎ マーカーをもとに発言を分割する。
  */
 
+import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
+import { unlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { promisify } from "node:util";
 import type { MeetingData, ParsedStatement } from "../../../utils/types";
 import {
   buildExternalId,
@@ -89,6 +94,9 @@ const HONORIFIC_OPTIONAL_SUFFIXES = [
   "主査",
   "補佐",
 ];
+
+const execFileAsync = promisify(execFile);
+const PDFTEXT_MAX_BUFFER = 25_000_000;
 
 function normalizeText(text: string): string {
   return toHalfWidth(text)
@@ -302,22 +310,69 @@ export function parseStatements(text: string): ParsedStatement[] {
   return statements;
 }
 
-async function fetchPdfText(pdfUrl: string): Promise<string | null> {
-  try {
-    const { extractText, getDocumentProxy } = await import("../../../utils/pdf");
-    const buffer = await fetchBinary(pdfUrl);
-    if (!buffer) return null;
+function isUsableExtractedText(text: string): boolean {
+  if (text.trim().length === 0) return false;
+  if (parseHeldOnFromText(text) === null) return false;
+  return parseStatements(text).length > 0;
+}
 
-    const pdf = await getDocumentProxy(new Uint8Array(buffer));
-    const { text } = await extractText(pdf, { mergePages: true });
-    return text;
+async function extractWithPdftotext(
+  buffer: ArrayBuffer,
+  pdfUrl: string,
+): Promise<string | null> {
+  const tmpPath = join(tmpdir(), `futaba_${Date.now()}.pdf`);
+
+  try {
+    await writeFile(tmpPath, Buffer.from(buffer));
+    const { stdout } = await execFileAsync("pdftotext", ["-layout", tmpPath, "-"], {
+      maxBuffer: PDFTEXT_MAX_BUFFER,
+    });
+    return stdout.trim().length > 0 ? stdout : null;
   } catch (err) {
     console.warn(
-      `[075469-futaba] PDF 取得失敗: ${pdfUrl}`,
+      `[075469-futaba] pdftotext failed: ${pdfUrl}`,
+      err instanceof Error ? err.message : err,
+    );
+    return null;
+  } finally {
+    await unlink(tmpPath).catch(() => {});
+  }
+}
+
+async function extractWithUnpdf(
+  buffer: ArrayBuffer,
+  pdfUrl: string,
+): Promise<string | null> {
+  try {
+    const { extractText, getDocumentProxy } = await import("../../../utils/pdf");
+    const pdf = await getDocumentProxy(new Uint8Array(buffer));
+    const { text } = await extractText(pdf, { mergePages: true });
+    return text.trim().length > 0 ? text : null;
+  } catch (err) {
+    console.warn(
+      `[075469-futaba] unpdf extract failed: ${pdfUrl}`,
       err instanceof Error ? err.message : err,
     );
     return null;
   }
+}
+
+async function fetchPdfText(pdfUrl: string): Promise<string | null> {
+  const buffer = await fetchBinary(pdfUrl);
+  if (!buffer) return null;
+  const fallbackBuffer = buffer.slice(0);
+
+  const unpdfText = await extractWithUnpdf(buffer, pdfUrl);
+  if (unpdfText && isUsableExtractedText(unpdfText)) {
+    return unpdfText;
+  }
+
+  const pdftotextText = await extractWithPdftotext(fallbackBuffer, pdfUrl);
+  if (pdftotextText && isUsableExtractedText(pdftotextText)) {
+    return pdftotextText;
+  }
+
+  return unpdfText ?? pdftotextText;
 }
 
 /**
