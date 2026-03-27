@@ -4,7 +4,8 @@
  * 議事録トップページをスクレイピングし、各会議セッションのPDFリンクを収集する。
  *
  * ページ構造:
- *   - h4 タグ: 会議セッション名 (例: 令和7年第4回議会定例会)
+ *   - h4 タグ: 会議セッション名 (例: 令和7年第4回議会定例会) ← 令和5年第4回以降の新しいセッション
+ *   - p > strong タグ: 会議セッション名 ← 令和5年第3回以前の古いセッション
  *   - a タグ: PDF リンク (uploads/ パスを含む)
  *
  * URL 構造:
@@ -58,16 +59,21 @@ export interface SessionInfo {
 export function parseSessionsFromHtml(html: string, year: number): OaraiPdfRecord[] {
   const records: OaraiPdfRecord[] = [];
 
-  // h4 タグとそれに続くコンテンツを処理
-  // h4 タグを区切りとして HTML を分割
-  const h4Pattern = /<h4[^>]*>([\s\S]*?)<\/h4>/gi;
+  // ページ構造の注記:
+  // 新しいセッション（令和5年第4回以降）は <h4> タグを使用。
+  // 古いセッション（令和5年第3回以前）は <p><strong>...</strong></p> タグを使用。
+  // 両方のパターンを組み合わせて全セッションを抽出する。
+  const headingPattern =
+    /(?:<h4[^>]*>([\s\S]*?)<\/h4>|<p[^>]*><strong>([\s\S]*?)<\/strong><\/p>)/gi;
 
-  // まず全ての h4 の位置とテキストを取得
+  // まず全ての見出しの位置とテキストを取得
   const sessions: Array<{ title: string; start: number; end: number }> = [];
   let m: RegExpExecArray | null;
 
-  while ((m = h4Pattern.exec(html)) !== null) {
-    const rawTitle = m[1]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  while ((m = headingPattern.exec(html)) !== null) {
+    const rawTitle = (m[1] ?? m[2])!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    // 議会セッション名のみを対象にする（令和・平成を含む見出し）
+    if (!parseWarekiYear(rawTitle)) continue;
     sessions.push({
       title: rawTitle,
       start: m.index,
