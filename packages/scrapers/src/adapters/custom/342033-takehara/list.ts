@@ -252,6 +252,8 @@ export function parseYearPage(
     let pdfUrl: string;
     if (href.startsWith("http")) {
       pdfUrl = href;
+    } else if (href.startsWith("//")) {
+      pdfUrl = `https:${href}`;
     } else if (href.startsWith("/")) {
       pdfUrl = `${BASE_ORIGIN}${href}`;
     } else {

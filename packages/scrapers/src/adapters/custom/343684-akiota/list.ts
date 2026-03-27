@@ -98,7 +98,7 @@ export function parsePdfLinks(html: string): AkiotaSessionInfo[] {
 
   // PDF リンクを全件抽出し、直前の h2 セクションと紐付ける
   const pdfPattern =
-    /<a\s[^>]*href="(\/uploaded\/life\/[^"]+\.pdf)"[^>]*>([^<]+)<\/a>/gi;
+    /<a\s[^>]*href="(\/uploaded\/[^"]+\.pdf)"[^>]*>([^<]+)<\/a>/gi;
 
   let pdfMatch: RegExpExecArray | null;
   while ((pdfMatch = pdfPattern.exec(html)) !== null) {
@@ -107,7 +107,7 @@ export function parsePdfLinks(html: string): AkiotaSessionInfo[] {
 
     // メタ情報を正規表現で抽出
     const metaPattern =
-      /^(令和|平成)(\d+)年第(\d+)回安芸太田町議会(定例会|臨時会)会議録（(\d+)月(\d+)日）/;
+      /^(令和|平成)(\d+)年第(\d+)回安芸太田町議会(定例会|臨時会)会議録[（(](\d+)月(\d+)日[）)]/;
     const meta = linkText.match(metaPattern);
     if (!meta) continue;
 
