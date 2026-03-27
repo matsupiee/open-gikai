@@ -250,7 +250,7 @@ export async function fetchMeetingList(
     const sessionHtml = await fetchPage(url);
     if (!sessionHtml) continue;
 
-    const meetings = parseSessionPage(sessionHtml, sessionName);
+    const meetings = parseSessionPage(sessionHtml, sessionName, year);
     for (const m of meetings) {
       if (!results.some((r) => r.pdfUrl === m.pdfUrl)) {
         results.push(m);

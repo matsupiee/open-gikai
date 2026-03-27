@@ -57,13 +57,10 @@ export function parseTopPage(
 function toAbsoluteUrl(href: string): string {
   if (href.startsWith("http")) return href;
   if (href.startsWith("/")) return `${BASE_ORIGIN}${href}`;
-  // 相対パス（例: "../page/dir012601.html" or "dir012601.html"）
+  // 相対パス（例: "../page/dir012601.html" or "../data/doc/file.pdf"）
   // サイト構造: https://www.town.ibaraki-yachiyo.lg.jp/page/dir{XXXXXX}.html
   const cleaned = href.replace(/^\.\.\//, "");
-  if (!cleaned.startsWith("/")) {
-    return `${BASE_ORIGIN}/${cleaned}`;
-  }
-  return `${BASE_ORIGIN}${cleaned}`;
+  return `${BASE_ORIGIN}/${cleaned}`;
 }
 
 /**

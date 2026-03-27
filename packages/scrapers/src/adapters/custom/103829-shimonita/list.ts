@@ -78,7 +78,8 @@ export function parseYearPageLinks(html: string): YearPageLink[] {
  * 古い形式（平成24年〜）: Excel/Word 由来のテーブルで会議種別セル + PDF リンクセル
  */
 export function parsePdfLinksFromYearPage(
-  html: string
+  html: string,
+  yearPageUrl?: string
 ): ShimonitaSessionInfo[] {
   // article.article 内を対象とする
   const articleMatch = html.match(
@@ -95,7 +96,7 @@ export function parsePdfLinksFromYearPage(
 
   // --- 古い形式パース ---
   // Excel/Word 由来のテーブルで、rowspan セルに会議種別名、隣セルに PDF リンク
-  const oldFormatResults = parseOldFormat(content);
+  const oldFormatResults = parseOldFormat(content, yearPageUrl);
   return oldFormatResults;
 }
 
@@ -158,7 +159,7 @@ export function parseNewFormat(content: string): ShimonitaSessionInfo[] {
  * 古い形式ページ（平成24年〜平成30年頃）のパース。
  * Excel/Word 由来のスタイル付きテーブルで、rowspan セルに会議種別名、隣セルに PDF リンク。
  */
-export function parseOldFormat(content: string): ShimonitaSessionInfo[] {
+export function parseOldFormat(content: string, yearPageUrl?: string): ShimonitaSessionInfo[] {
   const results: ShimonitaSessionInfo[] = [];
 
   // テーブル内のすべての <tr> を処理
@@ -198,7 +199,9 @@ export function parseOldFormat(content: string): ShimonitaSessionInfo[] {
 
       const pdfUrl = href.startsWith("http")
         ? href
-        : `${BASE_ORIGIN}${href.startsWith("/") ? href : `/${href}`}`;
+        : yearPageUrl
+          ? new URL(href, yearPageUrl).href
+          : `${BASE_ORIGIN}${href.startsWith("/") ? href : `/${href}`}`;
 
       const heldOn = parseDateFromPdfUrl(pdfUrl);
       const meetingType = detectMeetingType(currentHeading || linkText);
@@ -240,5 +243,5 @@ export async function fetchSessionList(
   const yearHtml = await fetchPage(targetLink.url);
   if (!yearHtml) return [];
 
-  return parsePdfLinksFromYearPage(yearHtml);
+  return parsePdfLinksFromYearPage(yearHtml, targetLink.url);
 }

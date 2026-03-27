@@ -70,6 +70,23 @@ describe("parseLinkText", () => {
     const result = parseLinkText("設楽町議会の概要について");
     expect(result).toBeNull();
   });
+
+  it("年が省略されたリンクテキストは year: null を返す", () => {
+    const result = parseLinkText("第1回臨時会会議録（2月17日）");
+    expect(result).not.toBeNull();
+    expect(result!.year).toBeNull();
+    expect(result!.session).toBe(1);
+    expect(result!.meetingKind).toBe("臨時会");
+  });
+
+  it("年が省略された定例会リンクテキストは year: null を返す", () => {
+    const result = parseLinkText("第３回定例会第２日");
+    expect(result).not.toBeNull();
+    expect(result!.year).toBeNull();
+    expect(result!.session).toBe(3);
+    expect(result!.meetingKind).toBe("定例会");
+    expect(result!.dayInSession).toBe(2);
+  });
 });
 
 describe("buildExternalId", () => {
@@ -172,5 +189,44 @@ describe("parseListPage", () => {
     expect(meetings[0]!.pdfUrl).toBe(
       "https://www.town.shitara.lg.jp/uploaded/attachment/4363.pdf"
     );
+  });
+
+  it("<h2> 見出しの年をリンクテキストが年なしのリンクに補完する", () => {
+    const html = `
+      <html><body>
+      <h2>令和３年</h2>
+      <p><a href="/uploaded/attachment/3000.pdf">第１回臨時会会議録（2月17日）</a></p>
+      <p><a href="/uploaded/attachment/3001.pdf">第２回定例会第１日</a></p>
+      </body></html>
+    `;
+
+    const meetings = parseListPage(html, 2021);
+
+    expect(meetings).toHaveLength(2);
+    expect(meetings[0]!.pdfUrl).toBe(
+      "https://www.town.shitara.lg.jp/uploaded/attachment/3000.pdf"
+    );
+    expect(meetings[0]!.title).toBe("令和3年第1回臨時会");
+    expect(meetings[0]!.meetingKind).toBe("臨時会");
+    expect(meetings[1]!.title).toBe("令和3年第2回定例会第1日");
+  });
+
+  it("見出しとリンク混在: 見出しの年と異なる年はスキップする", () => {
+    const html = `
+      <html><body>
+      <h2>令和４年</h2>
+      <p><a href="/uploaded/attachment/3100.pdf">第１回臨時会会議録</a></p>
+      <h2>令和３年</h2>
+      <p><a href="/uploaded/attachment/3000.pdf">第１回臨時会会議録</a></p>
+      </body></html>
+    `;
+
+    const meetings = parseListPage(html, 2021);
+
+    expect(meetings).toHaveLength(1);
+    expect(meetings[0]!.pdfUrl).toBe(
+      "https://www.town.shitara.lg.jp/uploaded/attachment/3000.pdf"
+    );
+    expect(meetings[0]!.title).toBe("令和3年第1回臨時会");
   });
 });
