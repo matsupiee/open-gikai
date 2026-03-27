@@ -70,7 +70,7 @@ export function parseMetaFromLinkText(text: string): {
 } | null {
   // パターン: {元号}{年}年第{回数}回({月}月){定例会|臨時会}会議録
   const match = text.match(
-    /(令和|平成)(元|\d+)年第(\d+)回\((\d+)月\)(定例会|臨時会)会議録/
+    /(令和|平成)(元|\d+)年第(\d+)回[（(](\d+)月[）)](定例会|臨時会)会議録/
   );
   if (!match) return null;
 
@@ -102,11 +102,11 @@ export function parseYearPage(html: string): GokaseMeeting[] {
 
   // 統合セレクタ: a.icon2 と a.pdf の両方に対応
   const linkRegex =
-    /<a[^>]+(?:class="(?:icon2|pdf)"[^>]*href="([^"]+\.pdf)"|href="([^"]+\.pdf)"[^>]*class="(?:icon2|pdf)")[^>]*>([\s\S]*?)<\/a>/gi;
+    /<a[^>]+href="([^"]+\.pdf)"[^>]*>([\s\S]*?)<\/a>/gi;
 
   for (const match of html.matchAll(linkRegex)) {
-    const href = (match[1] || match[2])!;
-    const linkText = match[3]!.replace(/<[^>]+>/g, "").trim();
+    const href = match[1]!;
+    const linkText = match[2]!.replace(/<[^>]+>/g, "").trim();
 
     const meta = parseMetaFromLinkText(linkText);
     if (!meta) continue;

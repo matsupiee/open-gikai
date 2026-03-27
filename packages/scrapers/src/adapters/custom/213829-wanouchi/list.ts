@@ -26,8 +26,8 @@ export function parseYearPage(html: string): WanouchiMeeting[] {
   const results: WanouchiMeeting[] = [];
   const seen = new Set<string>();
 
-  // href 属性から gikai*.pdf パターンのリンクを抽出
-  const linkRegex = /href="([^"]*wp-content\/uploads\/gikai(\d+)\.pdf)"/gi;
+  // href 属性から gikai*.pdf パターンのリンクを抽出（-N サフィックスも許容）
+  const linkRegex = /href="([^"]*wp-content\/uploads\/gikai(\d+)(?:-\d+)?\.pdf)"/gi;
 
   for (const match of html.matchAll(linkRegex)) {
     const href = match[1]!;
