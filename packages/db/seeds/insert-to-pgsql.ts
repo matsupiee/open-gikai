@@ -27,14 +27,8 @@ import { createDb, type Db } from "../src/index";
 import { municipalities } from "../src/schema/municipalities";
 import { meetings } from "../src/schema/meetings";
 import { statements } from "../src/schema/statements";
-import {
-  parseMeetingNdjsonLine,
-  type MeetingNdjsonRow,
-} from "./parse-data/meetings";
-import {
-  parseStatementNdjsonLine,
-  type StatementNdjsonRow,
-} from "./parse-data/statements";
+import { parseMeetingNdjsonLine, type MeetingNdjsonRow } from "./parse-data/meetings";
+import { parseStatementNdjsonLine, type StatementNdjsonRow } from "./parse-data/statements";
 
 // --- Setup ---
 
@@ -47,7 +41,7 @@ const dataDir = process.env.DATA_DIR
   ? resolve(process.env.DATA_DIR)
   : resolve(root, "data/minutes");
 
-const municipalitiesCsvPath = resolve(seedsDir, "data", "municipalities.csv");
+const municipalitiesCsvPath = resolve(root, "data", "municipalities.csv");
 
 const BATCH_SIZE = 100;
 
@@ -68,8 +62,7 @@ function collectNdjsonPaths(): {
 
   for (const yearEntry of readdirSync(dataDir)) {
     const yearDir = resolve(dataDir, yearEntry);
-    if (!statSync(yearDir).isDirectory() || !/^\d{4}$/.test(yearEntry))
-      continue;
+    if (!statSync(yearDir).isDirectory() || !/^\d{4}$/.test(yearEntry)) continue;
 
     for (const codeEntry of readdirSync(yearDir)) {
       const codeDir = resolve(yearDir, codeEntry);
@@ -95,16 +88,12 @@ async function main() {
   const { meetingsPaths, statementsPaths } = collectNdjsonPaths();
 
   if (meetingsPaths.length === 0) {
-    console.error(
-      `[import] NDJSON ファイルが見つかりません: ${dataDir}/{year}/{code}/`,
-    );
+    console.error(`[import] NDJSON ファイルが見つかりません: ${dataDir}/{year}/{code}/`);
     console.error("  先に scrape:ndjson を実行してください。");
     process.exit(1);
   }
 
-  console.log(
-    `[import] ${meetingsPaths.length} ディレクトリの NDJSON を検出`,
-  );
+  console.log(`[import] ${meetingsPaths.length} ディレクトリの NDJSON を検出`);
 
   const db = createDb(databaseUrl);
 
@@ -122,12 +111,8 @@ async function main() {
       const baseUrl = cols[5]?.replace(/"/g, "").trim() || null;
       const populationRaw = cols[6]?.replace(/"/g, "").trim();
       const populationYearRaw = cols[7]?.replace(/"/g, "").trim();
-      const population = populationRaw
-        ? parseInt(populationRaw, 10) || null
-        : null;
-      const populationYear = populationYearRaw
-        ? parseInt(populationYearRaw, 10) || null
-        : null;
+      const population = populationRaw ? parseInt(populationRaw, 10) || null : null;
+      const populationYear = populationYearRaw ? parseInt(populationYearRaw, 10) || null : null;
       return [{ code, name, prefecture, baseUrl, population, populationYear }];
     });
 
@@ -179,9 +164,7 @@ async function main() {
     `[import] ${insertedMeetingIds.size} 会議 INSERT 完了（${totalMeetings} 件中、重複 ${duplicateMeetings} 件スキップ）`,
   );
   if (skippedMeetingIds.size > 0) {
-    console.log(
-      `[import] ${skippedMeetingIds.size} 会議スキップ（heldOn が null）`,
-    );
+    console.log(`[import] ${skippedMeetingIds.size} 会議スキップ（heldOn が null）`);
   }
 
   // 2. statements の事前スキャン
@@ -221,9 +204,7 @@ async function main() {
   }
 
   // 3. statements（検証済みファイルのみ読み込み）
-  const validStatementsPaths = statementsPaths.filter(
-    (p) => !corruptedStatementFiles.has(p),
-  );
+  const validStatementsPaths = statementsPaths.filter((p) => !corruptedStatementFiles.has(p));
   console.log("[import] statements.ndjson を読み込み中...");
   let totalStatements = 0;
   let skippedStatements = 0;
@@ -257,9 +238,7 @@ async function main() {
   }
   console.log(`[import] ${totalStatements} 発言 INSERT 完了`);
   if (skippedStatements > 0) {
-    console.log(
-      `[import] ${skippedStatements} 発言スキップ（会議が除外済み）`,
-    );
+    console.log(`[import] ${skippedStatements} 発言スキップ（会議が除外済み）`);
   }
   if (failedBatches > 0) {
     console.log(`[import] ${failedBatches} バッチ失敗（FK 違反等）`);
@@ -272,10 +251,7 @@ async function main() {
   process.exit(0);
 }
 
-async function insertMeetings(
-  db: Db,
-  rows: MeetingNdjsonRow[],
-): Promise<string[]> {
+async function insertMeetings(db: Db, rows: MeetingNdjsonRow[]): Promise<string[]> {
   const result = await db
     .insert(meetings)
     .values(
@@ -294,10 +270,7 @@ async function insertMeetings(
   return result.map((r) => r.id);
 }
 
-async function insertStatements(
-  db: Db,
-  rows: StatementNdjsonRow[],
-): Promise<boolean> {
+async function insertStatements(db: Db, rows: StatementNdjsonRow[]): Promise<boolean> {
   try {
     await db
       .insert(statements)
@@ -320,9 +293,7 @@ async function insertStatements(
     const cause =
       err && typeof err === "object" && "cause" in err ? (err as { cause: unknown }).cause : err;
     const msg = cause instanceof Error ? cause.message : String(cause);
-    console.warn(
-      `[import] バッチ INSERT 失敗（${rows.length}件）: ${msg.slice(0, 300)}`,
-    );
+    console.warn(`[import] バッチ INSERT 失敗（${rows.length}件）: ${msg.slice(0, 300)}`);
     return false;
   }
 }
