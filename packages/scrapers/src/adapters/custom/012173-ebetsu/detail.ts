@@ -24,14 +24,15 @@ const ANSWER_ROLE_PATTERN =
   /^(市長|副市長|教育長)$|(?:部長|課長|室長|事務長|次長|局長|参事|主幹|技監|管理者)$/;
 
 /**
- * h2 タイトルからタイトルテキストを抽出する。
- * 「会議録」を含む or 「令和/平成」で始まる h2 を対象とする。
+ * h1/h2 タイトルからタイトルテキストを抽出する。
+ * 実際のサイトでは会議録タイトルは h1 に置かれる。
+ * 「会議録」を含む or 「令和/平成」で始まる h1/h2 を対象とする。
  */
 export function extractTitle(html: string): string | null {
-  const h2Regex = /<h2[^>]*>([\s\S]*?)<\/h2>/gi;
+  const headingRegex = /<(h[12])[^>]*>([\s\S]*?)<\/\1>/gi;
   let match: RegExpExecArray | null;
-  while ((match = h2Regex.exec(html)) !== null) {
-    const text = stripHtml(match[1]!).trim();
+  while ((match = headingRegex.exec(html)) !== null) {
+    const text = stripHtml(match[2]!).trim();
     if (text.includes("会議録") || /^(令和|平成)/.test(text)) {
       return text;
     }

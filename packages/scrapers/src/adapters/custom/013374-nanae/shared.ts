@@ -55,9 +55,13 @@ export function parseHeldOn(text: string): string | null {
 /**
  * 一覧ページのリンクテキストから西暦年を取得する。
  * 例: "令和6年(2024年)第4回七飯町議会定例会会議録（12月9日～12日）" -> 2024
+ * 例: "令和3年（2021年）第2回七飯町議会臨時会会議録（7月19日）" -> 2021
+ *
+ * サイト上で半角括弧 () と全角括弧 （） が混在しているため、両方にマッチさせる。
  */
 export function extractYearFromTitle(title: string): number | null {
-  const match = title.match(/\((\d{4})年\)/);
+  // 半角括弧 (2021年) と全角括弧 （2021年） の両方に対応
+  const match = title.match(/[（(](\d{4})年[）)]/);
   if (match?.[1]) {
     return parseInt(match[1], 10);
   }
