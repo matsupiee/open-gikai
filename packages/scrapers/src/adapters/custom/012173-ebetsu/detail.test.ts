@@ -2,7 +2,18 @@ import { describe, expect, it } from "vitest";
 import { parseSpeaker, classifyKind, parseStatements, extractTitle } from "./detail";
 
 describe("extractTitle", () => {
-  it("h2 から会議録タイトルを抽出する", () => {
+  it("h1 から会議録タイトルを抽出する（実サイト構造）", () => {
+    const html = `
+      <h1>令和7年第1回江別市議会定例会会議録（第1号）令和7年2月20日</h1>
+      <h2>1　出席議員</h2>
+      <h2>2　欠席議員</h2>
+    `;
+    expect(extractTitle(html)).toBe(
+      "令和7年第1回江別市議会定例会会議録（第1号）令和7年2月20日",
+    );
+  });
+
+  it("h2 から会議録タイトルを抽出する（フォールバック）", () => {
     const html = `
       <h2>サイトタイトル</h2>
       <h2>令和7年第1回江別市議会定例会会議録（第1号）令和7年2月20日</h2>
@@ -12,13 +23,13 @@ describe("extractTitle", () => {
     );
   });
 
-  it("会議録を含まない場合は令和/平成で始まる h2 を返す", () => {
-    const html = `<h2>令和7年第1回定例会 令和7年3月3日</h2>`;
+  it("会議録を含まない場合は令和/平成で始まる h1 を返す", () => {
+    const html = `<h1>令和7年第1回定例会 令和7年3月3日</h1>`;
     expect(extractTitle(html)).toBe("令和7年第1回定例会 令和7年3月3日");
   });
 
-  it("該当する h2 がなければ null を返す", () => {
-    const html = `<h2>江別市議会</h2>`;
+  it("該当する h1/h2 がなければ null を返す", () => {
+    const html = `<h1>江別市議会</h1><h2>出席議員</h2>`;
     expect(extractTitle(html)).toBeNull();
   });
 });
