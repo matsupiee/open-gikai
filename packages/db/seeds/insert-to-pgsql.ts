@@ -25,9 +25,7 @@ const root = resolve(seedsDir, "../../..");
 
 dotenv.config({ path: resolve(root, ".env.local"), override: true });
 
-const dataDir = process.env.DATA_DIR
-  ? resolve(process.env.DATA_DIR)
-  : resolve(root, "data/minutes");
+const dataDir = resolve(root, "data/minutes");
 
 const municipalitiesCsvPath = resolve(root, "data", "municipalities.csv");
 
@@ -41,7 +39,9 @@ async function main() {
   const targets = collectImportTargets(dataDir, { skipImported: false });
 
   if (targets.length === 0) {
-    console.log("[import] インポート対象のディレクトリがありません（_complete が存在するディレクトリなし）");
+    console.log(
+      "[import] インポート対象のディレクトリがありません（_complete が存在するディレクトリなし）",
+    );
     process.exit(0);
   }
 

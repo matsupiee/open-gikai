@@ -32,14 +32,20 @@ export function collectImportTargets(dataDir: string, options: CollectOptions): 
       const codeDir = resolve(yearDir, codeEntry);
       if (!statSync(codeDir).isDirectory()) continue;
 
+      // _complete が存在しない場合はスキップする
       const completePath = resolve(codeDir, "_complete");
       if (!existsSync(completePath)) continue;
+
+      // skipImported: true の場合、imported: true のディレクトリを除外する
       if (options.skipImported && isAlreadyImported(codeDir)) continue;
 
+      // meetings.ndjson が存在しない場合はスキップする
       const meetingsPath = resolve(codeDir, "meetings.ndjson");
       if (!existsSync(meetingsPath)) continue;
 
+      // statements.ndjson が存在しない場合はスキップする
       const statementsPath = resolve(codeDir, "statements.ndjson");
+      if (!existsSync(statementsPath)) continue;
 
       targets.push({
         codeDir,
