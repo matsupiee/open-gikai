@@ -97,7 +97,7 @@ export function parseReiwaFilename(filename: string): {
   isExtraordinary: boolean;
   issue: number;
 } | null {
-  const m = /^R(\d{2})_(\d+)(T|R)_(\d{2})\.pdf$/i.exec(filename);
+  const m = /^R(\d{2})_(\d+)(T|R)_(\d{1,2})\.pdf$/i.exec(filename);
   if (!m) return null;
   const reiwaYear = parseInt(m[1]!, 10);
   const session = parseInt(m[2]!, 10);

@@ -216,8 +216,7 @@ export async function fetchMeetingData(
   meeting: ShiogamaMeetingParams,
   municipalityCode: string,
 ): Promise<MeetingData | null> {
-  const heldOn = meeting.heldOn;
-  if (!heldOn) return null;
+  const heldOn = meeting.heldOn ?? `${meeting.year}-01-01`;
 
   const text = await fetchPdfText(meeting.pdfUrl);
   if (!text) return null;

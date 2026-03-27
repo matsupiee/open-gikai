@@ -223,7 +223,11 @@ export async function fetchMeetingData(
   params: MisawaDetailParams,
   municipalityCode: string
 ): Promise<MeetingData | null> {
-  if (!params.heldOn) return null;
+  const heldOnValue = params.heldOn ?? (() => {
+    const m = params.pdfUrl.match(/(\d{4})(\d{2})(\d{2})-\d{6}\.pdf$/);
+    return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
+  })();
+  if (!heldOnValue) return null;
 
   const text = await fetchPdfText(params.pdfUrl);
   if (!text) return null;
@@ -244,7 +248,7 @@ export async function fetchMeetingData(
     municipalityCode,
     title: params.title,
     meetingType: detectMeetingType(params.title),
-    heldOn: params.heldOn,
+    heldOn: heldOnValue,
     sourceUrl: params.pdfUrl,
     externalId,
     statements,
