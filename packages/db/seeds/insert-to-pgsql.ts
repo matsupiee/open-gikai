@@ -9,17 +9,10 @@
  *
  * - 直接 PostgreSQL 接続のため Supabase API 課金なし
  * - onConflictDoNothing で冪等（何度でも安全に再実行可能）
+ * - ディレクトリ単位で処理し、成功ごとに _complete に imported フラグを立てる
  */
 
-import {
-  createReadStream,
-  readFileSync,
-  writeFileSync,
-  existsSync,
-  readdirSync,
-  statSync,
-  unlinkSync,
-} from "node:fs";
+import { createReadStream, existsSync, unlinkSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline";
@@ -30,6 +23,9 @@ import { meetings } from "../src/schema/meetings";
 import { statements } from "../src/schema/statements";
 import { parseMeetingNdjsonLine, type MeetingNdjsonRow } from "./parse-data/meetings";
 import { parseStatementNdjsonLine, type StatementNdjsonRow } from "./parse-data/statements";
+import { collectImportTargets } from "./utils/collect-import-targets";
+import { markAsImported } from "./utils/complete-marker";
+import { parseMunicipalitiesCsv } from "./utils/parse-municipalities-csv";
 
 // --- Setup ---
 
@@ -48,78 +44,6 @@ const BATCH_SIZE = 100;
 
 // --- Main ---
 
-/**
- * _complete ファイルの中身を読み取り、imported フラグが立っているか確認する。
- * _complete が存在しない or imported: true → スキップ対象
- */
-function isAlreadyImported(codeDir: string): boolean {
-  const completePath = resolve(codeDir, "_complete");
-  if (!existsSync(completePath)) return false; // _complete がない → スキップ（収集しない）
-  try {
-    const data = JSON.parse(readFileSync(completePath, "utf-8"));
-    return data.imported === true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * _complete ファイルに imported フラグを書き込む。
- */
-function markAsImported(codeDir: string): void {
-  const completePath = resolve(codeDir, "_complete");
-  try {
-    const data = JSON.parse(readFileSync(completePath, "utf-8"));
-    data.imported = true;
-    data.importedAt = new Date().toISOString();
-    writeFileSync(completePath, JSON.stringify(data) + "\n");
-  } catch {
-    // _complete の読み込みに失敗した場合は何もしない
-  }
-}
-
-/**
- * data/minutes/ 配下の {year}/{municipalityCode}/ ディレクトリを走査し、
- * _complete が存在し、かつ import 完了フラグが立っていないディレクトリの
- * NDJSON ファイルのパスを収集する。
- */
-function collectNdjsonPaths(): {
-  meetingsPaths: string[];
-  statementsPaths: string[];
-  codeDirs: string[];
-} {
-  const meetingsPaths: string[] = [];
-  const statementsPaths: string[] = [];
-  const codeDirs: string[] = [];
-
-  if (!existsSync(dataDir)) return { meetingsPaths, statementsPaths, codeDirs };
-
-  for (const yearEntry of readdirSync(dataDir)) {
-    const yearDir = resolve(dataDir, yearEntry);
-    if (!statSync(yearDir).isDirectory() || !/^\d{4}$/.test(yearEntry)) continue;
-
-    for (const codeEntry of readdirSync(yearDir)) {
-      const codeDir = resolve(yearDir, codeEntry);
-      if (!statSync(codeDir).isDirectory()) continue;
-
-      // _complete がない or すでにインポート済み → スキップ
-      const completePath = resolve(codeDir, "_complete");
-      if (!existsSync(completePath)) continue;
-      if (isAlreadyImported(codeDir)) continue;
-
-      const mp = resolve(codeDir, "meetings.ndjson");
-      const sp = resolve(codeDir, "statements.ndjson");
-      if (existsSync(mp)) {
-        meetingsPaths.push(mp);
-        if (existsSync(sp)) statementsPaths.push(sp);
-        codeDirs.push(codeDir);
-      }
-    }
-  }
-
-  return { meetingsPaths, statementsPaths, codeDirs };
-}
-
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
@@ -127,35 +51,21 @@ async function main() {
     process.exit(1);
   }
 
-  const { meetingsPaths, statementsPaths, codeDirs } = collectNdjsonPaths();
+  const targets = collectImportTargets(dataDir);
 
-  if (meetingsPaths.length === 0) {
-    console.log(`[import] インポート対象のディレクトリがありません（_complete 未完了 or すべてインポート済み）`);
+  if (targets.length === 0) {
+    console.log("[import] インポート対象のディレクトリがありません（_complete 未完了 or すべてインポート済み）");
     process.exit(0);
   }
 
-  console.log(`[import] ${meetingsPaths.length} ディレクトリの NDJSON を検出（未インポート）`);
+  console.log(`[import] ${targets.length} ディレクトリの NDJSON を検出（未インポート）`);
 
   const db = createDb(databaseUrl);
 
   // 0. municipalities（FK 制約を満たすため先にインサート）
   if (existsSync(municipalitiesCsvPath)) {
     console.log("[import] municipalities.csv を読み込み中...");
-    const csvContent = readFileSync(municipalitiesCsvPath, "utf-8");
-    const csvLines = csvContent.split(/\r?\n/).slice(1);
-    const municipalityRows = csvLines.flatMap((line) => {
-      if (!line.trim()) return [];
-      const cols = line.split(",");
-      const code = cols[0]?.trim() ?? "";
-      const prefecture = cols[1]?.replace(/"/g, "").trim() ?? "";
-      const name = cols[2]?.replace(/"/g, "").trim() || prefecture;
-      const baseUrl = cols[5]?.replace(/"/g, "").trim() || null;
-      const populationRaw = cols[6]?.replace(/"/g, "").trim();
-      const populationYearRaw = cols[7]?.replace(/"/g, "").trim();
-      const population = populationRaw ? parseInt(populationRaw, 10) || null : null;
-      const populationYear = populationYearRaw ? parseInt(populationYearRaw, 10) || null : null;
-      return [{ code, name, prefecture, baseUrl, population, populationYear }];
-    });
+    const municipalityRows = parseMunicipalitiesCsv(municipalitiesCsvPath);
 
     for (let i = 0; i < municipalityRows.length; i += BATCH_SIZE) {
       const chunk = municipalityRows.slice(i, i + BATCH_SIZE);
@@ -164,138 +74,114 @@ async function main() {
     console.log(`[import] ${municipalityRows.length} 自治体 INSERT 完了`);
   }
 
-  // 1. meetings（全ディレクトリを順に読み込み）
-  // heldOn が null の会議はスキップし、そのIDを記録して statements でもフィルタする
-  console.log("[import] meetings.ndjson を読み込み中...");
+  // ディレクトリ単位で処理
+  let totalDirs = 0;
+  let failedDirs = 0;
+
+  for (const target of targets) {
+    const label = target.codeDir.replace(dataDir + "/", "");
+    try {
+      await importDirectory(db, target.meetingsPath, target.statementsPath, label);
+      markAsImported(target.codeDir);
+      totalDirs++;
+      console.log(`[import] ✓ ${label} インポート完了・フラグ記録`);
+    } catch (err) {
+      failedDirs++;
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[import] ✗ ${label} 失敗: ${msg.slice(0, 300)}`);
+    }
+  }
+
+  console.log("[import] 完了!");
+  console.log(`  成功: ${totalDirs} ディレクトリ`);
+  if (failedDirs > 0) {
+    console.log(`  失敗: ${failedDirs} ディレクトリ`);
+  }
+
+  process.exit(failedDirs > 0 ? 1 : 0);
+}
+
+async function importDirectory(
+  db: Db,
+  meetingsPath: string,
+  statementsPath: string | null,
+  label: string,
+): Promise<void> {
+  // 1. meetings
   const insertedMeetingIds = new Set<string>();
-  const skippedMeetingIds = new Set<string>();
-  // 全 meetings.ndjson に存在する meetingId を記録（FK 検証用）
   const allKnownMeetingIds = new Set<string>();
   let totalMeetings = 0;
   let meetingBatch: MeetingNdjsonRow[] = [];
 
-  for (const filePath of meetingsPaths) {
-    for await (const line of createInterface({
-      input: createReadStream(filePath),
-      crlfDelay: Infinity,
-    })) {
-      const m = parseMeetingNdjsonLine(line);
-      if (!m) continue;
-      allKnownMeetingIds.add(m.id);
-      if (!m.heldOn) {
-        skippedMeetingIds.add(m.id);
-        continue;
-      }
-      meetingBatch.push(m);
-      totalMeetings++;
+  for await (const line of createInterface({
+    input: createReadStream(meetingsPath),
+    crlfDelay: Infinity,
+  })) {
+    const m = parseMeetingNdjsonLine(line);
+    if (!m) continue;
+    allKnownMeetingIds.add(m.id);
+    if (!m.heldOn) continue;
+    meetingBatch.push(m);
+    totalMeetings++;
 
-      if (meetingBatch.length >= BATCH_SIZE) {
-        const inserted = await insertMeetings(db, meetingBatch);
-        for (const id of inserted) insertedMeetingIds.add(id);
-        meetingBatch = [];
-      }
+    if (meetingBatch.length >= BATCH_SIZE) {
+      const inserted = await insertMeetings(db, meetingBatch);
+      for (const id of inserted) insertedMeetingIds.add(id);
+      meetingBatch = [];
     }
   }
   if (meetingBatch.length > 0) {
     const inserted = await insertMeetings(db, meetingBatch);
     for (const id of inserted) insertedMeetingIds.add(id);
   }
-  const duplicateMeetings = totalMeetings - insertedMeetingIds.size;
-  console.log(
-    `[import] ${insertedMeetingIds.size} 会議 INSERT 完了（${totalMeetings} 件中、重複 ${duplicateMeetings} 件スキップ）`,
-  );
-  if (skippedMeetingIds.size > 0) {
-    console.log(`[import] ${skippedMeetingIds.size} 会議スキップ（heldOn が null）`);
-  }
 
-  // 2. statements の事前スキャン
-  // allKnownMeetingIds に存在しない meetingId を含むファイルを特定し、
-  // そのファイル（自治体）をまるごとスキップ＆削除する
-  console.log("[import] statements.ndjson を検証中...");
-  const corruptedStatementFiles = new Set<string>();
+  if (!statementsPath) return;
 
-  for (const filePath of statementsPaths) {
-    for await (const line of createInterface({
-      input: createReadStream(filePath),
-      crlfDelay: Infinity,
-    })) {
-      const s = parseStatementNdjsonLine(line);
-      if (!s) continue;
-      if (!allKnownMeetingIds.has(s.meetingId)) {
-        corruptedStatementFiles.add(filePath);
-        break;
-      }
+  // 2. statements の事前検証（不正 meetingId チェック）
+  let corrupted = false;
+  for await (const line of createInterface({
+    input: createReadStream(statementsPath),
+    crlfDelay: Infinity,
+  })) {
+    const s = parseStatementNdjsonLine(line);
+    if (!s) continue;
+    if (!allKnownMeetingIds.has(s.meetingId)) {
+      corrupted = true;
+      break;
     }
   }
 
-  // 不正な meetingId を含む NDJSON ファイルを削除
-  if (corruptedStatementFiles.size > 0) {
-    console.log(
-      `[import] ${corruptedStatementFiles.size} ファイルに存在しない meetingId を検出 → 削除します`,
-    );
-    for (const statementsFile of corruptedStatementFiles) {
-      const meetingsFile = resolve(dirname(statementsFile), "meetings.ndjson");
-      console.log(`[import]   削除: ${statementsFile}`);
-      unlinkSync(statementsFile);
-      if (existsSync(meetingsFile)) {
-        console.log(`[import]   削除: ${meetingsFile}`);
-        unlinkSync(meetingsFile);
-      }
-    }
+  if (corrupted) {
+    console.log(`[import]   ${label}: 存在しない meetingId を検出 → NDJSON 削除`);
+    unlinkSync(statementsPath);
+    if (existsSync(meetingsPath)) unlinkSync(meetingsPath);
+    return;
   }
 
-  // 3. statements（検証済みファイルのみ読み込み）
-  const validStatementsPaths = statementsPaths.filter((p) => !corruptedStatementFiles.has(p));
-  console.log("[import] statements.ndjson を読み込み中...");
+  // 3. statements
   let totalStatements = 0;
-  let skippedStatements = 0;
-  let failedBatches = 0;
   let stmtBatch: StatementNdjsonRow[] = [];
 
-  for (const filePath of validStatementsPaths) {
-    for await (const line of createInterface({
-      input: createReadStream(filePath),
-      crlfDelay: Infinity,
-    })) {
-      const s = parseStatementNdjsonLine(line);
-      if (!s) continue;
-      if (!insertedMeetingIds.has(s.meetingId)) {
-        skippedStatements++;
-        continue;
-      }
-      stmtBatch.push(s);
-      totalStatements++;
+  for await (const line of createInterface({
+    input: createReadStream(statementsPath),
+    crlfDelay: Infinity,
+  })) {
+    const s = parseStatementNdjsonLine(line);
+    if (!s) continue;
+    if (!insertedMeetingIds.has(s.meetingId)) continue;
+    stmtBatch.push(s);
+    totalStatements++;
 
-      if (stmtBatch.length >= BATCH_SIZE) {
-        const ok = await insertStatements(db, stmtBatch);
-        if (!ok) failedBatches++;
-        stmtBatch = [];
-      }
+    if (stmtBatch.length >= BATCH_SIZE) {
+      await insertStatements(db, stmtBatch);
+      stmtBatch = [];
     }
   }
   if (stmtBatch.length > 0) {
-    const ok = await insertStatements(db, stmtBatch);
-    if (!ok) failedBatches++;
-  }
-  console.log(`[import] ${totalStatements} 発言 INSERT 完了`);
-  if (skippedStatements > 0) {
-    console.log(`[import] ${skippedStatements} 発言スキップ（会議が除外済み）`);
-  }
-  if (failedBatches > 0) {
-    console.log(`[import] ${failedBatches} バッチ失敗（FK 違反等）`);
+    await insertStatements(db, stmtBatch);
   }
 
-  // インポート完了フラグを _complete ファイルに書き込む
-  for (const codeDir of codeDirs) {
-    markAsImported(codeDir);
-  }
-  console.log(`[import] ${codeDirs.length} ディレクトリにインポート完了フラグを記録`);
-
-  console.log("[import] 完了!");
-  console.log(`  会議: ${totalMeetings}`);
-  console.log(`  発言: ${totalStatements}`);
-
-  process.exit(0);
+  console.log(`[import]   ${label}: ${totalMeetings} 会議, ${totalStatements} 発言`);
 }
 
 async function insertMeetings(db: Db, rows: MeetingNdjsonRow[]): Promise<string[]> {
@@ -317,32 +203,23 @@ async function insertMeetings(db: Db, rows: MeetingNdjsonRow[]): Promise<string[
   return result.map((r) => r.id);
 }
 
-async function insertStatements(db: Db, rows: StatementNdjsonRow[]): Promise<boolean> {
-  try {
-    await db
-      .insert(statements)
-      .values(
-        rows.map((s) => ({
-          id: s.id,
-          meetingId: s.meetingId,
-          kind: s.kind,
-          speakerName: s.speakerName ?? null,
-          speakerRole: s.speakerRole ?? null,
-          content: s.content,
-          contentHash: s.contentHash,
-          startOffset: s.startOffset ?? null,
-          endOffset: s.endOffset ?? null,
-        })),
-      )
-      .onConflictDoNothing();
-    return true;
-  } catch (err: unknown) {
-    const cause =
-      err && typeof err === "object" && "cause" in err ? (err as { cause: unknown }).cause : err;
-    const msg = cause instanceof Error ? cause.message : String(cause);
-    console.warn(`[import] バッチ INSERT 失敗（${rows.length}件）: ${msg.slice(0, 300)}`);
-    return false;
-  }
+async function insertStatements(db: Db, rows: StatementNdjsonRow[]): Promise<void> {
+  await db
+    .insert(statements)
+    .values(
+      rows.map((s) => ({
+        id: s.id,
+        meetingId: s.meetingId,
+        kind: s.kind,
+        speakerName: s.speakerName ?? null,
+        speakerRole: s.speakerRole ?? null,
+        content: s.content,
+        contentHash: s.contentHash,
+        startOffset: s.startOffset ?? null,
+        endOffset: s.endOffset ?? null,
+      })),
+    )
+    .onConflictDoNothing();
 }
 
 main().catch((err) => {

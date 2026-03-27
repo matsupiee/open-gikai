@@ -21,7 +21,9 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:migrate": "drizzle-kit migrate",
-    "db:import": "bun run seeds/insert-to-pgsql.ts"
+    "db:import": "bun run seeds/insert-to-pgsql.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^3.3.0",
@@ -35,6 +37,7 @@
     "@types/pg": "^8.16.0",
     "drizzle-kit": "^0.31.8",
     "pg": "^8.17.1",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^4.1.0"
   }
 }
