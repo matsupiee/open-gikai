@@ -100,6 +100,9 @@ export function parseDateFromLinkText(rawText: string, year: number): string | n
  *
  * h1.c-secTtl span.c-secTtl_label から会議種別（タイトル）を取得し、
  * 直後の ul.c-fileList 内の PDF リンクと紐付ける。
+ *
+ * フォールバック: CSS クラスセレクターで結果が 0 件の場合、
+ * 令和3年など旧ページで使われる plain <h2> + <ul> 構造を解析する。
  */
 export function parseYearPage(html: string, pageYear: number): RankoshiMeeting[] {
   const results: RankoshiMeeting[] = [];
@@ -118,7 +121,10 @@ export function parseYearPage(html: string, pageYear: number): RankoshiMeeting[]
     headings.push({ title: rawTitle, position: hm.index, year: titleYear });
   }
 
-  if (headings.length === 0) return results;
+  if (headings.length === 0) {
+    // フォールバック: plain <h2> + <ul> 構造（令和3年など旧ページ）
+    return parseYearPageFallback(html, pageYear);
+  }
 
   // ul.c-fileList 内の PDF リンクを取得
   const fileListPattern = /<ul[^>]*class="[^"]*c-fileList[^"]*"[^>]*>([\s\S]*?)<\/ul>/gi;
@@ -151,6 +157,76 @@ export function parseYearPage(html: string, pageYear: number): RankoshiMeeting[]
         pdfUrl = href;
       } else {
         // 相対パスを正規化: ../../ や ../ プレフィックスを除去して絶対パスに
+        const normalizedHref = href.replace(/^(\.\.\/)+/, "/");
+        pdfUrl = `${BASE_ORIGIN}${normalizedHref.startsWith("/") ? "" : "/"}${normalizedHref}`;
+      }
+
+      const heldOn = parseDateFromLinkText(linkText, currentHeading.year);
+
+      results.push({
+        pdfUrl,
+        title: currentHeading.title,
+        heldOn,
+        year: currentHeading.year,
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * フォールバック: plain <h2> + <ul> 構造のページを解析する。
+ *
+ * 令和3年など旧ページでは CSS クラスを持たない <h2> と <ul> が使われる:
+ *   <h2>令和３年蘭越町議会第１回定例会</h2>
+ *   <ul>
+ *     <li><a href="...pdf">...</a></li>
+ *   </ul>
+ */
+function parseYearPageFallback(html: string, pageYear: number): RankoshiMeeting[] {
+  const results: RankoshiMeeting[] = [];
+
+  // plain <h2> 見出しを収集
+  const headingPattern = /<h2[^>]*>([\s\S]*?)<\/h2>/gi;
+  const headings: { title: string; position: number; year: number }[] = [];
+  let hm: RegExpExecArray | null;
+  while ((hm = headingPattern.exec(html)) !== null) {
+    const rawTitle = hm[1]!.replace(/<[^>]+>/g, "").trim();
+    if (!rawTitle) continue;
+    const titleYear = eraToWesternYear(rawTitle) ?? pageYear;
+    headings.push({ title: rawTitle, position: hm.index, year: titleYear });
+  }
+
+  if (headings.length === 0) return results;
+
+  // plain <ul> 内の PDF リンクを取得
+  const ulPattern = /<ul[^>]*>([\s\S]*?)<\/ul>/gi;
+  let fm: RegExpExecArray | null;
+  while ((fm = ulPattern.exec(html)) !== null) {
+    const listPosition = fm.index;
+    const listContent = fm[1]!;
+
+    // このリストの直前の見出しを探す
+    let currentHeading: (typeof headings)[0] | null = null;
+    for (const h of headings) {
+      if (h.position < listPosition) {
+        currentHeading = h;
+      }
+    }
+    if (!currentHeading) continue;
+
+    // ul 内の PDF a タグを抽出
+    const linkPattern = /<a[^>]+href="([^"]*\.pdf)"[^>]*>([\s\S]*?)<\/a>/gi;
+    let am: RegExpExecArray | null;
+    while ((am = linkPattern.exec(listContent)) !== null) {
+      const href = am[1]!;
+      const linkText = am[2]!.replace(/<[^>]+>/g, "").trim();
+
+      let pdfUrl: string;
+      if (href.startsWith("http")) {
+        pdfUrl = href;
+      } else {
         const normalizedHref = href.replace(/^(\.\.\/)+/, "/");
         pdfUrl = `${BASE_ORIGIN}${normalizedHref.startsWith("/") ? "" : "/"}${normalizedHref}`;
       }

@@ -53,17 +53,18 @@ export function normalizeLinkText(text: string): string {
  *
  * <div class="richtext"> 内の <ul> <li> <a> タグを解析する。
  * リンクテキストに「令和」または「平成」が含まれるものを対象とする。
+ *
+ * フォールバック: richtext div が存在しない場合はページ全体から
+ * 同じ条件でリンクを抽出する。
  */
 export function parseTopPage(html: string): ShakotanYearLink[] {
   const results: ShakotanYearLink[] = [];
 
-  // richtext div 内のコンテンツを抽出
+  // richtext div 内のコンテンツを抽出、なければページ全体を使う
   const richtextMatch = html.match(
     /<div\s[^>]*class="[^"]*richtext[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
   );
-  if (!richtextMatch) return results;
-
-  const content = richtextMatch[1]!;
+  const content = richtextMatch ? richtextMatch[1]! : html;
 
   // a タグを抽出
   const linkPattern = /<a\s[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
@@ -89,6 +90,8 @@ export function parseTopPage(html: string): ShakotanYearLink[] {
  * 年度別ページ HTML から PDF リンクを抽出する。
  *
  * <div class="richtext"> 内の .pdf で終わる href を持つ <a> タグを収集する。
+ *
+ * フォールバック: richtext div が存在しない場合はページ全体から PDF リンクを抽出する。
  */
 export function parseYearPage(
   html: string,
@@ -96,13 +99,11 @@ export function parseYearPage(
 ): ShakotanPdfLink[] {
   const results: ShakotanPdfLink[] = [];
 
-  // richtext div 内のコンテンツを抽出
+  // richtext div 内のコンテンツを抽出、なければページ全体を使う
   const richtextMatch = html.match(
     /<div\s[^>]*class="[^"]*richtext[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
   );
-  if (!richtextMatch) return results;
-
-  const content = richtextMatch[1]!;
+  const content = richtextMatch ? richtextMatch[1]! : html;
 
   // a タグを抽出
   const linkPattern = /<a\s[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;

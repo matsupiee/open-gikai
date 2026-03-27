@@ -25,12 +25,13 @@ export interface YonezawaMeeting {
 /**
  * 議事録 PDF の URL かどうかを判定する。
  * スケジュール PDF（teireikainittei_）や要旨 PDF（youshi_）はスキップする。
+ * 旧形式のファイル名（例: 93494617.pdf, 1762_4.pdf）も含め、
+ * 上記の除外対象以外の PDF はすべて議事録として扱う。
  */
 function isTranscriptPdf(filename: string): boolean {
   if (filename.startsWith("teireikainittei")) return false;
   if (filename.startsWith("youshi")) return false;
-  // 議事録 PDF パターン: r{XX}-{MM}{t|r}-{NN}-{MMDD}.pdf
-  return /^[rh]\d{2}-\d{2}[tr]-\d{2}-\d{4}\.pdf$/i.test(filename);
+  return filename.toLowerCase().endsWith(".pdf");
 }
 
 /**
@@ -159,11 +160,29 @@ export function parseIndexPage(
 }
 
 /**
+ * リンクテキストから開催日を抽出する（旧ファイル名形式のフォールバック）。
+ * e.g., "3月20日（金曜日）" + year=2021 → "2021-03-20"
+ */
+function parseDateFromLinkText(
+  linkText: string,
+  year: number
+): string | null {
+  const match = linkText.match(/(\d{1,2})月(\d{1,2})日/);
+  if (!match) return null;
+  const month = parseInt(match[1]!, 10);
+  const day = parseInt(match[2]!, 10);
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/**
  * セッションページ HTML から議事録 PDF リンクを抽出する。
+ * year が指定された場合、ファイル名から日付が取得できない旧形式のファイルに対して
+ * リンクテキストから日付を抽出するフォールバックを使用する。
  */
 export function parseSessionPage(
   html: string,
-  sessionName: string
+  sessionName: string,
+  year?: number
 ): YonezawaMeeting[] {
   const meetings: YonezawaMeeting[] = [];
 
@@ -172,6 +191,7 @@ export function parseSessionPage(
 
   for (const match of html.matchAll(pdfLinkPattern)) {
     let href = match[1]!;
+    const linkText = match[2]!.trim();
 
     // protocol-relative URL を https に変換
     if (href.startsWith("//")) {
@@ -183,7 +203,11 @@ export function parseSessionPage(
     const filename = href.split("/").pop() ?? "";
     if (!isTranscriptPdf(filename)) continue;
 
-    const heldOn = parseDateFromFilename(filename);
+    // ファイル名から日付を抽出し、取得できない場合はリンクテキストにフォールバック
+    let heldOn = parseDateFromFilename(filename);
+    if (!heldOn && year !== undefined) {
+      heldOn = parseDateFromLinkText(linkText, year);
+    }
     if (!heldOn) continue;
 
     // 重複チェック

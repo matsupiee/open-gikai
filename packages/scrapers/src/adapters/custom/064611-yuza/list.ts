@@ -71,7 +71,7 @@ export function parseYearPageUrls(html: string): string[] {
 /**
  * 年度別ページの HTML から PDF リンクとメタ情報を抽出する（テスト可能な純粋関数）。
  *
- * PDF URL パターン: /uploads/contents/archive_0000002698_00/{ファイル名}.pdf
+ * PDF URL パターン: /uploads/contents/archive_\d+_\d+/{ファイル名}.pdf
  * リンクテキスト: 第{回数}遊佐町議会{種別}会（令和{年}年{月}月{日}日開会）
  *
  * year が指定された場合、そのカレンダー年に該当する会議録のみ返す。
@@ -83,8 +83,9 @@ export function parseYearPage(
   const results: YuzaMeeting[] = [];
 
   // PDF リンクを抽出（日本語ファイル名を含む可能性があるため href 内の文字を広く取る）
+  // archive ID は年度によって異なるため動的にマッチする（例: archive_0000002698_00, archive_0000002020_00）
   const linkPattern =
-    /<a[^>]+href="([^"]*\/uploads\/contents\/archive_0000002698_00\/[^"]+\.pdf)"[^>]*>([\s\S]*?)<\/a>/gi;
+    /<a[^>]+href="([^"]*\/uploads\/contents\/archive_\d+_\d+\/[^"]+\.pdf)"[^>]*>([\s\S]*?)<\/a>/gi;
 
   for (const match of html.matchAll(linkPattern)) {
     const rawHref = match[1]!;
