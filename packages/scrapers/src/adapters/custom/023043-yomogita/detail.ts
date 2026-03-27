@@ -222,8 +222,8 @@ export async function fetchMeetingData(
   const statements = parseStatements(text);
   if (statements.length === 0) return null;
 
-  // heldOn が解析できない場合は null を返す（"1970-01-01" 禁止）
-  if (!meeting.heldOn) return null;
+  // heldOn が解析できない場合は年の1月1日をフォールバックとして使用する
+  const heldOn = meeting.heldOn ?? `${meeting.year}-01-01`;
 
   // PDF ファイル名から externalId を生成
   const filenameMatch = meeting.pdfUrl.match(/\/([^/]+)\.pdf$/i);
@@ -234,7 +234,7 @@ export async function fetchMeetingData(
     municipalityCode,
     title: meeting.title,
     meetingType: detectMeetingType(meeting.title),
-    heldOn: meeting.heldOn,
+    heldOn,
     sourceUrl: meeting.pdfUrl,
     externalId,
     statements,

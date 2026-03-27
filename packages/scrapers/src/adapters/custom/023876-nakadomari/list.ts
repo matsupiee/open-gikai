@@ -56,8 +56,8 @@ export function parseYearPage(
 ): NakadomariDocument[] {
   const documents: NakadomariDocument[] = [];
 
-  // h3 タグを見つけて会議ブロックを構成する
-  const h3Regex = /<h3[^>]*>([\s\S]*?)<\/h3>/gi;
+  // h2/h3 タグを見つけて会議ブロックを構成する（年によって h2 か h3 が使われる）
+  const h3Regex = /<h[23][^>]*>([\s\S]*?)<\/h[23]>/gi;
   const h3Matches = Array.from(html.matchAll(h3Regex));
 
   for (let i = 0; i < h3Matches.length; i++) {
