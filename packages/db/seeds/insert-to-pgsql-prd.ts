@@ -1,15 +1,15 @@
 /**
- * NDJSON から PostgreSQL DB にインサートするスクリプト（ローカル用）
+ * NDJSON から PostgreSQL DB にインサートするスクリプト（本番用）
  *
  * data/minutes/ の meetings.ndjson / statements.ndjson を読み込み、
  * バッチ INSERT でデータベースに投入する。
  *
  * 使い方:
- *   DATABASE_URL="postgresql://..." bun run db:import
+ *   DATABASE_URL_FOR_PRD_IMPORT="postgresql://..." bun run db:import:prd
  *
- * - _complete が存在するディレクトリをすべて処理する（imported フラグは無視）
- * - imported フラグの記録は行わない
- * - 本番 DB へのインポートには db:import:prd を使用すること
+ * - _complete が存在し、かつ imported フラグが立っていないディレクトリのみ処理する
+ * - 各ディレクトリの処理成功後に _complete へ imported フラグを記録する
+ * - 途中でエラーが起きても、完了済みディレクトリのフラグは保持される
  */
 
 import { resolve, dirname } from "node:path";
@@ -32,30 +32,30 @@ const dataDir = process.env.DATA_DIR
 const municipalitiesCsvPath = resolve(root, "data", "municipalities.csv");
 
 async function main() {
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = process.env.DATABASE_URL_FOR_PRD_IMPORT;
   if (!databaseUrl) {
-    console.error("[import] DATABASE_URL が設定されていません");
+    console.error("[import:prd] DATABASE_URL_FOR_PRD_IMPORT が設定されていません");
     process.exit(1);
   }
 
-  const targets = collectImportTargets(dataDir, { skipImported: false });
+  const targets = collectImportTargets(dataDir, { skipImported: true });
 
   if (targets.length === 0) {
-    console.log("[import] インポート対象のディレクトリがありません（_complete が存在するディレクトリなし）");
+    console.log("[import:prd] インポート対象のディレクトリがありません（_complete 未完了 or すべてインポート済み）");
     process.exit(0);
   }
 
-  console.log(`[import] ${targets.length} ディレクトリの NDJSON を検出`);
+  console.log(`[import:prd] ${targets.length} ディレクトリの NDJSON を検出（未インポート）`);
 
   const db = createDb(databaseUrl);
   const csvPath = existsSync(municipalitiesCsvPath) ? municipalitiesCsvPath : null;
 
   const { totalDirs, failedDirs } = await importAll(db, targets, dataDir, {
     municipalitiesCsvPath: csvPath,
-    markImported: false,
+    markImported: true,
   });
 
-  console.log("[import] 完了!");
+  console.log("[import:prd] 完了!");
   console.log(`  成功: ${totalDirs} ディレクトリ`);
   if (failedDirs > 0) {
     console.log(`  失敗: ${failedDirs} ディレクトリ`);
@@ -65,6 +65,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("[import] Fatal error:", err);
+  console.error("[import:prd] Fatal error:", err);
   process.exit(1);
 });

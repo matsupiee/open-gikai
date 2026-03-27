@@ -8,11 +8,18 @@ export interface ImportTarget {
   statementsPath: string | null;
 }
 
+export interface CollectOptions {
+  /** true の場合、imported 済みディレクトリをスキップする（本番用） */
+  skipImported: boolean;
+}
+
 /**
  * data/minutes/ 配下の {year}/{municipalityCode}/ ディレクトリを走査し、
- * _complete が存在し、かつ imported フラグが立っていないディレクトリを返す。
+ * _complete が存在するディレクトリを返す。
+ *
+ * skipImported: true の場合、imported フラグが立っているディレクトリを除外する。
  */
-export function collectImportTargets(dataDir: string): ImportTarget[] {
+export function collectImportTargets(dataDir: string, options: CollectOptions): ImportTarget[] {
   const targets: ImportTarget[] = [];
 
   if (!existsSync(dataDir)) return targets;
@@ -27,7 +34,7 @@ export function collectImportTargets(dataDir: string): ImportTarget[] {
 
       const completePath = resolve(codeDir, "_complete");
       if (!existsSync(completePath)) continue;
-      if (isAlreadyImported(codeDir)) continue;
+      if (options.skipImported && isAlreadyImported(codeDir)) continue;
 
       const meetingsPath = resolve(codeDir, "meetings.ndjson");
       if (!existsSync(meetingsPath)) continue;
