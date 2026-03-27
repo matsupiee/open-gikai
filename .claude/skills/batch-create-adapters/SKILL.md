@@ -31,23 +31,13 @@ ls docs/custom-scraping/*.md
 
 引数で件数が指定されていればその件数分だけ取得する。
 
-### Step 1.5: 情報不足ファイルのスキップ
-
-各 `.md` ファイルの行数を確認し、**20行以下のファイルはスキップ** する。行数が少ないファイルはスクレイピング方針の情報が不足しており、アダプター実装に必要な詳細（HTML 構造、URL パターン等）が欠けている可能性が高い。
-
-```bash
-wc -l docs/custom-scraping/*.md | awk '$1 <= 20 && $2 != "total" { print $2 }'
-```
-
-スキップしたファイル名は進捗報告時にまとめて表示する。スキップしたファイルは削除しない。
-
-### Step 1.7: 既存アダプターのスキップ（CRITICAL）
+### Step 1.5: 既存アダプターのスキップ（CRITICAL）
 
 **アダプターが既に存在する自治体はバッチ対象から除外する。** 過去に `/create-custom-adapter` で個別作成されたアダプターの `docs/custom-scraping/*.md` が残っている場合があるため、必ずこのチェックを行う。
 
 手順:
 
-1. `packages/db/src/seeds/municipalities.csv` から自治体名→自治体コードのマッピングを取得
+1. `data/municipalities.csv` から自治体名→自治体コードのマッピングを取得
 2. 各 `.md` ファイルのファイル名（拡張子なし）に対応する自治体コードを特定
 3. `packages/scrapers/src/adapters/custom/` 配下に `{コード}-*` ディレクトリが既に存在するか確認
 4. **既に存在する自治体は「既存スキップ」リストに追加し、バッチ対象から除外する**
@@ -102,7 +92,7 @@ gh pr merge --merge --auto
 手順は /create-custom-adapter スキルに従ってください。
 具体的には:
 1. docs/custom-scraping/{ファイル名}.md を読んでスクレイピング方針を把握
-2. packages/db/src/seeds/municipalities.csv から自治体コードを特定
+2. data/municipalities.csv から自治体コードを特定
 3. packages/scrapers/src/adapters/custom/{コード}-{名前}/ にアダプターを実装
 4. テストを書いて通す
 5. 型チェックを通す
