@@ -14,6 +14,7 @@
 import {
   createReadStream,
   readFileSync,
+  writeFileSync,
   existsSync,
   readdirSync,
   statSync,
@@ -48,17 +49,50 @@ const BATCH_SIZE = 100;
 // --- Main ---
 
 /**
+ * _complete ファイルの中身を読み取り、imported フラグが立っているか確認する。
+ * _complete が存在しない or imported: true → スキップ対象
+ */
+function isAlreadyImported(codeDir: string): boolean {
+  const completePath = resolve(codeDir, "_complete");
+  if (!existsSync(completePath)) return false; // _complete がない → スキップ（収集しない）
+  try {
+    const data = JSON.parse(readFileSync(completePath, "utf-8"));
+    return data.imported === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * _complete ファイルに imported フラグを書き込む。
+ */
+function markAsImported(codeDir: string): void {
+  const completePath = resolve(codeDir, "_complete");
+  try {
+    const data = JSON.parse(readFileSync(completePath, "utf-8"));
+    data.imported = true;
+    data.importedAt = new Date().toISOString();
+    writeFileSync(completePath, JSON.stringify(data) + "\n");
+  } catch {
+    // _complete の読み込みに失敗した場合は何もしない
+  }
+}
+
+/**
  * data/minutes/ 配下の {year}/{municipalityCode}/ ディレクトリを走査し、
- * 全 NDJSON ファイルのパスを収集する。
+ * _complete が存在し、かつ import 完了フラグが立っていないディレクトリの
+ * NDJSON ファイルのパスを収集する。
  */
 function collectNdjsonPaths(): {
   meetingsPaths: string[];
   statementsPaths: string[];
+  codeDirs: string[];
 } {
   const meetingsPaths: string[] = [];
   const statementsPaths: string[] = [];
+  const codeDirs: string[] = [];
 
-  if (!existsSync(dataDir)) return { meetingsPaths, statementsPaths };
+  if (!existsSync(dataDir)) return { meetingsPaths, statementsPaths, codeDirs };
 
   for (const yearEntry of readdirSync(dataDir)) {
     const yearDir = resolve(dataDir, yearEntry);
@@ -68,14 +102,22 @@ function collectNdjsonPaths(): {
       const codeDir = resolve(yearDir, codeEntry);
       if (!statSync(codeDir).isDirectory()) continue;
 
+      // _complete がない or すでにインポート済み → スキップ
+      const completePath = resolve(codeDir, "_complete");
+      if (!existsSync(completePath)) continue;
+      if (isAlreadyImported(codeDir)) continue;
+
       const mp = resolve(codeDir, "meetings.ndjson");
       const sp = resolve(codeDir, "statements.ndjson");
-      if (existsSync(mp)) meetingsPaths.push(mp);
-      if (existsSync(sp)) statementsPaths.push(sp);
+      if (existsSync(mp)) {
+        meetingsPaths.push(mp);
+        if (existsSync(sp)) statementsPaths.push(sp);
+        codeDirs.push(codeDir);
+      }
     }
   }
 
-  return { meetingsPaths, statementsPaths };
+  return { meetingsPaths, statementsPaths, codeDirs };
 }
 
 async function main() {
@@ -85,15 +127,14 @@ async function main() {
     process.exit(1);
   }
 
-  const { meetingsPaths, statementsPaths } = collectNdjsonPaths();
+  const { meetingsPaths, statementsPaths, codeDirs } = collectNdjsonPaths();
 
   if (meetingsPaths.length === 0) {
-    console.error(`[import] NDJSON ファイルが見つかりません: ${dataDir}/{year}/{code}/`);
-    console.error("  先に scrape:ndjson を実行してください。");
-    process.exit(1);
+    console.log(`[import] インポート対象のディレクトリがありません（_complete 未完了 or すべてインポート済み）`);
+    process.exit(0);
   }
 
-  console.log(`[import] ${meetingsPaths.length} ディレクトリの NDJSON を検出`);
+  console.log(`[import] ${meetingsPaths.length} ディレクトリの NDJSON を検出（未インポート）`);
 
   const db = createDb(databaseUrl);
 
@@ -243,6 +284,12 @@ async function main() {
   if (failedBatches > 0) {
     console.log(`[import] ${failedBatches} バッチ失敗（FK 違反等）`);
   }
+
+  // インポート完了フラグを _complete ファイルに書き込む
+  for (const codeDir of codeDirs) {
+    markAsImported(codeDir);
+  }
+  console.log(`[import] ${codeDirs.length} ディレクトリにインポート完了フラグを記録`);
 
   console.log("[import] 完了!");
   console.log(`  会議: ${totalMeetings}`);
