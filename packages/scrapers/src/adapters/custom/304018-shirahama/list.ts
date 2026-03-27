@@ -41,14 +41,15 @@ const INTER_REQUEST_DELAY_MS = 1500;
  */
 export function extractKakoPageUrls(html: string): string[] {
   const urls: string[] = [];
-  const pattern = /href="(\/soshiki\/gikai\/gyomu\/kaigiroku\/kako\/[^"]+\.html)"/g;
+  const pattern = /href="((?:https?:\/\/[^"]*)?\/soshiki\/gikai\/gyomu\/kaigiroku\/kako\/[^"]+\.html)"/g;
 
   for (const match of html.matchAll(pattern)) {
-    const path = match[1];
-    if (!path) continue;
+    const rawHref = match[1];
+    if (!rawHref) continue;
     // インデックスページ自体は除外
-    if (path.endsWith("index.html")) continue;
-    const url = `${BASE_ORIGIN}${path}`;
+    if (rawHref.endsWith("index.html")) continue;
+    // 絶対 URL の場合はそのまま使用、相対パスの場合は BASE_ORIGIN を付加
+    const url = rawHref.startsWith("http") ? rawHref : `${BASE_ORIGIN}${rawHref}`;
     if (!urls.includes(url)) {
       urls.push(url);
     }

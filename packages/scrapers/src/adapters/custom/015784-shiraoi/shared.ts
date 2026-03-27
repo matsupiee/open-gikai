@@ -94,13 +94,20 @@ export function parseJapaneseDate(text: string): string | null {
 }
 
 /**
- * PDF ファイル名（日付形式: YYYY.MM.DD...）から YYYY-MM-DD を返す。
+ * PDF ファイル名（日付形式: YYYY.MM.DD または YYYYMMDD...）から YYYY-MM-DD を返す。
  * e.g., "2024.06.14_____.pdf" → "2024-06-14"
+ * e.g., "20210224giansetumei2gatu.pdf" → "2021-02-24"
  */
 export function parseDateFromFilename(filename: string): string | null {
-  const match = filename.match(/(\d{4})\.(\d{2})\.(\d{2})/);
-  if (!match) return null;
-  return `${match[1]}-${match[2]}-${match[3]}`;
+  // YYYY.MM.DD 形式
+  const dotMatch = filename.match(/(\d{4})\.(\d{2})\.(\d{2})/);
+  if (dotMatch) return `${dotMatch[1]}-${dotMatch[2]}-${dotMatch[3]}`;
+
+  // YYYYMMDD 形式（ファイル名先頭）
+  const compactMatch = filename.match(/^(\d{4})(\d{2})(\d{2})/);
+  if (compactMatch) return `${compactMatch[1]}-${compactMatch[2]}-${compactMatch[3]}`;
+
+  return null;
 }
 
 /** HTML タグを除去してプレーンテキストを返す */

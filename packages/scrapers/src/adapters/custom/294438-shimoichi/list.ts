@@ -28,19 +28,24 @@ export function parseCategoryPage(html: string): ShimoimchiMeetingRef[] {
   const results: ShimoimchiMeetingRef[] = [];
   const seen = new Set<string>();
 
-  // /{数字ID}.html 形式のリンクを抽出
+  // /{数字ID}.html 形式のリンクを抽出（相対パスと絶対 URL の両方に対応）
   // "category/" や "soshiki/" などを含む URL は除外
-  const linkPattern = /href="(\/(\d+)\.html)"/g;
+  const linkPattern = /href="((?:https?:\/\/[^"]*)?\/(\d+)\.html)"/g;
 
   for (const match of html.matchAll(linkPattern)) {
-    const path = match[1]!;
+    const rawHref = match[1]!;
     const numericId = match[2]!;
 
     if (seen.has(numericId)) continue;
     seen.add(numericId);
 
+    // 絶対 URL の場合はそのまま使用、相対パスの場合は BASE_ORIGIN を付加
+    const pageUrl = rawHref.startsWith("http")
+      ? rawHref
+      : `${BASE_ORIGIN}${rawHref}`;
+
     results.push({
-      pageUrl: `${BASE_ORIGIN}${path}`,
+      pageUrl,
       numericId,
     });
   }
