@@ -164,7 +164,13 @@ export function parseYearPage(
       const month = parseInt(dateMatch[1]!, 10);
       const day = parseInt(dateMatch[2]!, 10);
 
-      const heldOn = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      // 年度をまたぐケース: 1-3月は翌年
+      let sessionYear = year;
+      if (month >= 1 && month <= 3) {
+        sessionYear = year + 1;
+      }
+
+      const heldOn = `${sessionYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
       // PDF の絶対 URL を構築
       let pdfUrl: string;
