@@ -70,10 +70,16 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer | null> {
  * アンカーテキストから開催日 (YYYY-MM-DD) を抽出する。
  *
  * パターン: "初　日（R6.12.05）" "２日目（R6.12.06）" "１日限り（R6.06.14）"
- * 和暦略号: R = 令和, H = 平成
+ *           "（Ｒ3.12.08）" のように全角のＲ/Ｈや全角数字を含む場合も対応
+ * 和暦略号: R/Ｒ = 令和, H/Ｈ = 平成
  */
 export function extractDateFromLabel(label: string): string | null {
-  const match = label.match(/[（(]([RH])(\d+)\.(\d+)\.(\d+)[)）]/);
+  // 全角数字・全角Ｒ/Ｈを半角に正規化してからマッチする
+  const normalized = label
+    .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/Ｒ/g, "R")
+    .replace(/Ｈ/g, "H");
+  const match = normalized.match(/[（(]([RH])(\d+)\.(\d+)\.(\d+)[)）]/);
   if (!match) return null;
 
   const era = match[1]!;
