@@ -8,13 +8,8 @@
  * `pdftotext -layout` を優先し、失敗時は unpdf をフォールバックに使う。
  */
 
-import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { unlink, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { promisify } from "node:util";
-import { extractText, getDocumentProxy } from "../../../utils/pdf";
+import { extractPdfText } from "../../../utils/pdf";
 import type { MeetingData, ParsedStatement } from "../../../utils/types";
 import type { AmamiMeeting } from "./list";
 import {
@@ -26,7 +21,6 @@ import {
   normalizeFullWidth,
 } from "./shared";
 
-const execFileAsync = promisify(execFile);
 const PDFTEXT_MAX_BUFFER = 25_000_000;
 
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
@@ -382,40 +376,6 @@ export function extractHeldOn(rawText: string, title: string): string | null {
   return toIsoDate(titleYear, parseInt(monthDayMatch[1]!, 10), parseInt(monthDayMatch[2]!, 10));
 }
 
-async function extractWithPdftotext(buffer: ArrayBuffer, pdfUrl: string): Promise<string | null> {
-  const tmpPath = join(tmpdir(), `amami_${Date.now()}.pdf`);
-
-  try {
-    await writeFile(tmpPath, Buffer.from(buffer));
-    const { stdout } = await execFileAsync("pdftotext", ["-layout", tmpPath, "-"], {
-      maxBuffer: PDFTEXT_MAX_BUFFER,
-    });
-    return stdout.trim().length > 0 ? stdout : null;
-  } catch (err) {
-    console.warn(
-      `[462225-amami] pdftotext failed: ${pdfUrl}`,
-      err instanceof Error ? err.message : err,
-    );
-    return null;
-  } finally {
-    await unlink(tmpPath).catch(() => {});
-  }
-}
-
-async function extractWithUnpdf(buffer: ArrayBuffer, pdfUrl: string): Promise<string | null> {
-  try {
-    const pdf = await getDocumentProxy(new Uint8Array(buffer));
-    const { text } = await extractText(pdf, { mergePages: true });
-    return text.trim().length > 0 ? text : null;
-  } catch (err) {
-    console.warn(
-      `[462225-amami] unpdf extract failed: ${pdfUrl}`,
-      err instanceof Error ? err.message : err,
-    );
-    return null;
-  }
-}
-
 /**
  * PDF URL からテキストを取得する。
  */
@@ -423,10 +383,12 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
   const buffer = await fetchBinary(pdfUrl);
   if (!buffer) return null;
 
-  const pdftotextText = await extractWithPdftotext(buffer, pdfUrl);
-  if (pdftotextText) return pdftotextText;
-
-  return extractWithUnpdf(buffer, pdfUrl);
+  return extractPdfText(buffer, {
+    maxBuffer: PDFTEXT_MAX_BUFFER,
+    pdfUrl,
+    strategy: ["pdftotext", "unpdf"],
+    tempPrefix: "amami",
+  });
 }
 
 function extractExternalIdKey(pdfUrl: string): string | null {
