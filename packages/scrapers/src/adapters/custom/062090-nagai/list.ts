@@ -79,8 +79,8 @@ export function parseYearPage(
       ? href
       : `${BASE_ORIGIN}${href.startsWith("/") ? "" : "/"}${href}`;
 
-    // 会期別ページは soshiki 配下にある（トップページへのリンクを除外）
-    if (!url.includes("/soshiki/")) continue;
+    // トップページへのリンクを除外（kaigiroku/index.html 等）
+    if (url.endsWith("/kaigiroku/index.html") || url.endsWith("/shigikai/index.html")) continue;
 
     // 重複チェック
     if (results.some((r) => r.url === url)) continue;

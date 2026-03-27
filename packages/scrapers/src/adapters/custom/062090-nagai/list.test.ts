@@ -130,6 +130,28 @@ describe("parseYearPage", () => {
     const results = parseYearPage(YEAR_HTML);
     expect(results.every((r) => !r.url.includes("index.html"))).toBe(true);
   });
+
+  it("令和3年形式（/shigikai/kaigiroku/R3/ 配下）のURLも抽出する", () => {
+    const r3Html = `
+<div class="section">
+  <ul>
+    <li><a href="/shigikai/kaigiroku/R3/9759.html">1月臨時会、3月定例会会議録</a></li>
+    <li><a href="/shigikai/kaigiroku/R3/9818.html">5月臨時会、6月定例会会議録</a></li>
+    <li><a href="/shigikai/kaigiroku/R3/10327.html">9月定例会会議録</a></li>
+    <li><a href="/shigikai/kaigiroku/R3/10326.html">12月定例会会議録</a></li>
+    <li><a href="/shigikai/kaigiroku/index.html">会議録トップへ戻る</a></li>
+  </ul>
+</div>
+`;
+    const results = parseYearPage(r3Html);
+
+    expect(results.length).toBe(4);
+    expect(results[0]!.url).toBe(
+      "https://www.city.nagai.yamagata.jp/shigikai/kaigiroku/R3/9759.html",
+    );
+    expect(results[0]!.sessionName).toBe("1月臨時会、3月定例会会議録");
+    expect(results.every((r) => !r.url.endsWith("/kaigiroku/index.html"))).toBe(true);
+  });
 });
 
 const SESSION_HTML = `
