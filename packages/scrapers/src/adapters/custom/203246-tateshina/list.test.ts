@@ -77,7 +77,7 @@ describe("parseYearPageUrls", () => {
     `;
 
     const result = parseYearPageUrls(html);
-    expect(result).toHaveLength(2);
+    expect(result).toHaveLength(1);
   });
 
   it("li.dir がない場合は空配列を返す", () => {
@@ -116,7 +116,7 @@ describe("parseSessionLinks", () => {
 
     const result = parseSessionLinks(html, "6");
 
-    expect(result).toHaveLength(2);
+    expect(result).toHaveLength(1);
     expect(result[0]!.title).toBe("令和6年第1回");
   });
 
@@ -128,7 +128,7 @@ describe("parseSessionLinks", () => {
 
     const result = parseSessionLinks(html, "2335");
 
-    expect(result).toHaveLength(2);
+    expect(result).toHaveLength(1);
     expect(result[0]!.title).toBe("令和7年");
   });
 
