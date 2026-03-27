@@ -118,7 +118,33 @@ export function resolveUrl(href: string, baseUrl: string): string {
 }
 
 /**
- * 一覧ページの HTML をパースして PDF リンク情報を返す（テスト可能な純粋関数）。
+ * HTML の詳細ページ URL（.html）のファイル名部分から日付を推定する。
+ *
+ * URL パターン: "2021-0415-1040-1.html" → year=2021, month=4, day=15
+ */
+export function parseHtmlFilenameDate(filename: string): {
+  year: number;
+  month: number;
+  day: number;
+} | null {
+  // パターン: "YYYY-MMDD-HHMM(-N).html"
+  const match = filename.match(/^(\d{4})-(\d{2})(\d{2})-\d+/);
+  if (match) {
+    return {
+      year: Number(match[1]),
+      month: Number(match[2]),
+      day: Number(match[3]),
+    };
+  }
+  return null;
+}
+
+/**
+ * 一覧ページの HTML をパースして PDF / HTML リンク情報を返す（テスト可能な純粋関数）。
+ *
+ * 収集対象:
+ *   - href に files/*.pdf を含む直接 PDF リンク
+ *   - href に gikaidayori/*.html を含む詳細ページリンク（2021年以前の形式）
  */
 export function parseListPage(html: string): ShimojoDayori[] {
   const results: ShimojoDayori[] = [];
@@ -158,6 +184,51 @@ export function parseListPage(html: string): ShimojoDayori[] {
 
     results.push({
       pdfUrl,
+      title,
+      heldOn: buildHeldOn(dateInfo.year, dateInfo.month, dateInfo.day),
+      section: "議会だより",
+    });
+  }
+
+  // HTML 詳細ページリンクを収集（gikaidayori/ 配下の .html、files/ や index を除く）
+  const htmlLinkPattern =
+    /<a[^>]+href="([^"]*gikaidayori\/(\d{4}-\d{4}-\d+-[^"]+\.html))"[^>]*>([\s\S]*?)<\/a>/gi;
+
+  const seenUrls = new Set(results.map((r) => r.pdfUrl));
+
+  for (const match of html.matchAll(htmlLinkPattern)) {
+    const href = match[1]!;
+    const filename = match[2]!;
+    const linkText = match[3]!.replace(/<[^>]+>/g, "").trim();
+
+    const pageUrl = resolveUrl(href, GIKAIDAYORI_BASE_URL);
+    if (seenUrls.has(pageUrl)) continue;
+    seenUrls.add(pageUrl);
+
+    // ファイル名から日付を推定
+    const filenameDate = parseHtmlFilenameDate(filename);
+
+    // リンクテキストから日付を試みる
+    const textDate = parsePublishDate(linkText);
+
+    const dateInfo = textDate ?? filenameDate;
+    if (!dateInfo) continue;
+
+    // 前後コンテキストから号数を探す (マッチ位置の前後 200 文字)
+    const contextStart = Math.max(0, (match.index ?? 0) - 200);
+    const contextEnd = Math.min(
+      html.length,
+      (match.index ?? 0) + match[0]!.length + 200
+    );
+    const context = html.slice(contextStart, contextEnd).replace(/<[^>]+>/g, "");
+
+    const issueNum = parseIssueNumber(context) ?? parseIssueNumber(linkText);
+    const title = issueNum
+      ? `下條村議会だより 第${issueNum}号`
+      : `下條村議会だより ${dateInfo.year}年${dateInfo.month}月`;
+
+    results.push({
+      pdfUrl: pageUrl,
       title,
       heldOn: buildHeldOn(dateInfo.year, dateInfo.month, dateInfo.day),
       section: "議会だより",

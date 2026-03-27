@@ -157,7 +157,7 @@ export function parsePdfLinksWithYear(
 
   const h2Pattern = /<h2[^>]*>([\s\S]*?)<\/h2>/gi;
   const pdfPattern =
-    /<p\s+class="file-link-item">\s*<a[^>]+class="pdf"[^>]+href="(\/\/[^"]+\.pdf)"[^>]*>([^<]+)<\/a>\s*<\/p>/gi;
+    /<p\s+class="file-link-item">\s*<a[^>]+href="(\/\/[^"]+\.pdf)"[^>]*>([^<]+)<\/a>\s*<\/p>/gi;
 
   interface H2Block {
     start: number;

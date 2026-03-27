@@ -105,7 +105,7 @@ export function parseYearPage(html: string, year: number): KijoMeeting[] {
 
   // a.pdf[href$=".pdf"] を抽出（プロトコル相対URLを含む）
   const linkRegex =
-    /<a[^>]+class="pdf"[^>]+href="([^"]+\.pdf)"[^>]*>([\s\S]*?)<\/a>/gi;
+    /<a[^>]+href="([^"]+\.pdf)"[^>]*>([\s\S]*?)<\/a>/gi;
 
   for (const match of html.matchAll(linkRegex)) {
     const href = match[1]!;

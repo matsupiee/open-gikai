@@ -127,12 +127,16 @@ export function parseYearPage(html: string, targetYear: number): OhiraMeeting[] 
 export function parseIndexPage(html: string, targetYear: number): string[] {
   const results: string[] = [];
 
-  // /6/4/3/1/{ID}.html パターンのリンクを収集
+  // /6/4/3/1/{ID}.html パターンのリンクを収集（相対パスと絶対 URL の両方に対応）
   const linkRegex =
-    /<a[^>]*href="(\/6\/4\/3\/1\/\d+\.html)"[^>]*>([\s\S]*?)<\/a>/gi;
+    /<a[^>]*href="((?:https?:\/\/[^"]*)?\/6\/4\/3\/1\/\d+\.html)"[^>]*>([\s\S]*?)<\/a>/gi;
 
   for (const match of html.matchAll(linkRegex)) {
-    const href = match[1]!;
+    const rawHref = match[1]!;
+    // 絶対 URL の場合はパス部分のみ取り出す
+    const href = rawHref.startsWith("http")
+      ? new URL(rawHref).pathname
+      : rawHref;
     const linkText = match[2]!.replace(/<[^>]+>/g, "").trim();
 
     // リンクテキストから年度を判定

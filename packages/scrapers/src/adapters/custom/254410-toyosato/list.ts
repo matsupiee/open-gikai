@@ -69,11 +69,18 @@ export function parseIndexPage(html: string): Array<{ url: string; title: string
 /**
  * リンクテキストが会議録 PDF かどうか判定する。
  *
- * リンクテキストに「会議録」が含まれる PDF のみを会議録として扱う。
+ * リンクテキストに「会議録」が含まれる PDF を会議録として扱う。
+ * また、実際の詳細ページでは「第1回定例会　3月5日」のように
+ * 「会議録」という文字を含まない日付形式のリンクテキストが使われるため、
+ * 「定例会」「臨時会」を含むリンクテキスト、または月日のみのパターン（例: 3月5日）も対象とする。
  * 「会期日程」「一般質問」「採決結果」は除外する。
  */
 export function isMeetingMinutes(linkText: string): boolean {
-  return linkText.includes("会議録");
+  if (linkText.includes("会議録")) return true;
+  if (linkText.includes("定例会") || linkText.includes("臨時会")) return true;
+  // "3月5日" のような月日パターン（会議録本体のリンクテキスト）
+  if (/\d+月\d+日/.test(linkText)) return true;
+  return false;
 }
 
 /**

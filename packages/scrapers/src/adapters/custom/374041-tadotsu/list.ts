@@ -40,9 +40,23 @@ export function parseIndexPage(
 
     // 西暦年を抽出: "令和7年（2025年）" → 2025
     const yearMatch = linkText.match(/[（(](\d{4})年[）)]/);
-    if (!yearMatch) continue;
 
-    const year = parseInt(yearMatch[1]!, 10);
+    let year: number;
+    if (yearMatch) {
+      year = parseInt(yearMatch[1]!, 10);
+    } else {
+      // 元号から西暦に変換: "令和3年 会議録" → 2021
+      const eraMatch = linkText.match(/(令和|平成)(元|\d+)年/);
+      if (!eraMatch) continue;
+      const eraName = eraMatch[1]!;
+      const eraYear = eraMatch[2] === "元" ? 1 : parseInt(eraMatch[2]!, 10);
+      if (eraName === "令和") {
+        year = 2018 + eraYear;
+      } else {
+        // 平成
+        year = 1988 + eraYear;
+      }
+    }
     const url = href.startsWith("http")
       ? href.replace(/^http:\/\//, "https://")
       : `${BASE_ORIGIN}${href}`;

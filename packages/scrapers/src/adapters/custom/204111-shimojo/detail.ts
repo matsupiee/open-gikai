@@ -187,11 +187,67 @@ export function parseStatements(text: string): ParsedStatement[] {
 }
 
 /**
+ * HTML 詳細ページから PDF リンクを抽出する。
+ * e.g., href="files/20210415134025.pdf" のような files/*.pdf リンクを探す。
+ */
+async function extractPdfUrlFromHtmlPage(
+  pageUrl: string
+): Promise<string | null> {
+  try {
+    const res = await fetch(pageUrl, {
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+
+    // files/*.pdf パターンのリンクを探す
+    const match = html.match(/href="([^"]*files\/[^"]+\.pdf)"/i);
+    if (!match) return null;
+
+    const href = match[1]!;
+    if (href.startsWith("http")) return href;
+    if (href.startsWith("/")) return `https://www.vill-shimojo.jp${href}`;
+
+    // 相対パス: pageUrl のベースディレクトリに結合
+    const base = pageUrl.replace(/\/[^/]*$/, "/");
+    return `${base}${href}`;
+  } catch (err) {
+    console.warn(
+      `[204111-shimojo] HTML ページからの PDF 抽出失敗: ${pageUrl}`,
+      err instanceof Error ? err.message : err
+    );
+    return null;
+  }
+}
+
+/**
+ * URL が HTML ページかどうかを判定する。
+ */
+function isHtmlUrl(url: string): boolean {
+  return url.endsWith(".html") || url.endsWith(".htm");
+}
+
+/**
  * PDF URL からテキストを取得する。
+ * URL が HTML ページの場合は、そのページから PDF リンクを探してダウンロードする。
  */
 async function fetchPdfText(pdfUrl: string): Promise<string | null> {
   try {
-    const buffer = await fetchBinary(pdfUrl);
+    let resolvedPdfUrl = pdfUrl;
+
+    // HTML 詳細ページの場合は PDF URL を取得する
+    if (isHtmlUrl(pdfUrl)) {
+      const extractedUrl = await extractPdfUrlFromHtmlPage(pdfUrl);
+      if (!extractedUrl) {
+        console.warn(
+          `[204111-shimojo] HTML ページ内に PDF リンクが見つかりません: ${pdfUrl}`
+        );
+        return null;
+      }
+      resolvedPdfUrl = extractedUrl;
+    }
+
+    const buffer = await fetchBinary(resolvedPdfUrl);
     if (!buffer) return null;
 
     const pdf = await getDocumentProxy(new Uint8Array(buffer));
@@ -207,12 +263,14 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
 }
 
 /**
- * PDF URL からファイル名ベースの externalId キーを抽出する。
+ * PDF URL または HTML ページ URL からファイル名ベースの externalId キーを抽出する。
  * e.g., "https://www.vill-shimojo.jp/.../files/2024-0115-0943.pdf"
  *   → "shimojo_2024-0115-0943"
+ * e.g., "https://www.vill-shimojo.jp/.../gikaidayori/2021-0415-1340-1.html"
+ *   → "shimojo_2021-0415-1340-1"
  */
 function extractExternalIdKey(pdfUrl: string): string | null {
-  const match = pdfUrl.match(/\/([^/]+)\.pdf$/i);
+  const match = pdfUrl.match(/\/([^/]+)\.(pdf|html)$/i);
   if (!match) return null;
   return `shimojo_${match[1]!}`;
 }

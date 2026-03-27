@@ -47,7 +47,7 @@ export function parseLinkText(text: string): {
   const normalized = normalizeFullWidth(text);
 
   const match = normalized.match(
-    /(令和|平成)(元|\d+)年[\s　]*第(\d+)回(定例会|臨時会)/,
+    /(令和|平成)(元|\d+)年[\s　_]*第(\d+)回(定例会|臨時会)/,
   );
   if (!match) return null;
 

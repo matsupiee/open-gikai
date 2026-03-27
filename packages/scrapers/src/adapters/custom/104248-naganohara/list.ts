@@ -98,8 +98,8 @@ export function parseLinkDate(
     return `${westernYear}-${String(month).padStart(2, "0")}-01`;
   }
 
-  // パターン3: R0603.pdf → 令和6年3月
-  const reiwa = new URL(pdfUrl).pathname.match(/\/R(\d{2})(\d{2})\.pdf$/i);
+  // パターン3: R0603.pdf → 令和6年3月 (R0302R.pdf, R0303T.pdf のような末尾 T/R 付きも許容)
+  const reiwa = new URL(pdfUrl).pathname.match(/\/R(\d{2})(\d{2})[TR]?\.pdf$/i);
   if (reiwa) {
     const eraYear = parseInt(reiwa[1]!, 10);
     const month = parseInt(reiwa[2]!, 10);

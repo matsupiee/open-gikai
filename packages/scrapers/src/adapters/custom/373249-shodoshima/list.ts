@@ -179,16 +179,33 @@ export async function fetchMeetingList(
 }
 
 /**
+ * 和暦テキストから西暦年を返す。
+ * e.g., "令和3年" → 2021, "令和6年" → 2024, "平成30年" → 2018
+ */
+function eraTextToWesternYear(text: string): number | null {
+  const match = text.match(/(令和|平成)(元|\d+)年/);
+  if (!match) return null;
+  const eraName = match[1]!;
+  const eraYearStr = match[2]!;
+  const eraYear = eraYearStr === "元" ? 1 : parseInt(eraYearStr, 10);
+  if (eraName === "令和") return eraYear + 2018;
+  if (eraName === "平成") return eraYear + 1988;
+  return null;
+}
+
+/**
  * インデックスページから指定年に対応する年別ページ URL のみを抽出する。
  *
  * インデックスページのリンクテキストには年の情報が含まれる場合がある。
  * 例: "令和6年（2024年）" → year=2024
+ * 例: "令和3年" → year=2021 (西暦なしの和暦のみ形式)
  * 年情報がリンク周辺にない場合は全ページを返す。
  */
 export function parseIndexPageWithYear(html: string, year: number): string[] {
   // インデックスページのリンクと周辺テキストから年を判定する
   // 構造例:
   // <li><a href="/gyousei/.../8342.html">令和6年（2024年）</a></li>
+  // <li><a href="/gyousei/.../5678.html">令和3年</a></li>
   // またはリンクテキストが年を含む場合
   const results: string[] = [];
   const seen = new Set<string>();
@@ -203,16 +220,30 @@ export function parseIndexPageWithYear(html: string, year: number): string[] {
     const href = match[1]!;
     const linkText = match[2]!;
 
-    // リンクテキストから西暦年を抽出
-    const yearInText = linkText.match(/\(?(\d{4})年?\)?/);
-    if (yearInText) {
-      const linkYear = parseInt(yearInText[1]!, 10);
+    // リンクテキストから西暦年を抽出（例: "令和6年（2024年）" の "2024"）
+    const westernYearInText = linkText.match(/\(?(\d{4})年?\)?/);
+    if (westernYearInText) {
+      const linkYear = parseInt(westernYearInText[1]!, 10);
       if (linkYear === year) {
         const url = resolveUrl(href);
         if (!seen.has(url)) {
           seen.add(url);
           results.push(url);
           foundYearMatch = true;
+        }
+      }
+      continue;
+    }
+
+    // 西暦が見つからない場合は和暦から変換（例: "令和3年" → 2021）
+    const eraYear = eraTextToWesternYear(linkText);
+    if (eraYear !== null) {
+      foundYearMatch = true; // 年情報は存在する（対象年でなくてもフラグを立てる）
+      if (eraYear === year) {
+        const url = resolveUrl(href);
+        if (!seen.has(url)) {
+          seen.add(url);
+          results.push(url);
         }
       }
     }
