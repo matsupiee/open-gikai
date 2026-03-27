@@ -114,4 +114,43 @@ describe("runGroupedByHost", () => {
   it("空配列でもエラーなく解決する", async () => {
     await expect(runGroupedByHost([], [])).resolves.toBeUndefined();
   });
+
+  it("独立ホストが多数ある場合にグローバル並列数上限（30）で制限される", async () => {
+    let maxConcurrent = 0;
+    let current = 0;
+
+    // 50 個の独立ホスト（カスタムアダプター相当）を用意
+    const targets = Array.from({ length: 50 }, (_, i) => ({
+      baseUrl: `https://host-${i}.example.jp/page`,
+    }));
+    const tasks = targets.map(() => async () => {
+      current++;
+      if (current > maxConcurrent) maxConcurrent = current;
+      await new Promise((r) => setTimeout(r, 30));
+      current--;
+    });
+
+    await runGroupedByHost(targets, tasks);
+
+    // グローバル上限 30 により、同時実行が 30 以下に制限される
+    expect(maxConcurrent).toBeLessThanOrEqual(30);
+    // 並列実行はされている（1 ではない）
+    expect(maxConcurrent).toBeGreaterThan(1);
+  });
+
+  it("グローバル並列数制限があっても全タスクが完了する", async () => {
+    const completed = new Set<number>();
+
+    const targets = Array.from({ length: 60 }, (_, i) => ({
+      baseUrl: `https://muni-${i}.lg.jp/gikai`,
+    }));
+    const tasks = targets.map((_, i) => async () => {
+      await new Promise((r) => setTimeout(r, 10));
+      completed.add(i);
+    });
+
+    await runGroupedByHost(targets, tasks);
+
+    expect(completed.size).toBe(60);
+  });
 });
