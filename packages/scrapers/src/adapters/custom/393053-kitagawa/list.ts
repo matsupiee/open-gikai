@@ -5,8 +5,7 @@
  *
  * ページ構造:
  * - div.list > p > a: 記事リンク
- *   - span[0]: タイトル
- *   - span[1]: 担当課・掲載日などのメタ情報
+ *   - <a> 内にタグなしのプレーンテキストで「タイトル 担当課 掲載日」が並ぶ
  * - 議会事務局担当かつタイトルに「定例会」or「臨時会」を含む記事を対象とする
  */
 
@@ -25,8 +24,12 @@ export interface KitagawaArticle {
  * 一覧ページの HTML から議会関連記事を抽出する（テスト可能な純粋関数）。
  *
  * 抽出条件:
- * - meta に「議会事務局」を含む
+ * - 本文テキストに「議会事務局」を含む
  * - タイトルに「定例会」または「臨時会」を含む
+ *
+ * 実際のページでは <a> 内に <span> がなく、テキストが直接書かれている。
+ * innerHTML 全体からタグを除去してテキストを取得し、担当課と
+ * 「定例会」「臨時会」をチェックする。
  */
 export function parseListPage(html: string): KitagawaArticle[] {
   const results: KitagawaArticle[] = [];
@@ -41,28 +44,25 @@ export function parseListPage(html: string): KitagawaArticle[] {
     const hdnKey = match[2]!;
     const innerHtml = match[3]!;
 
-    // span 要素からテキストを抽出
-    const spans: string[] = [];
-    const spanPattern = /<span[^>]*>([\s\S]*?)<\/span>/gi;
-    for (const spanMatch of innerHtml.matchAll(spanPattern)) {
-      const text = spanMatch[1]!
-        .replace(/<[^>]+>/g, "")
-        .replace(/&nbsp;/g, " ")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .trim();
-      spans.push(text);
-    }
-
-    if (spans.length < 2) continue;
-
-    const title = spans[0]!.replace(/\s+/g, " ").trim();
-    const meta = spans[1]!;
+    // タグを除去してプレーンテキストを取得
+    const fullText = innerHtml
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/\s+/g, " ")
+      .trim();
 
     // 議会事務局担当かつ定例会・臨時会を含む記事のみ対象
-    if (!meta.includes("議会事務局")) continue;
-    if (!/定例会|臨時会/.test(title)) continue;
+    if (!fullText.includes("議会事務局")) continue;
+    if (!/定例会|臨時会/.test(fullText)) continue;
+
+    // タイトルはテキスト全体の先頭部分（最初の区切り文字より前）
+    // 実際のテキスト例: "第○回定例会 議会事務局 2021-XX-XX"
+    // スペース区切りの最初のトークンではなく、担当課・日付より前を取る
+    // シンプルに fullText をタイトルとして使う（詳細ページで正確な値が取れる）
+    const title = fullText;
 
     const detailUrl = href.startsWith("http") ? href : `${BASE_ORIGIN}${href}`;
 

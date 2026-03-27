@@ -95,7 +95,7 @@ describe("parseListPage", () => {
     expect(result[0]!.pdfUrl).toBe(
       "https://www.city.misawa.lg.jp/index.cfm/24,11423,c,html/11423/20250301-120000.pdf"
     );
-    expect(result[0]!.heldOn).toBeNull();
+    expect(result[0]!.heldOn).toBe("2025-03-01");
     expect(result[0]!.year).toBe(2025);
     expect(result[0]!.session).toBe(1);
     expect(result[0]!.dayNumber).toBe(1);

@@ -1,52 +1,96 @@
 import { describe, expect, it } from "vitest";
-import { parseTopPage, parseSessionPage, estimateYear } from "./list";
+import { parseMainPage, parseYearListPage, parseSessionPage, estimateYear } from "./list";
 
-describe("parseTopPage", () => {
-  it(".html リンクを全て抽出する", () => {
+describe("parseMainPage", () => {
+  it("令和X年会議録のリンクのみを抽出し年を解析する", () => {
     const html = `
       <html><body>
-        <h2>令和7年会議録</h2>
+        <h2>会議録（本会議）</h2>
         <ul>
-          <li><a href="R7-1.html">令和7年第1回定例会（3月議会）</a></li>
-          <li><a href="R7-1-rinji.html">令和7年第1回臨時会</a></li>
+          <li><a href="/site/gikai/list12-53.html">令和7年会議録（本会議）</a></li>
+          <li><a href="/site/gikai/list12-54.html">令和6年会議録（本会議）</a></li>
+          <li><a href="/site/gikai/list12-57.html">令和3年会議録（本会議）</a></li>
         </ul>
-        <h2>令和6年会議録</h2>
-        <ul>
-          <li><a href="2024-0612-R6-1.html">令和6年第1回定例会（3月議会）</a></li>
-          <li><a href="2025-0306-1950-77.html">第4回定例会（12月）</a></li>
-        </ul>
+        <p><a href="/site/gikai/list12.html">会議録（本会議）の一覧</a></p>
+        <a href="/site/gikai/1157.html">会議日程</a>
       </body></html>
     `;
 
-    const links = parseTopPage(html);
+    const links = parseMainPage(html);
 
-    expect(links).toHaveLength(4);
-    expect(links[0]!.href).toBe("R7-1.html");
-    expect(links[0]!.text).toBe("令和7年第1回定例会（3月議会）");
-    expect(links[1]!.href).toBe("R7-1-rinji.html");
-    expect(links[1]!.text).toBe("令和7年第1回臨時会");
-    expect(links[2]!.href).toBe("2024-0612-R6-1.html");
-    expect(links[3]!.href).toBe("2025-0306-1950-77.html");
+    expect(links).toHaveLength(3);
+    expect(links[0]!.href).toBe("/site/gikai/list12-53.html");
+    expect(links[0]!.text).toBe("令和7年会議録（本会議）");
+    expect(links[0]!.year).toBe(2025);
+    expect(links[1]!.year).toBe(2024);
+    expect(links[2]!.href).toBe("/site/gikai/list12-57.html");
+    expect(links[2]!.year).toBe(2021);
   });
 
-  it(".html 以外のリンクはスキップする", () => {
+  it("令和元年は 2019 として解析する", () => {
     const html = `
       <html><body>
-        <a href="index.html">トップ</a>
-        <a href="files/R7-1zentai.pdf">全体分PDF</a>
-        <a href="R7-1.html">令和7年第1回定例会</a>
+        <a href="/site/gikai/list12-99.html">令和元年会議録（本会議）</a>
       </body></html>
     `;
 
-    const links = parseTopPage(html);
-    expect(links).toHaveLength(2);
-    expect(links[0]!.href).toBe("index.html");
-    expect(links[1]!.href).toBe("R7-1.html");
+    const links = parseMainPage(html);
+    expect(links).toHaveLength(1);
+    expect(links[0]!.year).toBe(2019);
+  });
+
+  it("令和X年会議録以外のリンクはスキップする", () => {
+    const html = `
+      <html><body>
+        <a href="/site/gikai/list12.html">会議録（本会議）の一覧</a>
+        <a href="/site/gikai/1157.html">会議日程</a>
+      </body></html>
+    `;
+
+    const links = parseMainPage(html);
+    expect(links).toHaveLength(0);
+  });
+});
+
+describe("parseYearListPage", () => {
+  it("数字のみのファイル名（定例会ページ）のリンクを抽出する", () => {
+    const html = `
+      <html><body>
+        <h2>令和3年会議録（本会議）</h2>
+        <ul>
+          <li><a href="/site/gikai/1138.html">令和3年第4回定例会（12月議会）</a></li>
+          <li><a href="/site/gikai/1140.html">令和3年第2回臨時会</a></li>
+          <li><a href="/site/gikai/1135.html">令和3年第1回定例会（3月議会）</a></li>
+        </ul>
+        <a href="/site/gikai/list12-57.html">令和3年会議録一覧へ戻る</a>
+      </body></html>
+    `;
+
+    const links = parseYearListPage(html);
+
+    expect(links).toHaveLength(3);
+    expect(links[0]!.href).toBe("/site/gikai/1138.html");
+    expect(links[0]!.text).toBe("令和3年第4回定例会（12月議会）");
+    expect(links[1]!.href).toBe("/site/gikai/1140.html");
+    expect(links[2]!.href).toBe("/site/gikai/1135.html");
+  });
+
+  it("リストページ形式（list12-xx.html）のリンクはスキップする", () => {
+    const html = `
+      <html><body>
+        <a href="/site/gikai/list12-57.html">令和3年会議録</a>
+        <a href="/site/gikai/1138.html">令和3年第4回定例会</a>
+      </body></html>
+    `;
+
+    const links = parseYearListPage(html);
+    expect(links).toHaveLength(1);
+    expect(links[0]!.href).toBe("/site/gikai/1138.html");
   });
 
   it("リンクが0件の場合は空配列を返す", () => {
     const html = `<html><body><p>会議録はありません</p></body></html>`;
-    const links = parseTopPage(html);
+    const links = parseYearListPage(html);
     expect(links).toHaveLength(0);
   });
 });

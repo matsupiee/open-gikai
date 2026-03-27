@@ -24,12 +24,12 @@ describe("parseListPage", () => {
 
     expect(articles).toHaveLength(2);
     expect(articles[0]!.hdnKey).toBe("123");
-    expect(articles[0]!.title).toBe("令和7年第4回定例会 会期日程・審議結果");
+    expect(articles[0]!.title).toBe("令和7年第4回定例会 会期日程・審議結果 議会事務局 2025年12月20日");
     expect(articles[0]!.detailUrl).toBe(
       "https://www.kitagawamura.jp/life/dtl.php?hdnKey=123"
     );
     expect(articles[1]!.hdnKey).toBe("456");
-    expect(articles[1]!.title).toBe("令和7年第3回臨時会 会期日程・審議結果");
+    expect(articles[1]!.title).toBe("令和7年第3回臨時会 会期日程・審議結果 議会事務局 2025年10月15日");
   });
 
   it("議会事務局以外の担当はフィルタリングされる", () => {

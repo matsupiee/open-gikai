@@ -1,8 +1,15 @@
 /**
  * 岩出市議会 会議録 — list フェーズ
  *
- * トップページから全定例会ページへのリンクを収集し、
+ * メインページ（/site/gikai/）から年別リストページへのリンクを収集し、
+ * 各年別ページから定例会ページへのリンクを収集し、
  * 各定例会ページから全体版 PDF のリンクを抽出する。
+ *
+ * URL 構造:
+ *   メインページ: https://www.city.iwade.lg.jp/site/gikai/
+ *   年別リスト:   https://www.city.iwade.lg.jp/site/gikai/list12-57.html （令和3年など）
+ *   定例会ページ: https://www.city.iwade.lg.jp/site/gikai/1138.html
+ *   PDF:          https://www.city.iwade.lg.jp/uploaded/attachment/1768.pdf
  */
 
 import { BASE_URL, fetchPage } from "./shared";
@@ -19,14 +26,41 @@ export interface IwadeSession {
 }
 
 /**
- * トップページ HTML から定例会ページへのリンクを抽出する。
+ * メインページ HTML から年別リストページへのリンクを抽出する。
+ *
+ * 「令和X年会議録（本会議）」のような形式のリンクを抽出する。
+ *
+ * @returns { href: string; text: string; year: number }[] のリスト
+ */
+export function parseMainPage(html: string): Array<{ href: string; text: string; year: number }> {
+  const results: Array<{ href: string; text: string; year: number }> = [];
+  const linkRegex = /<a[^>]+href="([^"]+\.html)"[^>]*>([^<]+)<\/a>/gi;
+  for (const match of html.matchAll(linkRegex)) {
+    const href = match[1]?.trim();
+    const text = match[2]?.trim();
+    if (!href || !text) continue;
+
+    // 「令和X年会議録」のパターンのみ対象
+    const reiwaMatch = text.match(/令和(\d+|元)年/);
+    if (!reiwaMatch) continue;
+
+    const n = reiwaMatch[1] === "元" ? 1 : parseInt(reiwaMatch[1] ?? "0", 10);
+    const year = 2018 + n;
+    results.push({ href, text, year });
+  }
+  return results;
+}
+
+/**
+ * 年別リストページ HTML から定例会ページへのリンクを抽出する。
+ *
+ * `/site/gikai/\d+.html` 形式（数字のみのファイル名）のリンクを対象とする。
  *
  * @returns { href: string; text: string }[] のリスト
  */
-export function parseTopPage(html: string): Array<{ href: string; text: string }> {
+export function parseYearListPage(html: string): Array<{ href: string; text: string }> {
   const results: Array<{ href: string; text: string }> = [];
-  // .html で終わるリンクを抽出
-  const linkRegex = /<a[^>]+href="([^"]+\.html)"[^>]*>([^<]+)<\/a>/gi;
+  const linkRegex = /<a[^>]+href="([^"]*\/\d+\.html)"[^>]*>([^<]+)<\/a>/gi;
   for (const match of html.matchAll(linkRegex)) {
     const href = match[1]?.trim();
     const text = match[2]?.trim();
@@ -62,21 +96,30 @@ export function parseSessionPage(html: string): string | null {
 
 /**
  * 指定年に該当する定例会セッションの一覧を取得する。
+ *
+ * 1. メインページから対象年の年別リストページ URL を取得する
+ * 2. 年別リストページから定例会ページ URL を取得する
+ * 3. 各定例会ページから全体版 PDF リンクを取得する
  */
 export async function fetchSessionList(year: number): Promise<IwadeSession[]> {
-  const html = await fetchPage(BASE_URL);
-  if (!html) return [];
+  const mainHtml = await fetchPage(BASE_URL);
+  if (!mainHtml) return [];
 
-  const links = parseTopPage(html);
+  // 対象年の年別リストページを特定する
+  const yearLinks = parseMainPage(mainHtml);
+  const yearLink = yearLinks.find((l) => l.year === year);
+  if (!yearLink) return [];
+
+  const yearListUrl = new URL(yearLink.href, BASE_URL).toString();
+  const yearListHtml = await fetchPage(yearListUrl);
+  if (!yearListHtml) return [];
+
+  // 年別リストページから定例会ページリンクを取得する
+  const sessionLinks = parseYearListPage(yearListHtml);
   const sessions: IwadeSession[] = [];
 
-  for (const { href, text } of links) {
-    // href は相対パス（例: "R7-1.html", "2024-0612-R6-1.html"）
-    const sessionUrl = new URL(href, BASE_URL).toString();
-
-    // リンクテキストから年を推定して絞り込む
-    const sessionYear = estimateYear(text, href);
-    if (sessionYear !== null && sessionYear !== year) continue;
+  for (const { href, text } of sessionLinks) {
+    const sessionUrl = new URL(href, yearListUrl).toString();
 
     // 定例会ページから全体版 PDF リンクを取得
     const sessionHtml = await fetchPage(sessionUrl);

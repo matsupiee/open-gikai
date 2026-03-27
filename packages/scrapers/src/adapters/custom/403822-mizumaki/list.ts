@@ -200,13 +200,13 @@ export function extractGijirokuRecords(
   const meetingType = detectMeetingType(link.title);
   const baseUrl = pageUrl ?? link.url;
 
-  // gijiroku を含む PDF リンクを抽出
-  // リンク形式: href="./R6.6.3gijiroku.pdf" や href="./R6.6.3gijinittei.pdf"
-  const pdfPattern = /href="([^"]+gijiroku[^"]*\.pdf)"/gi;
+  // gijiroku または kaigiroku を含む PDF リンクを抽出
+  // リンク形式: href="./R6.6.3gijiroku.pdf" や href="./R3.3.1kaigiroku.pdf"
+  const pdfPattern = /href="([^"]+(?:gijiroku|kaigiroku)[^"]*\.pdf)"/gi;
 
   // 日付を見出し（h2）とファイル名の両方から取得
-  // ファイル名から日付を取得: R{年}.{月}.{日}gijiroku.pdf → 月.日
-  const filenamePattern = /[Rr]?\d*\.?(\d{1,2})\.(\d{1,2})gijiroku/i;
+  // ファイル名から日付を取得: R{年}.{月}.{日}gijiroku.pdf や R{年}.{月}.{日}kaigiroku.pdf → 月.日
+  const filenamePattern = /[Rr]?\d*\.?(\d{1,2})\.(\d{1,2})(?:gijiroku|kaigiroku)/i;
 
   const seen = new Set<string>();
   let pm: RegExpExecArray | null;

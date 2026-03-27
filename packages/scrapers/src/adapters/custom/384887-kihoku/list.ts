@@ -43,14 +43,25 @@ export function parseIndexUrls(html: string): string[] {
  *
  * `<h3>定例会</h3>` / `<h3>臨時会</h3>` でセクションを分け、
  * 各セクション内の `/uploaded/life/...misc.pdf` リンクを収集する。
+ *
+ * 実際のリンクテキスト例:
+ *   「第1回鬼北町議会定例会（1日目・3月7日開催）」
+ * 年号が含まれないため、year パラメータから西暦年を補う。
  */
-export function parseYearIndexPage(html: string): KihokuPdfRecord[] {
+export function parseYearIndexPage(
+  html: string,
+  year?: number
+): KihokuPdfRecord[] {
   const records: KihokuPdfRecord[] = [];
 
   // h3 タグで区切って各セクションを処理する
   const sectionRegex = /<h3[^>]*>([\s\S]*?)<\/h3>([\s\S]*?)(?=<h3|$)/gi;
-  const titlePattern =
+  // 実際の形式: 第N回鬼北町議会定例会（N日目・N月N日開催）
+  // 年号なしの形式と年号ありの形式の両方に対応する
+  const titlePatternWithYear =
     /第(\d+)回鬼北町議会(定例会|臨時会)（(令和|平成)(\d+)年(\d+)月(\d+)日開催）/;
+  const titlePatternNoYear =
+    /第(\d+)回鬼北町議会(定例会|臨時会)（.+?・(\d+)月(\d+)日開催）/;
   const pdfPattern = /^\/uploaded\/life\/.+_misc\.pdf$/;
 
   for (const sectionMatch of html.matchAll(sectionRegex)) {
@@ -77,14 +88,28 @@ export function parseYearIndexPage(html: string): KihokuPdfRecord[] {
       const pdfUrl = `${BASE_ORIGIN}${href}`;
 
       // リンクテキストから開催日と回次を抽出
-      const titleMatch = rawText.match(titlePattern);
       let heldOn: string | null = null;
       let sessionNumber: number | null = null;
 
-      if (titleMatch) {
-        sessionNumber = parseInt(titleMatch[1]!, 10);
-        const dateText = `${titleMatch[3]}${titleMatch[4]}年${titleMatch[5]}月${titleMatch[6]}日`;
+      // まず年号あり形式を試みる
+      const matchWithYear = rawText.match(titlePatternWithYear);
+      if (matchWithYear) {
+        sessionNumber = parseInt(matchWithYear[1]!, 10);
+        const dateText = `${matchWithYear[3]}${matchWithYear[4]}年${matchWithYear[5]}月${matchWithYear[6]}日`;
         heldOn = parseJapaneseDate(dateText);
+      } else {
+        // 年号なし形式（実際のページ）: year パラメータから補う
+        const matchNoYear = rawText.match(titlePatternNoYear);
+        if (matchNoYear) {
+          sessionNumber = parseInt(matchNoYear[1]!, 10);
+          if (year != null) {
+            const month = parseInt(matchNoYear[3]!, 10);
+            const day = parseInt(matchNoYear[4]!, 10);
+            const mm = String(month).padStart(2, "0");
+            const dd = String(day).padStart(2, "0");
+            heldOn = `${year}-${mm}-${dd}`;
+          }
+        }
       }
 
       records.push({
@@ -119,7 +144,7 @@ export async function fetchPdfList(year: number): Promise<KihokuPdfRecord[]> {
     const html = await fetchPage(url);
     if (!html) continue;
 
-    const records = parseYearIndexPage(html);
+    const records = parseYearIndexPage(html, year);
     for (const record of records) {
       allRecords.push(record);
     }

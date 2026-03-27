@@ -113,6 +113,43 @@ describe("parseSessionsFromHtml", () => {
     const records = parseSessionsFromHtml(html, 2024);
     expect(records).toHaveLength(0);
   });
+
+  it("古いセッション（p > strong タグ）からも PDF リンクを抽出できる", () => {
+    // 令和5年第3回以前は <p><strong>...</strong></p> 形式を使用
+    const html = `
+      <p class="has-background"><strong>令和3年第１回議会定例会</strong></p>
+      <div class="wp-block-file"><a href="https://www.town.oarai.lg.jp/oaraigikai/wp/wp-content/uploads/2021/07/目次.pdf">目次</a><a href="https://www.town.oarai.lg.jp/oaraigikai/wp/wp-content/uploads/2021/07/目次.pdf" class="wp-block-file__button" download>ダウンロード</a></div>
+      <div class="wp-block-file"><a href="https://www.town.oarai.lg.jp/oaraigikai/wp/wp-content/uploads/2021/07/１日目（3月8日）.pdf">１日目（3月8日）</a><a href="https://www.town.oarai.lg.jp/oaraigikai/wp/wp-content/uploads/2021/07/１日目（3月8日）.pdf" class="wp-block-file__button" download>ダウンロード</a></div>
+      <div class="wp-block-file"><a href="https://www.town.oarai.lg.jp/oaraigikai/wp/wp-content/uploads/2021/07/２日目（3月10日）.pdf">２日目（3月10日）</a><a href="https://www.town.oarai.lg.jp/oaraigikai/wp/wp-content/uploads/2021/07/２日目（3月10日）.pdf" class="wp-block-file__button" download>ダウンロード</a></div>
+    `;
+
+    const records = parseSessionsFromHtml(html, 2021);
+
+    expect(records).toHaveLength(2);
+    expect(records[0]!.title).toBe("令和3年第１回議会定例会");
+    expect(records[0]!.dayLabel).toBe("3月8日");
+    expect(records[1]!.dayLabel).toBe("3月10日");
+  });
+
+  it("h4 と p > strong が混在するページでも両方のセッションを抽出できる", () => {
+    // 新しいセッションは h4、古いセッションは p > strong
+    const html = `
+      <h4>令和５年第４回議会定例会</h4>
+      <p>
+        <a href="https://www.town.oarai.lg.jp/oaraigikai/wp/wp-content/uploads/2024/01/new.pdf">１日目（12月5日）</a>
+      </p>
+      <p class="has-background"><strong>令和3年第１回議会定例会</strong></p>
+      <div class="wp-block-file"><a href="https://www.town.oarai.lg.jp/oaraigikai/wp/wp-content/uploads/2021/07/old.pdf">１日目（3月8日）</a></div>
+    `;
+
+    const records2023 = parseSessionsFromHtml(html, 2023);
+    expect(records2023).toHaveLength(1);
+    expect(records2023[0]!.title).toBe("令和５年第４回議会定例会");
+
+    const records2021 = parseSessionsFromHtml(html, 2021);
+    expect(records2021).toHaveLength(1);
+    expect(records2021[0]!.title).toBe("令和3年第１回議会定例会");
+  });
 });
 
 describe("extractDayLabel", () => {

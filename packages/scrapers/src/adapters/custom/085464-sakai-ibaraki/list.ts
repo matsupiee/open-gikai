@@ -27,7 +27,7 @@ export interface SakaiIbarakiRecord {
 export function parseTopPage(html: string): { label: string; url: string }[] {
   const results: { label: string; url: string }[] = [];
 
-  const linkRegex = /<a[^>]+href="([^"]*\/page\/dir\d+\.html)"[^>]*>([^<]+)<\/a>/g;
+  const linkRegex = /<a[^>]+href="([^"]*dir\d+\.html)"[^>]*>([^<]+)<\/a>/g;
 
   for (const match of html.matchAll(linkRegex)) {
     const href = match[1]!;
@@ -40,7 +40,9 @@ export function parseTopPage(html: string): { label: string; url: string }[] {
 
     const url = href.startsWith("http")
       ? href
-      : `${BASE_ORIGIN}${href.startsWith("/") ? "" : "/"}${href}`;
+      : href.startsWith("/")
+        ? `${BASE_ORIGIN}${href}`
+        : `${BASE_ORIGIN}/page/${href}`;
 
     if (!results.some((r) => r.url === url)) {
       results.push({ label, url });
@@ -57,7 +59,7 @@ export function parseTopPage(html: string): { label: string; url: string }[] {
 export function parseYearPage(html: string): { title: string; url: string }[] {
   const results: { title: string; url: string }[] = [];
 
-  const linkRegex = /<a[^>]+href="([^"]*\/page\/page\d+\.html)"[^>]*>([^<]+)<\/a>/g;
+  const linkRegex = /<a[^>]+href="([^"]*page\d+\.html)"[^>]*>([^<]+)<\/a>/g;
 
   for (const match of html.matchAll(linkRegex)) {
     const href = match[1]!;
@@ -67,7 +69,9 @@ export function parseYearPage(html: string): { title: string; url: string }[] {
 
     const url = href.startsWith("http")
       ? href
-      : `${BASE_ORIGIN}${href.startsWith("/") ? "" : "/"}${href}`;
+      : href.startsWith("/")
+        ? `${BASE_ORIGIN}${href}`
+        : `${BASE_ORIGIN}/page/${href}`;
 
     if (!results.some((r) => r.url === url)) {
       results.push({ title, url });

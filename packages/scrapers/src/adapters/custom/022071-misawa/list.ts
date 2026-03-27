@@ -160,10 +160,11 @@ export function parseListPage(html: string, year: number): MisawaSessionInfo[] {
       if (rowIdx === 1) continue; // ヘッダー行はスキップ
 
       const rowHtml = rowMatch[1]!;
-      const cellPattern = /<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi;
+      const cellPattern = /<(t[hd])([^>]*)>([\s\S]*?)<\/\1>/gi;
       const cells: string[] = [];
       for (const cellMatch of rowHtml.matchAll(cellPattern)) {
-        cells.push(cellMatch[1]!);
+        // 開始タグの属性とセル内容を結合（旧HTMLでは href が <td> 属性に入っている場合がある）
+        cells.push(cellMatch[2]! + " " + cellMatch[3]!);
       }
 
       if (cells.length === 0) continue;
@@ -191,9 +192,15 @@ export function parseListPage(html: string, year: number): MisawaSessionInfo[] {
         const title = `${tableYear}年第${sessionInfo.session}回${sessionTypeName}${dayNum}日目`;
         const meetingType = detectMeetingType(title);
 
+        // PDF ファイル名から開催日を抽出（YYYYMMDD-HHMMSS.pdf パターン）
+        const dateMatch = pdfUrl.match(/(\d{4})(\d{2})(\d{2})-\d{6}\.pdf$/);
+        const heldOn = dateMatch
+          ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`
+          : null;
+
         results.push({
           title,
-          heldOn: null, // 三沢市の一覧ページには開催日情報がないためnull
+          heldOn,
           meetingType,
           pdfUrl,
           year: tableYear,

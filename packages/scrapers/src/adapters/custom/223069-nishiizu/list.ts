@@ -20,6 +20,19 @@ import {
   delay,
 } from "./shared";
 
+/**
+ * インデックスページに掲載されない古い年度のページ番号範囲マッピング。
+ *
+ * インデックスページは直近 ~12 件しかリンクしないため、
+ * それ以前の年度は URL を直接構築してアクセスする必要がある。
+ *
+ * ページ番号は 78_{num}.html の {num} に対応する。
+ * 各年の範囲は実際のサイトを確認して設定。
+ */
+const YEAR_PAGE_RANGES: Record<number, { from: number; to: number }> = {
+  2021: { from: 60, to: 68 },
+};
+
 export interface NishiizuMeeting {
   /** PDF の絶対 URL */
   pdfUrl: string;
@@ -178,6 +191,7 @@ export function extractDateFromPdfFilename(
  * 1. 一覧ページから中間ページ URL を収集
  * 2. 年フィルタリング（タイトルの和暦から西暦年を判定）
  * 3. 各中間ページから PDF リンクを収集
+ * 4. インデックスページに掲載されない古い年度は YEAR_PAGE_RANGES から直接 URL を構築
  */
 export async function fetchMeetingList(
   _baseUrl: string,
@@ -187,21 +201,52 @@ export async function fetchMeetingList(
   const listHtml = await fetchPage(listUrl);
   if (!listHtml) return [];
 
-  const links = parseIndexLinks(listHtml);
+  const indexLinks = parseIndexLinks(listHtml);
+
+  // インデックスページにある対象年のリンクを絞り込む
+  const linksForYear = indexLinks.filter(({ title }) => {
+    const titleYear = parseWarekiToYear(title);
+    return titleYear === null || titleYear === year;
+  });
+
+  // インデックスページに対象年のリンクがなく、既知の範囲マッピングがある場合は
+  // URL を直接構築して補完する
+  const hasIndexLinksForYear = indexLinks.some(
+    ({ title }) => parseWarekiToYear(title) === year
+  );
+
+  if (!hasIndexLinksForYear && YEAR_PAGE_RANGES[year]) {
+    const { from, to } = YEAR_PAGE_RANGES[year];
+    for (let num = from; num <= to; num++) {
+      const pageNum = String(num);
+      const href = `${BASE_ORIGIN}/kakuka/gikai/gijiroku/78_${pageNum}.html`;
+      // タイトルは中間ページを取得してから判明するため、仮タイトルとして年を使う
+      linksForYear.push({ pageNum, title: "", href });
+    }
+  }
 
   const allMeetings: NishiizuMeeting[] = [];
 
-  for (const { pageNum, title, href } of links) {
-    // タイトルから年を判定してフィルタリング
-    const titleYear = parseWarekiToYear(title);
-    if (titleYear !== null && titleYear !== year) continue;
-
+  for (const { pageNum, title: indexTitle, href } of linksForYear) {
     await delay(INTER_PAGE_DELAY_MS);
 
     const intermediateHtml = await fetchPage(href);
     if (!intermediateHtml) continue;
 
-    const meetings = parseIntermediatePage(intermediateHtml, title, pageNum);
+    // 中間ページの <h1>/<h2> からタイトルを取得する（インデックスタイトルが空の場合）
+    let sessionTitle = indexTitle;
+    if (!sessionTitle) {
+      const h1Match = intermediateHtml.match(/<h[12][^>]*>([\s\S]*?)<\/h[12]>/i);
+      if (h1Match) {
+        sessionTitle = h1Match[1]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      }
+    }
+
+    // セッションタイトルから年を判定してフィルタリング
+    const titleYear = parseWarekiToYear(sessionTitle);
+    if (titleYear !== null && titleYear !== year) continue;
+
+    const meetings = parseIntermediatePage(intermediateHtml, sessionTitle, pageNum);
 
     for (const meeting of meetings) {
       // heldOn が判明している場合は年で追加フィルタリング
@@ -210,8 +255,8 @@ export async function fetchMeetingList(
         if (meetingYear === year) {
           allMeetings.push(meeting);
         }
-      } else if (titleYear === year) {
-        // heldOn 不明だがタイトル年が一致
+      } else if (titleYear === year || (titleYear === null && !indexTitle)) {
+        // heldOn 不明だがタイトル年が一致、または直接 URL で取得したページ
         allMeetings.push(meeting);
       }
     }

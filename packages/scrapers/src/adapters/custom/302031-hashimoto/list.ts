@@ -106,6 +106,35 @@ export function parseMeetingPage(
 ): HashimotoMeeting[] {
   const results: HashimotoMeeting[] = [];
 
+  // セッションタイトルから年を抽出（例: "令和3年3月定例会会議録" → 2021）
+  const yearMatch = sessionTitle.match(/(令和|平成)(元|\d+)年/);
+  let sessionYear: number | null = null;
+  if (yearMatch) {
+    const eraYear = yearMatch[2] === "元" ? 1 : parseInt(yearMatch[2]!, 10);
+    sessionYear = yearMatch[1] === "令和" ? eraYear + 2018 : eraYear + 1988;
+  }
+
+  // h2 見出しと PDF リンクの位置を収集して、見出しの日付をフォールバックに使う
+  // <h2>第1日(3月1日)</h2> パターンから月日を抽出
+  interface HeadingDate {
+    index: number;
+    month: number;
+    day: number;
+  }
+  const headingDates: HeadingDate[] = [];
+  const h2Pattern = /<h2[^>]*>([\s\S]*?)<\/h2>/gi;
+  for (const m of html.matchAll(h2Pattern)) {
+    const text = m[1]!.replace(/<[^>]+>/g, "").trim();
+    const dm = text.match(/(\d+)月(\d+)日/);
+    if (dm) {
+      headingDates.push({
+        index: m.index!,
+        month: parseInt(dm[1]!, 10),
+        day: parseInt(dm[2]!, 10),
+      });
+    }
+  }
+
   // PDF リンクを抽出
   const linkPattern = /<a[^>]+href="([^"]*\.pdf)"[^>]*>([\s\S]*?)<\/a>/gi;
 
@@ -116,8 +145,21 @@ export function parseMeetingPage(
     // 目次 PDF はスキップ
     if (linkText.includes("目次")) continue;
 
-    // リンクテキストから日付を抽出
-    const heldOn = parseDateText(linkText);
+    // リンクテキストから日付を抽出（新形式）
+    let heldOn = parseDateText(linkText);
+
+    // フォールバック: 直前の h2 見出しから月日を取得（旧形式）
+    if (!heldOn && sessionYear && headingDates.length > 0) {
+      const linkIndex = match.index!;
+      let closestHeading: HeadingDate | null = null;
+      for (const h of headingDates) {
+        if (h.index < linkIndex) closestHeading = h;
+      }
+      if (closestHeading) {
+        heldOn = `${sessionYear}-${String(closestHeading.month).padStart(2, "0")}-${String(closestHeading.day).padStart(2, "0")}`;
+      }
+    }
+
     if (!heldOn) continue;
 
     // PDF URL を構築（protocol-relative URL に対応）
