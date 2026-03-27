@@ -1,10 +1,10 @@
 /**
  * 岩出市議会 会議録 — 共通ユーティリティ
  *
- * サイト: https://www.city.iwade.lg.jp/gikai/kaigiroku/
+ * サイト: https://www.city.iwade.lg.jp/site/gikai/
  */
 
-export const BASE_URL = "https://www.city.iwade.lg.jp/gikai/kaigiroku/";
+export const BASE_URL = "https://www.city.iwade.lg.jp/site/gikai/";
 
 const USER_AGENT =
   "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
