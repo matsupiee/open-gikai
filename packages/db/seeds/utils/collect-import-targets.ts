@@ -43,9 +43,7 @@ export function collectImportTargets(dataDir: string, options: CollectOptions): 
       const meetingsPath = resolve(codeDir, "meetings.ndjson");
       if (!existsSync(meetingsPath)) continue;
 
-      // statements.ndjson が存在しない場合はスキップする
       const statementsPath = resolve(codeDir, "statements.ndjson");
-      if (!existsSync(statementsPath)) continue;
 
       targets.push({
         codeDir,

@@ -72,11 +72,10 @@ async function importDirectory(
   statementsPath: string | null,
   label: string,
 ): Promise<void> {
-  // 1. meetings
-  const insertedMeetingIds = new Set<string>();
+  // ── バリデーションフェーズ ──
+  // meetings.ndjson を読み込み
+  const meetingRows: MeetingNdjsonRow[] = [];
   const allKnownMeetingIds = new Set<string>();
-  let totalMeetings = 0;
-  let meetingBatch: MeetingNdjsonRow[] = [];
 
   for await (const line of createInterface({
     input: createReadStream(meetingsPath),
@@ -86,67 +85,46 @@ async function importDirectory(
     if (!m) continue;
     allKnownMeetingIds.add(m.id);
     if (!m.heldOn) continue;
-    meetingBatch.push(m);
-    totalMeetings++;
-
-    if (meetingBatch.length >= BATCH_SIZE) {
-      const inserted = await insertMeetings(db, meetingBatch);
-      for (const id of inserted) insertedMeetingIds.add(id);
-      meetingBatch = [];
-    }
-  }
-  if (meetingBatch.length > 0) {
-    const inserted = await insertMeetings(db, meetingBatch);
-    for (const id of inserted) insertedMeetingIds.add(id);
+    meetingRows.push(m);
   }
 
-  if (!statementsPath) return;
+  // statements.ndjson を読み込み + meetingId の整合性チェック
+  const statementRows: StatementNdjsonRow[] = [];
+  const insertableMeetingIds = new Set(meetingRows.map((m) => m.id));
 
-  // 2. statements の事前検証（不正 meetingId チェック）
-  let corrupted = false;
-  for await (const line of createInterface({
-    input: createReadStream(statementsPath),
-    crlfDelay: Infinity,
-  })) {
-    const s = parseStatementNdjsonLine(line);
-    if (!s) continue;
-    if (!allKnownMeetingIds.has(s.meetingId)) {
-      corrupted = true;
-      break;
+  if (statementsPath) {
+    for await (const line of createInterface({
+      input: createReadStream(statementsPath),
+      crlfDelay: Infinity,
+    })) {
+      const s = parseStatementNdjsonLine(line);
+      if (!s) continue;
+      if (!allKnownMeetingIds.has(s.meetingId)) {
+        // meetings.ndjson に存在しない meetingId → データ不整合
+        console.log(`[import]   ${label}: 存在しない meetingId を検出 → NDJSON 削除`);
+        unlinkSync(statementsPath);
+        if (existsSync(meetingsPath)) unlinkSync(meetingsPath);
+        return;
+      }
+      if (!insertableMeetingIds.has(s.meetingId)) continue; // heldOn が null の会議に紐づく発言はスキップ
+      statementRows.push(s);
     }
   }
 
-  if (corrupted) {
-    console.log(`[import]   ${label}: 存在しない meetingId を検出 → NDJSON 削除`);
-    unlinkSync(statementsPath);
-    if (existsSync(meetingsPath)) unlinkSync(meetingsPath);
-    return;
+  // ── INSERT フェーズ（バリデーション通過後のみ実行） ──
+  // meetings INSERT
+  for (let i = 0; i < meetingRows.length; i += BATCH_SIZE) {
+    const chunk = meetingRows.slice(i, i + BATCH_SIZE);
+    await insertMeetings(db, chunk);
   }
 
-  // 3. statements
-  let totalStatements = 0;
-  let stmtBatch: StatementNdjsonRow[] = [];
-
-  for await (const line of createInterface({
-    input: createReadStream(statementsPath),
-    crlfDelay: Infinity,
-  })) {
-    const s = parseStatementNdjsonLine(line);
-    if (!s) continue;
-    if (!insertedMeetingIds.has(s.meetingId)) continue;
-    stmtBatch.push(s);
-    totalStatements++;
-
-    if (stmtBatch.length >= BATCH_SIZE) {
-      await insertStatements(db, stmtBatch);
-      stmtBatch = [];
-    }
-  }
-  if (stmtBatch.length > 0) {
-    await insertStatements(db, stmtBatch);
+  // statements INSERT
+  for (let i = 0; i < statementRows.length; i += BATCH_SIZE) {
+    const chunk = statementRows.slice(i, i + BATCH_SIZE);
+    await insertStatements(db, chunk);
   }
 
-  console.log(`[import]   ${label}: ${totalMeetings} 会議, ${totalStatements} 発言`);
+  console.log(`[import]   ${label}: ${meetingRows.length} 会議, ${statementRows.length} 発言`);
 }
 
 async function insertMeetings(db: Db, rows: MeetingNdjsonRow[]): Promise<string[]> {
