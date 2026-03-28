@@ -3,10 +3,23 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockSearchQueryFn, mockSemanticQueryFn } = vi.hoisted(() => ({
-  mockSearchQueryFn: vi.fn(),
-  mockSemanticQueryFn: vi.fn(),
-}));
+const { mockSearchQueryFn, mockSemanticQueryFn, mockMunicipalitiesListQueryFn, mockStorage } = vi.hoisted(() => {
+  const store: Record<string, string> = {};
+  return {
+    mockSearchQueryFn: vi.fn(),
+    mockSemanticQueryFn: vi.fn(),
+    mockMunicipalitiesListQueryFn: vi.fn(),
+    mockStorage: {
+      store,
+      getItem: vi.fn((key: string) => store[key] ?? null),
+      setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
+      removeItem: vi.fn((key: string) => { delete store[key]; }),
+      clear: vi.fn(() => { for (const k in store) delete store[k]; }),
+    },
+  };
+});
+
+Object.defineProperty(globalThis, "localStorage", { value: mockStorage, writable: true });
 
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => () => ({}),
@@ -25,6 +38,14 @@ vi.mock("@/lib/orpc/orpc", () => ({
         queryOptions: ({ input }: { input: unknown }) => ({
           queryKey: ["statements", "semanticSearch", input],
           queryFn: mockSemanticQueryFn,
+        }),
+      },
+    },
+    municipalities: {
+      list: {
+        queryOptions: ({ input }: { input: unknown }) => ({
+          queryKey: ["municipalities", "list", input],
+          queryFn: mockMunicipalitiesListQueryFn,
         }),
       },
     },
@@ -49,6 +70,14 @@ function renderSearchPage() {
 beforeEach(() => {
   mockSearchQueryFn.mockResolvedValue({ statements: [], nextCursor: null });
   mockSemanticQueryFn.mockResolvedValue({ statements: [] });
+  mockMunicipalitiesListQueryFn.mockResolvedValue({
+    municipalities: [
+      { code: "010001", name: "札幌市", prefecture: "北海道", baseUrl: null, population: null, meetingCount: 0, systemTypeDescription: null },
+    ],
+    total: 1,
+  });
+  // Pre-select a municipality so search is enabled
+  mockStorage.store["open-gikai:selectedMunicipalityCodes"] = JSON.stringify(["010001"]);
 });
 
 describe("検索ページ", () => {
