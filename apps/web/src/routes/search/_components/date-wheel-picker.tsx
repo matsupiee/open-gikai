@@ -137,41 +137,43 @@ export function DateWheelPicker({
         </button>
       </DrawerTrigger>
       <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle className="text-sm">{label}</DrawerTitle>
-        </DrawerHeader>
-        <div className="flex justify-center px-4 pb-2">
-          <WheelPickerWrapper className="w-full max-w-xs">
-            <WheelPicker
-              options={YEAR_OPTIONS}
-              value={year}
-              onValueChange={(v) => setYear(v)}
-            />
-            <WheelPicker
-              options={MONTH_OPTIONS}
-              value={month}
-              onValueChange={(v) => setMonth(v)}
-            />
-            <WheelPicker
-              options={dayOptions}
-              value={clampedDay}
-              onValueChange={(v) => setDay(v)}
-            />
-          </WheelPickerWrapper>
-        </div>
-        <DrawerFooter className="flex-row gap-2">
-          <Button variant="outline" size="sm" className="flex-1" onClick={handleClear}>
-            クリア
-          </Button>
-          <DrawerClose asChild>
-            <Button variant="outline" size="sm" className="flex-1">
-              キャンセル
+        <div className="mx-auto w-full max-w-[480px]">
+          <DrawerHeader>
+            <DrawerTitle className="text-sm">{label}</DrawerTitle>
+          </DrawerHeader>
+          <div className="flex justify-center px-4 pb-2">
+            <WheelPickerWrapper className="w-full max-w-xs">
+              <WheelPicker
+                options={YEAR_OPTIONS}
+                value={year}
+                onValueChange={(v) => setYear(v)}
+              />
+              <WheelPicker
+                options={MONTH_OPTIONS}
+                value={month}
+                onValueChange={(v) => setMonth(v)}
+              />
+              <WheelPicker
+                options={dayOptions}
+                value={clampedDay}
+                onValueChange={(v) => setDay(v)}
+              />
+            </WheelPickerWrapper>
+          </div>
+          <DrawerFooter className="flex-row gap-2">
+            <Button variant="outline" size="sm" className="flex-1" onClick={handleClear}>
+              クリア
             </Button>
-          </DrawerClose>
-          <Button size="sm" className="flex-1" onClick={handleConfirm}>
-            決定
-          </Button>
-        </DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline" size="sm" className="flex-1">
+                キャンセル
+              </Button>
+            </DrawerClose>
+            <Button size="sm" className="flex-1" onClick={handleConfirm}>
+              決定
+            </Button>
+          </DrawerFooter>
+        </div>
       </DrawerContent>
     </Drawer>
   );
