@@ -4,9 +4,8 @@ import { extractGroupKey } from "./group-key";
 /** 全ホストグループを通じた同時実行数の上限 */
 const GLOBAL_HOST_GROUP_CONCURRENCY = 30;
 
-export function getHostConcurrency(groupKey: string): number {
-  // discussnet-ssp: 十分な耐性がありそうなので増やす
-  if (groupKey === "kaigiroku.net") return 10;
+export function getHostConcurrency(_groupKey: string): number {
+  // 何か変えたくなったらここを修正する
 
   // デフォルトは 3件に抑える
   return 3;
