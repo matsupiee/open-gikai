@@ -10,7 +10,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getAuth, getDb } from "@/lib/server";
 
 import { isBlockedBot } from "./_utils/block-bot";
-import { checkRateLimit } from "./_utils/rate-limit";
 
 function withSecurityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
@@ -49,21 +48,6 @@ async function handle({ request }: { request: Request }) {
   const userAgent = request.headers.get("user-agent");
   if (isBlockedBot(userAgent)) {
     return new Response("Forbidden", { status: 403 });
-  }
-
-  // Rate limiting by IP
-  const ip =
-    request.headers.get("cf-connecting-ip") ??
-    request.headers.get("x-forwarded-for") ??
-    "unknown";
-  const rateCheck = checkRateLimit(ip);
-  if (!rateCheck.allowed) {
-    return new Response("Too Many Requests", {
-      status: 429,
-      headers: {
-        "Retry-After": String(rateCheck.retryAfter),
-      },
-    });
   }
 
   const context = await createContext({
