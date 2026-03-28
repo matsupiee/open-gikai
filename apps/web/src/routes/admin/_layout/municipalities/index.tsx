@@ -11,7 +11,7 @@ import { Button } from "@/shared/_components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/_components/ui/card";
 import { Input } from "@/shared/_components/ui/input";
 
-export const Route = createFileRoute("/municipalities/")({
+export const Route = createFileRoute("/admin/_layout/municipalities/")({
   component: RouteComponent,
 });
 
@@ -58,102 +58,100 @@ function RouteComponent() {
   const end = offset + count;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-6">自治体一覧</h1>
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-6">自治体一覧</h1>
 
-          <div className="rounded-lg border border-border bg-card p-4 space-y-4">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="例: 鹿児島市、鹿児島県、kensakusystem.jp"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="flex-1"
-              />
-              <Button onClick={handleSearch} size="sm">
-                絞り込む
+        <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="例: 鹿児島市、鹿児島県、kensakusystem.jp"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              className="flex-1"
+            />
+            <Button onClick={handleSearch} size="sm">
+              絞り込む
+            </Button>
+            {appliedQuery && (
+              <Button onClick={handleReset} variant="outline" size="sm">
+                リセット
               </Button>
-              {appliedQuery && (
-                <Button onClick={handleReset} variant="outline" size="sm">
-                  リセット
-                </Button>
-              )}
-            </div>
+            )}
+          </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant={sortBy === "population" ? "default" : "outline"}
-                size="sm"
-                onClick={handleSortByPopulation}
-                className="gap-1.5"
-              >
-                {sortBy === "population" ? (
-                  <ArrowDown className="h-3.5 w-3.5" />
-                ) : (
-                  <ArrowUpDown className="h-3.5 w-3.5" />
-                )}
-                人口順
-              </Button>
-              {sortBy === "population" && (
-                <span className="text-xs text-muted-foreground">人口の多い順で表示中</span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={sortBy === "population" ? "default" : "outline"}
+              size="sm"
+              onClick={handleSortByPopulation}
+              className="gap-1.5"
+            >
+              {sortBy === "population" ? (
+                <ArrowDown className="h-3.5 w-3.5" />
+              ) : (
+                <ArrowUpDown className="h-3.5 w-3.5" />
               )}
-            </div>
+              人口順
+            </Button>
+            {sortBy === "population" && (
+              <span className="text-xs text-muted-foreground">人口の多い順で表示中</span>
+            )}
           </div>
         </div>
+      </div>
 
-        <div className="space-y-3">
-          {isLoading && (
-            <>
-              {[...Array(10)].map((_, i) => (
-                <div key={i} className="rounded-lg border border-border bg-card p-4 animate-pulse">
-                  <div className="h-4 bg-muted rounded w-1/3 mb-2" />
-                  <div className="h-3 bg-muted rounded w-1/4" />
-                </div>
-              ))}
-            </>
-          )}
+      <div className="space-y-3">
+        {isLoading && (
+          <>
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="rounded-lg border border-border bg-card p-4 animate-pulse">
+                <div className="h-4 bg-muted rounded w-1/3 mb-2" />
+                <div className="h-3 bg-muted rounded w-1/4" />
+              </div>
+            ))}
+          </>
+        )}
 
-          {!isLoading && data?.municipalities.length === 0 && (
-            <div className="rounded border border-border bg-card p-8 text-center">
-              <p className="text-sm text-muted-foreground">自治体が見つかりませんでした</p>
+        {!isLoading && data?.municipalities.length === 0 && (
+          <div className="rounded border border-border bg-card p-8 text-center">
+            <p className="text-sm text-muted-foreground">自治体が見つかりませんでした</p>
+          </div>
+        )}
+
+        {!isLoading && data && data.municipalities.length > 0 && (
+          <>
+            <div className="text-xs text-muted-foreground mb-2">
+              {start}〜{end} 件表示（全 {total.toLocaleString()} 件）
             </div>
-          )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {data.municipalities.map((municipality) => (
+                <MunicipalityCard key={municipality.id} municipality={municipality} />
+              ))}
+            </div>
 
-          {!isLoading && data && data.municipalities.length > 0 && (
-            <>
-              <div className="text-xs text-muted-foreground mb-2">
-                {start}〜{end} 件表示（全 {total.toLocaleString()} 件）
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {data.municipalities.map((municipality) => (
-                  <MunicipalityCard key={municipality.id} municipality={municipality} />
-                ))}
-              </div>
-
-              <div className="flex gap-2 justify-between pt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(page - 1)}
-                  disabled={page === 0}
-                >
-                  前のページ
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(page + 1)}
-                  disabled={end >= total}
-                >
-                  次のページ
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
+            <div className="flex gap-2 justify-between pt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(page - 1)}
+                disabled={page === 0}
+              >
+                前のページ
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(page + 1)}
+                disabled={end >= total}
+              >
+                次のページ
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

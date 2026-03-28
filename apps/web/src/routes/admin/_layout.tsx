@@ -27,6 +27,12 @@ function AdminLayout() {
             >
               ダッシュボード
             </a>
+            <a
+              href="/admin/municipalities"
+              className="font-medium text-foreground hover:text-primary"
+            >
+              自治体一覧
+            </a>
           </nav>
         </div>
       </div>

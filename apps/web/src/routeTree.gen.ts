@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SearchIndexRouteImport } from './routes/search/index'
-import { Route as MunicipalitiesIndexRouteImport } from './routes/municipalities/index'
 import { Route as MeetingsIndexRouteImport } from './routes/meetings/index'
 import { Route as MeetingsMeetingIdRouteImport } from './routes/meetings/$meetingId'
 import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
@@ -20,6 +19,7 @@ import { Route as authSignUpIndexRouteImport } from './routes/(auth)/sign-up/ind
 import { Route as authSignInIndexRouteImport } from './routes/(auth)/sign-in/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AdminLayoutMunicipalitiesIndexRouteImport } from './routes/admin/_layout/municipalities/index'
 import { Route as authSignUpOtpIndexRouteImport } from './routes/(auth)/sign-up/otp/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -30,11 +30,6 @@ const IndexRoute = IndexRouteImport.update({
 const SearchIndexRoute = SearchIndexRouteImport.update({
   id: '/search/',
   path: '/search/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MunicipalitiesIndexRoute = MunicipalitiesIndexRouteImport.update({
-  id: '/municipalities/',
-  path: '/municipalities/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeetingsIndexRoute = MeetingsIndexRouteImport.update({
@@ -77,6 +72,12 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLayoutMunicipalitiesIndexRoute =
+  AdminLayoutMunicipalitiesIndexRouteImport.update({
+    id: '/municipalities/',
+    path: '/municipalities/',
+    getParentRoute: () => AdminLayoutRoute,
+  } as any)
 const authSignUpOtpIndexRoute = authSignUpOtpIndexRouteImport.update({
   id: '/(auth)/sign-up/otp/',
   path: '/sign-up/otp/',
@@ -88,7 +89,6 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminLayoutRouteWithChildren
   '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
   '/meetings/': typeof MeetingsIndexRoute
-  '/municipalities/': typeof MunicipalitiesIndexRoute
   '/search/': typeof SearchIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -96,12 +96,12 @@ export interface FileRoutesByFullPath {
   '/sign-up/': typeof authSignUpIndexRoute
   '/admin/': typeof AdminLayoutIndexRoute
   '/sign-up/otp/': typeof authSignUpOtpIndexRoute
+  '/admin/municipalities/': typeof AdminLayoutMunicipalitiesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
   '/meetings': typeof MeetingsIndexRoute
-  '/municipalities': typeof MunicipalitiesIndexRoute
   '/search': typeof SearchIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -109,6 +109,7 @@ export interface FileRoutesByTo {
   '/sign-up': typeof authSignUpIndexRoute
   '/admin': typeof AdminLayoutIndexRoute
   '/sign-up/otp': typeof authSignUpOtpIndexRoute
+  '/admin/municipalities': typeof AdminLayoutMunicipalitiesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,7 +117,6 @@ export interface FileRoutesById {
   '/admin/_layout': typeof AdminLayoutRouteWithChildren
   '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
   '/meetings/': typeof MeetingsIndexRoute
-  '/municipalities/': typeof MunicipalitiesIndexRoute
   '/search/': typeof SearchIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -124,6 +124,7 @@ export interface FileRoutesById {
   '/(auth)/sign-up/': typeof authSignUpIndexRoute
   '/admin/_layout/': typeof AdminLayoutIndexRoute
   '/(auth)/sign-up/otp/': typeof authSignUpOtpIndexRoute
+  '/admin/_layout/municipalities/': typeof AdminLayoutMunicipalitiesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -132,7 +133,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/meetings/$meetingId'
     | '/meetings/'
-    | '/municipalities/'
     | '/search/'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -140,12 +140,12 @@ export interface FileRouteTypes {
     | '/sign-up/'
     | '/admin/'
     | '/sign-up/otp/'
+    | '/admin/municipalities/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/meetings/$meetingId'
     | '/meetings'
-    | '/municipalities'
     | '/search'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -153,13 +153,13 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/admin'
     | '/sign-up/otp'
+    | '/admin/municipalities'
   id:
     | '__root__'
     | '/'
     | '/admin/_layout'
     | '/meetings/$meetingId'
     | '/meetings/'
-    | '/municipalities/'
     | '/search/'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -167,6 +167,7 @@ export interface FileRouteTypes {
     | '/(auth)/sign-up/'
     | '/admin/_layout/'
     | '/(auth)/sign-up/otp/'
+    | '/admin/_layout/municipalities/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -174,7 +175,6 @@ export interface RootRouteChildren {
   AdminLayoutRoute: typeof AdminLayoutRouteWithChildren
   MeetingsMeetingIdRoute: typeof MeetingsMeetingIdRoute
   MeetingsIndexRoute: typeof MeetingsIndexRoute
-  MunicipalitiesIndexRoute: typeof MunicipalitiesIndexRoute
   SearchIndexRoute: typeof SearchIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
@@ -197,13 +197,6 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search/'
       preLoaderRoute: typeof SearchIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/municipalities/': {
-      id: '/municipalities/'
-      path: '/municipalities'
-      fullPath: '/municipalities/'
-      preLoaderRoute: typeof MunicipalitiesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/meetings/': {
@@ -262,6 +255,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/_layout/municipalities/': {
+      id: '/admin/_layout/municipalities/'
+      path: '/municipalities'
+      fullPath: '/admin/municipalities/'
+      preLoaderRoute: typeof AdminLayoutMunicipalitiesIndexRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
     '/(auth)/sign-up/otp/': {
       id: '/(auth)/sign-up/otp/'
       path: '/sign-up/otp'
@@ -274,10 +274,12 @@ declare module '@tanstack/react-router' {
 
 interface AdminLayoutRouteChildren {
   AdminLayoutIndexRoute: typeof AdminLayoutIndexRoute
+  AdminLayoutMunicipalitiesIndexRoute: typeof AdminLayoutMunicipalitiesIndexRoute
 }
 
 const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
   AdminLayoutIndexRoute: AdminLayoutIndexRoute,
+  AdminLayoutMunicipalitiesIndexRoute: AdminLayoutMunicipalitiesIndexRoute,
 }
 
 const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(
@@ -289,7 +291,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminLayoutRoute: AdminLayoutRouteWithChildren,
   MeetingsMeetingIdRoute: MeetingsMeetingIdRoute,
   MeetingsIndexRoute: MeetingsIndexRoute,
-  MunicipalitiesIndexRoute: MunicipalitiesIndexRoute,
   SearchIndexRoute: SearchIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
@@ -300,12 +301,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
