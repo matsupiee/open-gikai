@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 
 import { orpc } from "@/lib/orpc/orpc";
+import { DateWheelPicker } from "@/shared/_components/date-wheel-picker";
+import { MunicipalitySelector } from "@/shared/_components/municipality-selector";
 import { Button } from "@/shared/_components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/_components/ui/card";
 import { Input } from "@/shared/_components/ui/input";
@@ -14,17 +16,17 @@ export const Route = createFileRoute("/meetings/")({
 });
 
 interface Filters {
+  municipalityCodes: string[];
   heldOnFrom: string;
   heldOnTo: string;
-  prefecture: string;
-  municipality: string;
+  title: string;
 }
 
 const defaultFilters: Filters = {
+  municipalityCodes: [],
   heldOnFrom: "",
   heldOnTo: "",
-  prefecture: "",
-  municipality: "",
+  title: "",
 };
 
 function RouteComponent() {
@@ -34,18 +36,28 @@ function RouteComponent() {
   const [cursors, setCursors] = useState<(string | undefined)[]>([undefined]);
   const [page, setPage] = useState(0);
 
+  const dateError =
+    appliedFilters.heldOnFrom &&
+    appliedFilters.heldOnTo &&
+    appliedFilters.heldOnFrom > appliedFilters.heldOnTo
+      ? "開始日は終了日より前の日付を指定してください"
+      : null;
+
   const input = {
+    ...(appliedFilters.municipalityCodes.length > 0
+      ? { municipalityCodes: appliedFilters.municipalityCodes }
+      : {}),
     ...(appliedFilters.heldOnFrom ? { heldOnFrom: appliedFilters.heldOnFrom } : {}),
     ...(appliedFilters.heldOnTo ? { heldOnTo: appliedFilters.heldOnTo } : {}),
-    ...(appliedFilters.prefecture ? { prefecture: appliedFilters.prefecture } : {}),
-    ...(appliedFilters.municipality ? { municipality: appliedFilters.municipality } : {}),
+    ...(appliedFilters.title ? { title: appliedFilters.title } : {}),
     ...(cursor ? { cursor } : {}),
     limit: 20,
   };
 
   const { data, isLoading } = useQuery(orpc.meetings.list.queryOptions({ input }));
 
-  const hasActiveFilters = Object.values(appliedFilters).some(Boolean);
+  const hasActiveFilters =
+    filters.municipalityCodes.length > 0 || filters.heldOnFrom || filters.heldOnTo || filters.title;
 
   function handleSearch() {
     setAppliedFilters(filters);
@@ -85,42 +97,51 @@ function RouteComponent() {
           <h1 className="text-2xl font-bold mb-6">会議一覧</h1>
 
           <div className="rounded-lg border border-border bg-card p-4 space-y-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="space-y-1">
-                <Label className="text-xs">開催日（から）</Label>
-                <Input
-                  type="date"
+            <MunicipalitySelector
+              selectedCodes={filters.municipalityCodes}
+              onChange={(codes) => setFilters({ ...filters, municipalityCodes: codes })}
+            />
+
+            <div className="space-y-1">
+              <Label className="text-xs">開催日</Label>
+              <div className="flex items-center gap-2">
+                <DateWheelPicker
                   value={filters.heldOnFrom}
-                  onChange={(e) => setFilters({ ...filters, heldOnFrom: e.target.value })}
+                  onChange={(v) => setFilters({ ...filters, heldOnFrom: v })}
+                  label="開催日（開始）"
+                  defaultYear={2021}
+                  defaultMonth={1}
+                  defaultDay={1}
                 />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">開催日（まで）</Label>
-                <Input
-                  type="date"
+                <span className="text-xs text-muted-foreground" aria-hidden="true">
+                  ~
+                </span>
+                <DateWheelPicker
                   value={filters.heldOnTo}
-                  onChange={(e) => setFilters({ ...filters, heldOnTo: e.target.value })}
+                  onChange={(v) => setFilters({ ...filters, heldOnTo: v })}
+                  label="開催日（終了）"
+                  defaultYear={new Date().getFullYear()}
+                  defaultMonth={new Date().getMonth() + 1}
+                  defaultDay={new Date().getDate()}
                 />
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">都道府県</Label>
-                <Input
-                  type="text"
-                  placeholder="例: 鹿児島県"
-                  value={filters.prefecture}
-                  onChange={(e) => setFilters({ ...filters, prefecture: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">自治体名</Label>
-                <Input
-                  type="text"
-                  placeholder="例: 鹿児島市"
-                  value={filters.municipality}
-                  onChange={(e) => setFilters({ ...filters, municipality: e.target.value })}
-                />
-              </div>
+              {dateError && (
+                <p className="text-xs text-destructive" role="alert">
+                  {dateError}
+                </p>
+              )}
             </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">会議名</Label>
+              <Input
+                type="text"
+                placeholder="例: 定例会"
+                value={filters.title}
+                onChange={(e) => setFilters({ ...filters, title: e.target.value })}
+              />
+            </div>
+
             <div className="flex gap-2">
               <Button onClick={handleSearch} size="sm">
                 絞り込む
