@@ -35,6 +35,9 @@ export function createAuth({
       enabled: true,
       requireEmailVerification: true,
     },
+    emailVerification: {
+      autoSignInAfterVerification: true,
+    },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         if (ctx.path !== "/sign-up/email") return;
