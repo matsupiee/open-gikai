@@ -42,14 +42,20 @@ export default function SignInForm() {
             });
             toast.success("ログインに成功しました");
           },
-          onError: (error) => {
+          onError: async (error) => {
             if (
               error.error.status === 403 &&
               error.error.message === "Email not verified"
             ) {
-              toast.error(
-                "メールアドレスが未確認です。確認メール内のリンクをクリックしてください。"
-              );
+              await authClient.emailOtp.sendVerificationOtp({
+                email: value.email,
+                type: "email-verification",
+              });
+              toast.info("確認コードをメールに送信しました。");
+              navigate({
+                to: "/sign-up/otp",
+                search: { email: value.email },
+              });
               return;
             }
             toast.error(error.error.message || error.error.statusText);
