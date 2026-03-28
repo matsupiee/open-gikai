@@ -22,6 +22,7 @@ function getEnv(): Cloudflare.Env {
     CORS_ORIGIN: process.env.CORS_ORIGIN ?? "http://localhost:4030",
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? "",
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? "http://localhost:4030",
+    RESEND_API_KEY: process.env.RESEND_API_KEY ?? "",
   } as unknown as Cloudflare.Env;
 }
 
@@ -37,8 +38,14 @@ export function getDb(): Db {
  */
 export function getAuth(): Auth {
   const e = getEnv();
+  if (!e.RESEND_API_KEY) {
+    console.warn(
+      "[auth] RESEND_API_KEY が未設定です。メール確認機能が動作しません。"
+    );
+  }
   return createAuth({
     db: getDb(),
     trustedOrigins: e.CORS_ORIGIN,
+    resendApiKey: e.RESEND_API_KEY,
   });
 }
