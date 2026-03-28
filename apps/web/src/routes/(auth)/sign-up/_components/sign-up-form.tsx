@@ -8,7 +8,6 @@ import { isAllowedEmailDomain } from "@open-gikai/auth/allowed-email-domains";
 import { authClient } from "@/lib/better-auth/auth-client";
 
 import AllowedDomainDialog from "./allowed-domain-dialog";
-import OtpVerificationForm from "./otp-verification-form";
 import Loader from "../../../../shared/_components/loader";
 import { Button } from "../../../../shared/_components/ui/button";
 import {
@@ -23,11 +22,8 @@ import { Input } from "../../../../shared/_components/ui/input";
 import { Label } from "../../../../shared/_components/ui/label";
 
 export default function SignUpForm() {
-  const navigate = useNavigate({
-    from: "/",
-  });
+  const navigate = useNavigate();
   const { isPending } = authClient.useSession();
-  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [showDomainDialog, setShowDomainDialog] = useState(false);
 
   const form = useForm({
@@ -44,7 +40,10 @@ export default function SignUpForm() {
         },
         {
           onSuccess: () => {
-            setRegisteredEmail(value.email);
+            navigate({
+              to: "/sign-up/otp",
+              search: { email: value.email },
+            });
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
@@ -64,18 +63,6 @@ export default function SignUpForm() {
 
   if (isPending) {
     return <Loader />;
-  }
-
-  if (registeredEmail) {
-    return (
-      <OtpVerificationForm
-        email={registeredEmail}
-        onVerified={() => {
-          navigate({ to: "/search" });
-          toast.success("アカウント登録に成功しました");
-        }}
-      />
-    );
   }
 
   return (

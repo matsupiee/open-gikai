@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 import { authClient } from "@/lib/better-auth/auth-client";
 
-import { Button } from "../../../../shared/_components/ui/button";
+import { Button } from "../../../../../shared/_components/ui/button";
 import {
   Card,
   CardContent,
@@ -11,22 +12,21 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "../../../../shared/_components/ui/card";
+} from "../../../../../shared/_components/ui/card";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from "../../../../shared/_components/ui/input-otp";
+} from "../../../../../shared/_components/ui/input-otp";
 
 interface OtpVerificationFormProps {
   email: string;
-  onVerified: () => void;
 }
 
 export default function OtpVerificationForm({
   email,
-  onVerified,
 }: OtpVerificationFormProps) {
+  const navigate = useNavigate();
   const [otp, setOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -43,7 +43,8 @@ export default function OtpVerificationForm({
         toast.error(error.message || "確認コードが正しくありません");
         setOtp("");
       } else {
-        onVerified();
+        navigate({ to: "/search" });
+        toast.success("アカウント登録に成功しました");
       }
     } finally {
       setIsVerifying(false);
