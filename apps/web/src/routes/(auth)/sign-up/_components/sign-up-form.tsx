@@ -4,12 +4,10 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import z from "zod";
 
-import {
-  ALLOWED_EMAIL_DOMAINS,
-  isAllowedEmailDomain,
-} from "@open-gikai/auth/allowed-email-domains";
+import { isAllowedEmailDomain } from "@open-gikai/auth/allowed-email-domains";
 import { authClient } from "@/lib/better-auth/auth-client";
 
+import AllowedDomainDialog from "./allowed-domain-dialog";
 import Loader from "../../../../shared/_components/loader";
 import { Button } from "../../../../shared/_components/ui/button";
 import {
@@ -20,14 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../../shared/_components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../../../../shared/_components/ui/dialog";
 import { Input } from "../../../../shared/_components/ui/input";
 import { Label } from "../../../../shared/_components/ui/label";
 
@@ -203,30 +193,10 @@ export default function SignUpForm() {
         </CardFooter>
       </Card>
 
-      <Dialog open={showDomainDialog} onOpenChange={setShowDomainDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>登録可能なメールドメイン</DialogTitle>
-            <DialogDescription>
-              以下のドメインのメールアドレスで登録できます。
-            </DialogDescription>
-          </DialogHeader>
-          <ul className="max-h-64 overflow-y-auto columns-2 gap-x-4 text-sm">
-            {ALLOWED_EMAIL_DOMAINS.map((domain) => (
-              <li key={domain} className="py-0.5">
-                @{domain.replace("*.", "")}
-                {domain.startsWith("*.") && (
-                  <span className="text-muted-foreground">
-                    {" "}
-                    (サブドメイン可)
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-          <DialogFooter showCloseButton />
-        </DialogContent>
-      </Dialog>
+      <AllowedDomainDialog
+        open={showDomainDialog}
+        onOpenChange={setShowDomainDialog}
+      />
     </>
   );
 }
