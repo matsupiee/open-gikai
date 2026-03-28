@@ -11,6 +11,7 @@ interface SearchFiltersProps {
   heldOnTo: string;
   setHeldOnTo: (v: string) => void;
   onReset: () => void;
+  dateError: string | null;
 }
 
 export function SearchFilters({
@@ -21,37 +22,57 @@ export function SearchFilters({
   heldOnTo,
   setHeldOnTo,
   onReset,
+  dateError,
 }: SearchFiltersProps) {
   const hasActiveFilters = !!(kind || heldOnFrom || heldOnTo);
 
   return (
-    <div className="grid gap-3 rounded border border-border bg-card p-4">
-      <h3 className="font-semibold text-sm">フィルター</h3>
+    <fieldset className="grid gap-3 rounded border border-border bg-card p-4">
+      <legend className="font-semibold text-sm px-1">フィルター</legend>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
         <div className="flex flex-col gap-1">
-          <Label className="text-xs">開催日（から）</Label>
+          <Label htmlFor="filter-held-on-from" className="text-xs">
+            開催日（から）
+          </Label>
           <Input
+            id="filter-held-on-from"
             type="date"
             value={heldOnFrom}
+            max={heldOnTo || undefined}
             onChange={(e) => setHeldOnFrom(e.target.value)}
             className="text-xs"
+            aria-invalid={dateError ? "true" : undefined}
+            aria-describedby={dateError ? "date-error" : undefined}
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <Label className="text-xs">開催日（まで）</Label>
+          <Label htmlFor="filter-held-on-to" className="text-xs">
+            開催日（まで）
+          </Label>
           <Input
+            id="filter-held-on-to"
             type="date"
             value={heldOnTo}
+            min={heldOnFrom || undefined}
             onChange={(e) => setHeldOnTo(e.target.value)}
             className="text-xs"
+            aria-invalid={dateError ? "true" : undefined}
+            aria-describedby={dateError ? "date-error" : undefined}
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <Label className="text-xs">発言種別</Label>
-          <NativeSelect value={kind} onChange={(e) => setKind(e.target.value)} className="w-full">
+          <Label htmlFor="filter-kind" className="text-xs">
+            発言種別
+          </Label>
+          <NativeSelect
+            id="filter-kind"
+            value={kind}
+            onChange={(e) => setKind(e.target.value)}
+            className="w-full"
+          >
             <NativeSelectOption value="">すべて</NativeSelectOption>
             <NativeSelectOption value="question">質問</NativeSelectOption>
             <NativeSelectOption value="answer">答弁</NativeSelectOption>
@@ -59,11 +80,17 @@ export function SearchFilters({
         </div>
       </div>
 
+      {dateError && (
+        <p id="date-error" className="text-xs text-destructive" role="alert">
+          {dateError}
+        </p>
+      )}
+
       {hasActiveFilters && (
         <Button onClick={onReset} variant="outline" size="sm" className="w-full">
           フィルターをリセット
         </Button>
       )}
-    </div>
+    </fieldset>
   );
 }

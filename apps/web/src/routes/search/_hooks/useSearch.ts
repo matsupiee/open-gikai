@@ -1,58 +1,78 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
-import { orpc } from "@/lib/orpc/orpc";
-import { useDebouncedValue } from "@/shared/_hooks/use-debounced-value";
+import { client } from "@/lib/orpc/orpc";
 
 import { usePersistedMunicipalityCodes } from "./usePersistedMunicipalityCodes";
 
-const DEBOUNCE_MS = 300;
+import type { SearchParams } from "../index";
 
-export function useSearch() {
-  const [query, setQuery] = useState("");
-  const [kind, setKind] = useState<"question" | "answer" | "">("");
-  const [speakerName, setSpeakerName] = useState("");
-  const [heldOnFrom, setHeldOnFrom] = useState("");
-  const [heldOnTo, setHeldOnTo] = useState("");
+const LIMIT = 10;
+
+export function useSearch(searchParams: SearchParams) {
+  const navigate = useNavigate();
 
   const { municipalityCodes, setMunicipalityCodes } = usePersistedMunicipalityCodes();
 
-  const debouncedQuery = useDebouncedValue(query, DEBOUNCE_MS);
-  const debouncedSpeakerName = useDebouncedValue(speakerName, DEBOUNCE_MS);
+  const query = searchParams.q ?? "";
+  const kind = searchParams.kind ?? "";
+  const heldOnFrom = searchParams.heldOnFrom ?? "";
+  const heldOnTo = searchParams.heldOnTo ?? "";
 
-  const searchReady =
-    municipalityCodes.length > 0 &&
-    (debouncedQuery.trim().length > 0 || debouncedSpeakerName.trim().length > 0);
-
-  const keywordQuery = useQuery({
-    ...orpc.statements.search.queryOptions({
-      input: {
-        q: debouncedQuery.trim() || undefined,
-        kind: (kind || undefined) as "question" | "answer" | undefined,
-        speakerName: debouncedSpeakerName.trim() || undefined,
-        heldOnFrom: heldOnFrom || undefined,
-        heldOnTo: heldOnTo || undefined,
-        municipalityCodes: municipalityCodes.length > 0 ? municipalityCodes : undefined,
-        limit: 10,
+  const setSearchParam = <K extends keyof SearchParams>(key: K, value: SearchParams[K]) => {
+    navigate({
+      to: "/search",
+      search: (prev) => {
+        const next = { ...prev, [key]: value };
+        for (const k of Object.keys(next) as (keyof SearchParams)[]) {
+          if (next[k] === "" || next[k] === undefined) {
+            delete next[k];
+          }
+        }
+        return next;
       },
-    }),
+      replace: true,
+    });
+  };
+
+  const setQuery = (v: string) => setSearchParam("q", v);
+  const setKind = (v: "question" | "answer" | "") => setSearchParam("kind", v);
+  const setHeldOnFrom = (v: string) => setSearchParam("heldOnFrom", v);
+  const setHeldOnTo = (v: string) => setSearchParam("heldOnTo", v);
+
+  const searchInput = {
+    q: query.trim() || undefined,
+    kind: (kind || undefined) as "question" | "answer" | undefined,
+    heldOnFrom: heldOnFrom || undefined,
+    heldOnTo: heldOnTo || undefined,
+    municipalityCodes: municipalityCodes.length > 0 ? municipalityCodes : undefined,
+    limit: LIMIT,
+  };
+
+  const searchReady = municipalityCodes.length > 0 && query.trim().length > 0;
+
+  const infiniteQuery = useInfiniteQuery({
+    queryKey: ["statements", "search", searchInput],
+    queryFn: ({ pageParam }) =>
+      client.statements.search({
+        ...searchInput,
+        cursor: pageParam ?? undefined,
+      }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
     enabled: searchReady,
   });
 
-  const { data: keywordData, isLoading: keywordLoading } = keywordQuery;
+  const statements = infiniteQuery.data?.pages.flatMap((page) => page.statements) ?? [];
 
-  const statements = keywordData?.statements ?? [];
-
-  const isLoading = keywordLoading;
-
-  const hasSearched = debouncedQuery.trim().length > 0 || debouncedSpeakerName.trim().length > 0;
+  const hasSearched = query.trim().length > 0;
 
   const handleReset = () => {
-    setQuery("");
-    setKind("");
-    setSpeakerName("");
-    setHeldOnFrom("");
-    setHeldOnTo("");
+    navigate({
+      to: "/search",
+      search: {},
+      replace: true,
+    });
   };
 
   return {
@@ -60,8 +80,6 @@ export function useSearch() {
     setQuery,
     kind,
     setKind,
-    speakerName,
-    setSpeakerName,
     heldOnFrom,
     setHeldOnFrom,
     heldOnTo,
@@ -69,7 +87,10 @@ export function useSearch() {
     municipalityCodes,
     setMunicipalityCodes,
     statements,
-    isLoading,
+    isLoading: infiniteQuery.isLoading,
+    isFetchingNextPage: infiniteQuery.isFetchingNextPage,
+    hasNextPage: infiniteQuery.hasNextPage,
+    fetchNextPage: infiniteQuery.fetchNextPage,
     hasSearched,
     handleReset,
   };
