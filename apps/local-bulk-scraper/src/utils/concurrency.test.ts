@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { getHostConcurrency, getDetailConcurrency, runGroupedByHost } from "./concurrency";
 
 describe("getHostConcurrency", () => {
-  it("kaigiroku.net は 10 を返す", () => {
-    expect(getHostConcurrency("kaigiroku.net")).toBe(10);
+  it("kaigiroku.net もデフォルト 3 を返す", () => {
+    expect(getHostConcurrency("kaigiroku.net")).toBe(3);
   });
 
   it("任意のキーはデフォルト 3 を返す", () => {
@@ -105,10 +105,10 @@ describe("runGroupedByHost", () => {
 
     await runGroupedByHost(targets, tasks);
 
-    // dbsr.jp のデフォルト並列数は 5 なので 3 タスクは全て並列可能だが、
+    // dbsr.jp もデフォルト並列数は 3 なので 3 タスクは全て並列可能だが、
     // 重要なのは同一グループにまとめられていること（全タスク完了する）
     expect(maxConcurrent).toBeGreaterThanOrEqual(1);
-    expect(maxConcurrent).toBeLessThanOrEqual(5);
+    expect(maxConcurrent).toBeLessThanOrEqual(3);
   });
 
   it("空配列でもエラーなく解決する", async () => {
