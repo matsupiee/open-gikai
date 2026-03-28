@@ -9,18 +9,18 @@ import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { Resend } from "resend";
 import { isAllowedEmailDomain } from "./allowed-email-domains";
 
+const EMAIL_FROM = "noreplay@opengikai.com";
+
 export interface CreateAuthOptions {
   db: Db;
   trustedOrigins: string;
   resendApiKey: string;
-  emailFrom: string;
 }
 
 export function createAuth({
   db,
   trustedOrigins,
   resendApiKey,
-  emailFrom,
 }: CreateAuthOptions) {
   const resend = new Resend(resendApiKey);
 
@@ -56,7 +56,7 @@ export function createAuth({
         async sendVerificationOTP({ email, otp, type }) {
           if (type !== "email-verification") return;
           await resend.emails.send({
-            from: emailFrom,
+            from: EMAIL_FROM,
             to: email,
             subject: "【open-gikai】確認コード",
             html: `
