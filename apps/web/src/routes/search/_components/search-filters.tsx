@@ -27,10 +27,10 @@ export function SearchFilters({
   const hasActiveFilters = !!(kind || heldOnFrom || heldOnTo);
 
   return (
-    <fieldset className="grid gap-3 rounded border border-border bg-card p-4">
-      <legend className="font-semibold text-sm px-1">フィルター</legend>
+    <fieldset className="grid gap-2">
+      <legend className="text-xs text-muted-foreground">フィルター</legend>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
         <div className="flex flex-col gap-1">
           <Label htmlFor="filter-held-on-from" className="text-xs">
             開催日（から）

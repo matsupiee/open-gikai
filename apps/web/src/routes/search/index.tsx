@@ -62,12 +62,12 @@ export function RouteComponent() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-6">
+        <div className="mb-4">
           <h1 className="text-xl font-bold mb-1">議会答弁調査</h1>
           <p className="text-sm text-muted-foreground">過去の答弁を素早く検索できます</p>
         </div>
 
-        <div className="mb-6 rounded border border-border bg-card p-4">
+        <div className="mb-3 rounded border border-border bg-card px-4 py-3">
           <MunicipalitySelector selectedCodes={municipalityCodes} onChange={setMunicipalityCodes} />
         </div>
 
@@ -80,8 +80,8 @@ export function RouteComponent() {
         )}
 
         {canSearch && (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-3 rounded border border-border bg-card p-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2 rounded border border-border bg-card px-4 py-3">
               <div role="search" aria-label="議会答弁検索">
                 <label htmlFor="search-query" className="sr-only">
                   検索ワード
