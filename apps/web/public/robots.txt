@@ -1,3 +1,6 @@
-# https://www.robotstxt.org/robotstxt.html
+# robots.txt はクローラーへの「お願い」であり、強制力はない。
+# 悪意あるクローラーはこのファイルを無視するため、
+# 実際のスクレイピング防止はサーバー側の対策に依存する。
 User-agent: *
-Disallow:
+Disallow: /api/
+Disallow: /admin/

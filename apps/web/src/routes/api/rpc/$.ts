@@ -9,6 +9,8 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { getAuth, getDb } from "@/lib/server";
 
+import { isBlockedBot } from "./_utils/block-bot";
+
 const rpcHandler = new RPCHandler(appRouter, {
   interceptors: [
     onError((error) => {
@@ -31,6 +33,12 @@ const apiHandler = new OpenAPIHandler(appRouter, {
 });
 
 async function handle({ request }: { request: Request }) {
+  // Bot UA check
+  const userAgent = request.headers.get("user-agent");
+  if (isBlockedBot(userAgent)) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
   const context = await createContext({
     req: request,
     auth: getAuth(),
