@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shared/_components/ui/button";
 import { Input } from "@/shared/_components/ui/input";
 
-import { MunicipalitySelector } from "./_components/municipality-selector";
+import { MunicipalitySelector } from "@/shared/_components/municipality-selector";
 import { SearchFilters } from "./_components/search-filters";
 import { SkeletonCard } from "./_components/skeleton-card";
 import { StatementCard } from "./_components/statement-card";
@@ -68,7 +68,7 @@ export function RouteComponent() {
         </div>
 
         <div className="mb-3 flex flex-col gap-3 rounded border border-border bg-card px-4 py-3">
-          <MunicipalitySelector selectedCodes={municipalityCodes} onChange={setMunicipalityCodes} />
+          <MunicipalitySelector selectedCodes={municipalityCodes} onChange={setMunicipalityCodes} required />
 
           {!canSearch && (
             <p className="text-sm text-muted-foreground text-center py-4" role="status">

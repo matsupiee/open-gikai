@@ -10,7 +10,7 @@ import {
 } from "@/shared/_components/ui/collapsible";
 import { NativeSelect, NativeSelectOption } from "@/shared/_components/ui/native-select";
 
-import { DateWheelPicker } from "./date-wheel-picker";
+import { DateWheelPicker } from "@/shared/_components/date-wheel-picker";
 
 interface SearchFiltersProps {
   kind: string;
