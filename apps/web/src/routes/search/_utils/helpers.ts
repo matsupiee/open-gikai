@@ -1,3 +1,31 @@
+import type { ReactNode } from "react";
+import { createElement, Fragment } from "react";
+
+export function highlightText(text: string, query: string): ReactNode {
+  const tokens = query
+    .trim()
+    .split(/\s+/)
+    .filter((t) => t.length > 0);
+  if (tokens.length === 0) return text;
+
+  const escaped = tokens.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
+  const parts = text.split(pattern);
+
+  if (parts.length === 1) return text;
+
+  return createElement(
+    Fragment,
+    null,
+    ...parts.map((part, i) => {
+      const isMatch = tokens.some((t) => part.toLowerCase() === t.toLowerCase());
+      return isMatch
+        ? createElement("mark", { key: i, className: "bg-yellow-200 rounded-sm" }, part)
+        : part;
+    }),
+  );
+}
+
 export const getKindLabel = (kind: string): string => {
   const kindMap: Record<string, string> = {
     question: "質問",

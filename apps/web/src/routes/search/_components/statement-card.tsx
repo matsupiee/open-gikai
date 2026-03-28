@@ -4,7 +4,7 @@ import { Badge } from "@/shared/_components/ui/badge";
 import { Button } from "@/shared/_components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/_components/ui/card";
 
-import { getKindColor, getKindLabel } from "../_utils/helpers";
+import { getKindColor, getKindLabel, highlightText } from "../_utils/helpers";
 
 interface StatementCardProps {
   statement: {
@@ -20,9 +20,10 @@ interface StatementCardProps {
     sourceUrl: string | null;
   };
   showSimilarity: boolean;
+  query?: string;
 }
 
-export function StatementCard({ statement, showSimilarity }: StatementCardProps) {
+export function StatementCard({ statement, showSimilarity, query }: StatementCardProps) {
   const [expanded, setExpanded] = useState(false);
   const isTruncated = statement.content.length > 200;
   const displayContent =
@@ -48,7 +49,9 @@ export function StatementCard({ statement, showSimilarity }: StatementCardProps)
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-3">
-          <p className="text-xs leading-relaxed">{displayContent}</p>
+          <p className="text-xs leading-relaxed">
+            {query ? highlightText(displayContent, query) : displayContent}
+          </p>
           {isTruncated && (
             <Button
               variant="link"
