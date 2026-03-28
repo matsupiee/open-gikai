@@ -121,7 +121,7 @@ export function DateWheelPicker({
   }, [onChange]);
 
   return (
-    <Drawer open={open} onOpenChange={handleOpenChange}>
+    <Drawer open={open} onOpenChange={handleOpenChange} handleOnly>
       <DrawerTrigger asChild>
         <button
           type="button"

@@ -20,6 +20,7 @@ import { Route as authSignUpIndexRouteImport } from './routes/(auth)/sign-up/ind
 import { Route as authSignInIndexRouteImport } from './routes/(auth)/sign-in/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as authSignUpOtpIndexRouteImport } from './routes/(auth)/sign-up/otp/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +77,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const authSignUpOtpIndexRoute = authSignUpOtpIndexRouteImport.update({
+  id: '/(auth)/sign-up/otp/',
+  path: '/sign-up/otp/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/sign-in/': typeof authSignInIndexRoute
   '/sign-up/': typeof authSignUpIndexRoute
   '/admin/': typeof AdminLayoutIndexRoute
+  '/sign-up/otp/': typeof authSignUpOtpIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof authSignInIndexRoute
   '/sign-up': typeof authSignUpIndexRoute
   '/admin': typeof AdminLayoutIndexRoute
+  '/sign-up/otp': typeof authSignUpOtpIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/(auth)/sign-in/': typeof authSignInIndexRoute
   '/(auth)/sign-up/': typeof authSignUpIndexRoute
   '/admin/_layout/': typeof AdminLayoutIndexRoute
+  '/(auth)/sign-up/otp/': typeof authSignUpOtpIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/sign-in/'
     | '/sign-up/'
     | '/admin/'
+    | '/sign-up/otp/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/admin'
+    | '/sign-up/otp'
   id:
     | '__root__'
     | '/'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/(auth)/sign-in/'
     | '/(auth)/sign-up/'
     | '/admin/_layout/'
+    | '/(auth)/sign-up/otp/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -168,6 +180,7 @@ export interface RootRouteChildren {
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   authSignInIndexRoute: typeof authSignInIndexRoute
   authSignUpIndexRoute: typeof authSignUpIndexRoute
+  authSignUpOtpIndexRoute: typeof authSignUpOtpIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -249,6 +262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(auth)/sign-up/otp/': {
+      id: '/(auth)/sign-up/otp/'
+      path: '/sign-up/otp'
+      fullPath: '/sign-up/otp/'
+      preLoaderRoute: typeof authSignUpOtpIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -275,6 +295,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   authSignInIndexRoute: authSignInIndexRoute,
   authSignUpIndexRoute: authSignUpIndexRoute,
+  authSignUpOtpIndexRoute: authSignUpOtpIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
