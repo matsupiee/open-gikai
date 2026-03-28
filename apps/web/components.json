@@ -17,5 +17,8 @@
     "ui": "@/shared/_components/ui",
     "lib": "@/lib/shadcn",
     "hooks": "@/shared/_hooks"
+  },
+  "registries": {
+    "@ncdai": "https://chanhdai.com/r/{name}.json"
   }
 }

@@ -4,12 +4,20 @@ import { createAuth, type Auth } from "@open-gikai/auth";
 let cfEnv: Cloudflare.Env | undefined;
 
 try {
-  // Cloudflare Workers 環境（本番 + miniflare）
-  // @ts-expect-error cloudflare:workers は Cloudflare 環境でのみ利用可能
   const cf = await import("cloudflare:workers");
   cfEnv = cf.env;
-} catch {
-  // ローカル dev（Cloudflare plugin なし）
+} catch {}
+
+// Cloudflare Workers では cfEnv が入るためこの分岐は通らない。ローカル開発でこの分岐に入る
+if (!cfEnv) {
+  // 動的import にすることで、Cloudflare バンドルで node:path / dotenv が評価されないようにするため。
+  const [{ config: loadEnvFile }, path, { fileURLToPath }] = await Promise.all([
+    import("dotenv"),
+    import("node:path"),
+    import("node:url"),
+  ]);
+  const monorepoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
+  loadEnvFile({ path: path.join(monorepoRoot, ".env.local"), override: true });
 }
 
 function getEnv(): Cloudflare.Env {
@@ -39,9 +47,7 @@ export function getDb(): Db {
 export function getAuth(): Auth {
   const e = getEnv();
   if (!e.RESEND_API_KEY) {
-    console.warn(
-      "[auth] RESEND_API_KEY が未設定です。メール確認機能が動作しません。"
-    );
+    console.warn("[auth] RESEND_API_KEY が未設定です。メール確認機能が動作しません。");
   }
   return createAuth({
     db: getDb(),
