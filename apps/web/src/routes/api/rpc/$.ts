@@ -9,68 +9,9 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { getAuth, getDb } from "@/lib/server";
 
-// --- Bot detection ---
-const BLOCKED_UA_PATTERNS = [
-  /python-requests/i,
-  /scrapy/i,
-  /wget/i,
-  /httpx/i,
-  /aiohttp/i,
-  /node-fetch/i,
-  /go-http-client/i,
-  /java\//i,
-  /libwww-perl/i,
-  /GPTBot/i,
-  /CCBot/i,
-  /Google-Extended/i,
-  /anthropic-ai/i,
-  /ClaudeBot/i,
-  /Bytespider/i,
-  /Amazonbot/i,
-  /Cohere-ai/i,
-];
+import { isBlockedBot } from "./_utils/block-bot";
+import { checkRateLimit } from "./_utils/rate-limit";
 
-function isBlockedBot(userAgent: string | null): boolean {
-  if (!userAgent) return true;
-  return BLOCKED_UA_PATTERNS.some((pattern) => pattern.test(userAgent));
-}
-
-// --- Rate limiting (per-isolate in-memory) ---
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_REQUESTS = 60;
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string): { allowed: boolean; retryAfter: number } {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || now >= entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return { allowed: true, retryAfter: 0 };
-  }
-
-  entry.count++;
-  if (entry.count > RATE_LIMIT_MAX_REQUESTS) {
-    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-    return { allowed: false, retryAfter };
-  }
-
-  return { allowed: true, retryAfter: 0 };
-}
-
-// Periodically clean up expired entries to prevent memory leaks
-function cleanupRateLimitMap() {
-  const now = Date.now();
-  for (const [ip, entry] of rateLimitMap) {
-    if (now >= entry.resetAt) {
-      rateLimitMap.delete(ip);
-    }
-  }
-}
-setInterval(cleanupRateLimitMap, RATE_LIMIT_WINDOW_MS);
-
-// --- Security headers ---
 function withSecurityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
   headers.set("X-Robots-Tag", "noindex, nofollow");
@@ -82,7 +23,6 @@ function withSecurityHeaders(response: Response): Response {
   });
 }
 
-// --- Handlers ---
 const rpcHandler = new RPCHandler(appRouter, {
   interceptors: [
     onError((error) => {
