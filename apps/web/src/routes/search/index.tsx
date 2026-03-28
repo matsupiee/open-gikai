@@ -67,21 +67,28 @@ export function RouteComponent() {
           <p className="text-sm text-muted-foreground">過去の答弁を素早く検索できます</p>
         </div>
 
-        <div className="mb-3 rounded border border-border bg-card px-4 py-3">
+        <div className="mb-3 flex flex-col gap-3 rounded border border-border bg-card px-4 py-3">
           <MunicipalitySelector selectedCodes={municipalityCodes} onChange={setMunicipalityCodes} />
-        </div>
 
-        {!canSearch && (
-          <div className="rounded border border-border bg-card p-8 text-center" role="status">
-            <p className="text-sm text-muted-foreground">
+          {!canSearch && (
+            <p className="text-sm text-muted-foreground text-center py-4" role="status">
               上のセレクターから自治体を選択すると、検索が可能になります
             </p>
-          </div>
-        )}
+          )}
 
-        {canSearch && (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-2 rounded border border-border bg-card px-4 py-3">
+          {canSearch && (
+            <>
+              <SearchFilters
+                kind={kind}
+                setKind={(v) => setKind(v as "question" | "answer" | "")}
+                heldOnFrom={heldOnFrom}
+                setHeldOnFrom={setHeldOnFrom}
+                heldOnTo={heldOnTo}
+                setHeldOnTo={setHeldOnTo}
+                onReset={handleReset}
+                dateError={dateError}
+              />
+
               <div role="search" aria-label="議会答弁検索">
                 <label htmlFor="search-query" className="sr-only">
                   検索ワード
@@ -96,76 +103,66 @@ export function RouteComponent() {
                   aria-describedby={dateError ? "date-error" : undefined}
                 />
               </div>
+            </>
+          )}
+        </div>
 
-              <SearchFilters
-                kind={kind}
-                setKind={(v) => setKind(v as "question" | "answer" | "")}
-                heldOnFrom={heldOnFrom}
-                setHeldOnFrom={setHeldOnFrom}
-                heldOnTo={heldOnTo}
-                setHeldOnTo={setHeldOnTo}
-                onReset={handleReset}
-                dateError={dateError}
-              />
-            </div>
+        {canSearch && (
+          <div
+            className="space-y-4"
+            aria-live="polite"
+            aria-atomic="false"
+          >
+            {isLoading && (
+              <div aria-label="検索結果を読み込み中" role="status">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="mb-4">
+                    <SkeletonCard />
+                  </div>
+                ))}
+              </div>
+            )}
 
-            {/* Results */}
-            <div
-              className="flex-1 min-w-0 space-y-4"
-              aria-live="polite"
-              aria-atomic="false"
-            >
-              {isLoading && (
-                <div aria-label="検索結果を読み込み中" role="status">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="mb-4">
-                      <SkeletonCard />
-                    </div>
+            {!hasSearched && !isLoading && (
+              <div className="rounded border border-border bg-card p-8 text-center" role="status">
+                <p className="text-sm text-muted-foreground">検索ワード未入力</p>
+              </div>
+            )}
+
+            {hasSearched && !isLoading && statements.length === 0 && (
+              <div className="rounded border border-border bg-card p-8 text-center" role="status">
+                <p className="text-sm text-muted-foreground">発言が見つかりませんでした</p>
+              </div>
+            )}
+
+            {statements.length > 0 && (
+              <>
+                <p className="text-xs text-muted-foreground" role="status" aria-live="polite">
+                  {statements.length}件の結果{hasNextPage && "（さらに表示可能）"}
+                </p>
+                <div className="grid gap-4">
+                  {statements.map((statement) => (
+                    <StatementCard
+                      key={statement.id}
+                      statement={statement}
+                      showSimilarity={false}
+                    />
                   ))}
                 </div>
-              )}
 
-              {!hasSearched && !isLoading && (
-                <div className="rounded border border-border bg-card p-8 text-center" role="status">
-                  <p className="text-sm text-muted-foreground">検索ワード未入力</p>
-                </div>
-              )}
-
-              {hasSearched && !isLoading && statements.length === 0 && (
-                <div className="rounded border border-border bg-card p-8 text-center" role="status">
-                  <p className="text-sm text-muted-foreground">発言が見つかりませんでした</p>
-                </div>
-              )}
-
-              {statements.length > 0 && (
-                <>
-                  <p className="text-xs text-muted-foreground" role="status" aria-live="polite">
-                    {statements.length}件の結果{hasNextPage && "（さらに表示可能）"}
-                  </p>
-                  <div className="grid gap-4">
-                    {statements.map((statement) => (
-                      <StatementCard
-                        key={statement.id}
-                        statement={statement}
-                        showSimilarity={false}
-                      />
-                    ))}
+                {hasNextPage && (
+                  <div className="flex justify-center pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => fetchNextPage()}
+                      disabled={isFetchingNextPage}
+                    >
+                      {isFetchingNextPage ? "読み込み中..." : "もっと見る"}
+                    </Button>
                   </div>
-
-                  {hasNextPage && (
-                    <div className="flex justify-center pt-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => fetchNextPage()}
-                        disabled={isFetchingNextPage}
-                      >
-                        {isFetchingNextPage ? "読み込み中..." : "もっと見る"}
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>

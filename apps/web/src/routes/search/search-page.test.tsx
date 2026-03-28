@@ -110,9 +110,8 @@ describe("検索ページ", () => {
     expect(screen.getByText("自治体を選択", { exact: false })).toBeTruthy();
     expect(screen.getByPlaceholderText(SEARCH_INPUT_PLACEHOLDER)).toBeTruthy();
 
-    // フィルターは常時表示
-    expect(screen.getByText("開催日（から）")).toBeTruthy();
-    expect(screen.getByText("発言種別")).toBeTruthy();
+    // 詳細条件トグルが表示される
+    expect(screen.getByRole("button", { name: /詳細条件/ })).toBeTruthy();
   });
 
   it("自治体未選択時は検索フォームの代わりに案内が表示される", async () => {
