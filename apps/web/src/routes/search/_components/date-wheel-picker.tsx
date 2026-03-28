@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, XIcon } from "lucide-react";
 
 import { Button } from "@/shared/_components/ui/button";
 import {
@@ -140,16 +140,16 @@ export function DateWheelPicker({
         <div className="mx-auto w-full max-w-[480px]">
           <DrawerHeader className="relative">
             <DrawerTitle className="text-sm">{label}</DrawerTitle>
-            {value && (
+            <DrawerClose asChild>
               <Button
-                variant="link"
-                size="sm"
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-muted-foreground h-auto p-0"
-                onClick={handleClear}
+                variant="ghost"
+                size="icon-xs"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+                aria-label="閉じる"
               >
-                クリア
+                <XIcon className="size-4" />
               </Button>
-            )}
+            </DrawerClose>
           </DrawerHeader>
           <div className="flex justify-center px-4 pb-2">
             <WheelPickerWrapper className="w-full max-w-xs">
@@ -171,11 +171,9 @@ export function DateWheelPicker({
             </WheelPickerWrapper>
           </div>
           <DrawerFooter className="flex-row gap-2">
-            <DrawerClose asChild>
-              <Button variant="outline" size="sm" className="flex-1">
-                キャンセル
-              </Button>
-            </DrawerClose>
+            <Button variant="outline" size="sm" className="flex-1" onClick={handleClear}>
+              リセット
+            </Button>
             <Button size="sm" className="flex-1" onClick={handleConfirm}>
               決定
             </Button>
