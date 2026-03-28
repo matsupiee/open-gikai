@@ -74,19 +74,6 @@ function RouteComponent() {
             <span>{data.prefecture} {data.municipality}</span>
             <span>•</span>
             <Badge variant="outline" className="text-xs">{data.meetingType}</Badge>
-            {data.sourceUrl && (
-              <>
-                <span>•</span>
-                <a
-                  href={data.sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline text-xs"
-                >
-                  元の議事録を見る
-                </a>
-              </>
-            )}
           </div>
         </div>
 

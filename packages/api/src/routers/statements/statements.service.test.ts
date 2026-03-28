@@ -38,7 +38,6 @@ describe("searchStatements", () => {
         title: "札幌定例会",
         meetingType: "定例会",
         heldOn: "2024-03-01",
-        sourceUrl: "https://example.com/sapporo",
       });
       await tx.insert(statements).values([
         {

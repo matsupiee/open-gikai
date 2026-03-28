@@ -141,7 +141,6 @@ describe("検索ページ", () => {
           heldOn: "2024-03-01",
           prefecture: "北海道",
           municipality: "札幌市",
-          sourceUrl: "https://example.com/sapporo",
         },
         {
           id: "stmt-2",
@@ -154,7 +153,6 @@ describe("検索ページ", () => {
           heldOn: "2024-03-01",
           prefecture: "北海道",
           municipality: "札幌市",
-          sourceUrl: null,
         },
       ],
       nextCursor: null,
@@ -173,9 +171,11 @@ describe("検索ページ", () => {
     );
 
     expect(
-      screen.getByText((_, element) => element?.textContent === "予算について質問します"),
+      screen.getByText((_, el) => el?.tagName === "P" && el?.textContent === "予算について質問します"),
     ).toBeTruthy();
-    expect(screen.getByText("教育政策について回答します")).toBeTruthy();
+    expect(
+      screen.getByText((_, el) => el?.tagName === "P" && el?.textContent === "教育政策について回答します"),
+    ).toBeTruthy();
     expect(screen.getAllByText("札幌定例会")).toHaveLength(2);
     expect(screen.getAllByText("質問").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("答弁").length).toBeGreaterThanOrEqual(1);
