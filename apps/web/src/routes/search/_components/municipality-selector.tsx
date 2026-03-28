@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { XIcon } from "lucide-react";
 
@@ -7,21 +7,11 @@ import { Badge } from "@/shared/_components/ui/badge";
 import { Button } from "@/shared/_components/ui/button";
 import { Input } from "@/shared/_components/ui/input";
 import { Label } from "@/shared/_components/ui/label";
+import { useDebouncedValue } from "@/shared/_hooks/use-debounced-value";
 
 interface MunicipalitySelectorProps {
   selectedCodes: string[];
   onChange: (codes: string[]) => void;
-}
-
-function useDebouncedValue<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-
-  return debouncedValue;
 }
 
 export function MunicipalitySelector({
