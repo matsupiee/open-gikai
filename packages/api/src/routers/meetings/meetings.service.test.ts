@@ -315,7 +315,7 @@ describe("getMeetingStatements", () => {
     });
   });
 
-  it("発言が id 昇順でソートされる", async () => {
+  it("発言が startOffset 昇順でソートされる", async () => {
     await withRollback(db, async (tx) => {
       await tx.insert(municipalities).values({
         code: "010001",
@@ -334,15 +334,19 @@ describe("getMeetingStatements", () => {
           id: "zzz",
           meetingId: "meeting-1",
           kind: "question",
-          content: "最後に挿入",
+          content: "2番目の発言",
           contentHash: "hash-z",
+          startOffset: 100,
+          endOffset: 200,
         },
         {
           id: "aaa",
           meetingId: "meeting-1",
           kind: "answer",
-          content: "最初に挿入",
+          content: "1番目の発言",
           contentHash: "hash-a",
+          startOffset: 0,
+          endOffset: 50,
         },
       ]);
 

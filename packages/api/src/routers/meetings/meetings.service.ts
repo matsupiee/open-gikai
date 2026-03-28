@@ -111,7 +111,7 @@ export async function getMeetingStatements(
     })
     .from(statements)
     .where(eq(statements.meetingId, input.meetingId))
-    .orderBy(asc(statements.id));
+    .orderBy(asc(statements.startOffset));
 
   return {
     ...(meeting as MeetingListItem),
