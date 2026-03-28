@@ -146,6 +146,7 @@ export function RouteComponent() {
                       key={statement.id}
                       statement={statement}
                       showSimilarity={false}
+                      query={query}
                     />
                   ))}
                 </div>
