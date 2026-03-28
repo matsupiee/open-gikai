@@ -1,8 +1,8 @@
 import { createWriteStream, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createId } from "@paralleldrive/cuid2";
-import type { MeetingData } from "@open-gikai/scrapers";
-import { detectAdapterKey, getAdapter } from "@open-gikai/scrapers";
+import type { MeetingData } from "./scrapers";
+import { detectAdapterKey, getAdapter } from "./scrapers";
 import { checkYearNdjsonIntegrity } from "./ndjson-year-integrity";
 import type { ScrapeLogger } from "./scrape-run-logger";
 import { scrapeOneYear } from "./scrape-one-year";

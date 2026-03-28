@@ -1,4 +1,4 @@
-import type { MeetingData, ScraperAdapter } from "@open-gikai/scrapers";
+import type { MeetingData, ScraperAdapter } from "./scrapers";
 import { getDetailConcurrency } from "./concurrency";
 
 export interface ScrapeOneYearResult {

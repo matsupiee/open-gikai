@@ -1,4 +1,4 @@
-import { SharedSystemAdapterKey } from "@open-gikai/scrapers";
+import { SharedSystemAdapterKey } from "./scrapers";
 
 export const CUSTOM_SYSTEM_TYPE = "custom" as const;
 export type SystemTypeFilter = SharedSystemAdapterKey | typeof CUSTOM_SYSTEM_TYPE;

@@ -1,13 +1,12 @@
-import { SharedSystemAdapterKey } from "@open-gikai/scrapers";
+import { SharedSystemAdapterKey } from "./scrapers";
 import { extractGroupKey } from "./group-key";
 
 /** 全ホストグループを通じた同時実行数の上限 */
 const GLOBAL_HOST_GROUP_CONCURRENCY = 30;
 
 export function getHostConcurrency(_groupKey: string): number {
-  // 何か変えたくなったらここを修正する
-
-  // デフォルトは 3件に抑える
+  if (_groupKey === "kaigiroku.net") return 10;
+  if (_groupKey === "dbsr.jp") return 5;
   return 3;
 }
 
