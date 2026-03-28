@@ -12,7 +12,6 @@ export interface MeetingListItem {
   heldOn: string;
   prefecture: string;
   municipality: string;
-  sourceUrl: string | null;
 }
 
 export interface MeetingsListResponse {
@@ -55,7 +54,6 @@ function queryMeetings(db: Db, input: z.input<typeof meetingsListSchema>, limit:
       heldOn: meetings.heldOn,
       prefecture: municipalities.prefecture,
       municipality: municipalities.name,
-      sourceUrl: meetings.sourceUrl,
     })
     .from(meetings)
     .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code));
@@ -93,7 +91,6 @@ export async function getMeetingStatements(
       heldOn: meetings.heldOn,
       prefecture: municipalities.prefecture,
       municipality: municipalities.name,
-      sourceUrl: meetings.sourceUrl,
     })
     .from(meetings)
     .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))

@@ -17,7 +17,6 @@ interface StatementCardProps {
     municipality: string;
     content: string;
     similarity?: number;
-    sourceUrl: string | null;
   };
   showSimilarity: boolean;
   query?: string;
@@ -69,17 +68,6 @@ export function StatementCard({ statement, showSimilarity, query }: StatementCar
             <div className="text-xs text-muted-foreground">
               類似度: {Math.round(statement.similarity * 100)}%
             </div>
-          )}
-          {statement.sourceUrl && (
-            <a
-              href={statement.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary hover:underline"
-            >
-              元の議事録を見る
-              <span className="sr-only">（新しいタブで開きます）</span>
-            </a>
           )}
         </div>
       </CardContent>

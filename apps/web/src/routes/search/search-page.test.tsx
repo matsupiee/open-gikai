@@ -141,7 +141,6 @@ describe("検索ページ", () => {
           heldOn: "2024-03-01",
           prefecture: "北海道",
           municipality: "札幌市",
-          sourceUrl: "https://example.com/sapporo",
         },
         {
           id: "stmt-2",
@@ -154,7 +153,6 @@ describe("検索ページ", () => {
           heldOn: "2024-03-01",
           prefecture: "北海道",
           municipality: "札幌市",
-          sourceUrl: null,
         },
       ],
       nextCursor: null,

@@ -277,7 +277,6 @@ describe("getMeetingStatements", () => {
         title: "令和6年第1回定例会",
         meetingType: "定例会",
         heldOn: "2024-03-01",
-        sourceUrl: "https://example.com/meeting/1",
       });
       await tx.insert(statements).values([
         {
@@ -307,7 +306,6 @@ describe("getMeetingStatements", () => {
       expect(result.title).toBe("令和6年第1回定例会");
       expect(result.prefecture).toBe("北海道");
       expect(result.municipality).toBe("札幌市");
-      expect(result.sourceUrl).toBe("https://example.com/meeting/1");
       expect(result.statements).toHaveLength(2);
       expect(result.statements[0]!.kind).toBe("question");
       expect(result.statements[0]!.speakerName).toBe("田中太郎");

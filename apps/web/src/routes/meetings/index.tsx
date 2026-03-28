@@ -208,7 +208,6 @@ interface MeetingCardProps {
     heldOn: string;
     prefecture: string;
     municipality: string;
-    sourceUrl: string | null;
     status: string;
   };
 }
@@ -231,12 +230,6 @@ function MeetingCard({ meeting }: MeetingCardProps) {
             <span>•</span>
             <span>{meeting.prefecture}</span>
             <span>{meeting.municipality}</span>
-            {meeting.sourceUrl && (
-              <>
-                <span>•</span>
-                <span className="text-primary">議事録あり</span>
-              </>
-            )}
           </div>
         </CardContent>
       </Card>

@@ -21,7 +21,6 @@ export interface SearchResult {
   heldOn: string;
   prefecture: string;
   municipality: string;
-  sourceUrl: string | null;
 }
 
 export interface SemanticSearchResult extends SearchResult {
@@ -105,7 +104,6 @@ function queryStatements(db: Db, input: z.input<typeof statementsSearchSchema>, 
       heldOn: meetings.heldOn,
       prefecture: municipalities.prefecture,
       municipality: municipalities.name,
-      sourceUrl: meetings.sourceUrl,
     })
     .from(statements)
     .innerJoin(meetings, eq(statements.meetingId, meetings.id))
@@ -167,7 +165,6 @@ function querySemanticStatements(db: Db, input: z.input<typeof statementsSemanti
       heldOn: meetings.heldOn,
       prefecture: municipalities.prefecture,
       municipality: municipalities.name,
-      sourceUrl: meetings.sourceUrl,
       similarity: sql<number>`0.5`,
     })
     .from(statements)
