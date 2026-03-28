@@ -72,8 +72,6 @@ function RouteComponent() {
             <span>{data.heldOn}</span>
             <span>•</span>
             <span>{data.prefecture} {data.municipality}</span>
-            <span>•</span>
-            <Badge variant="outline" className="text-xs">{data.meetingType}</Badge>
           </div>
         </div>
 

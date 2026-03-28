@@ -8,7 +8,6 @@ import type { meetingsListSchema, meetingStatementsSchema } from "./_schemas";
 export interface MeetingListItem {
   id: string;
   title: string;
-  meetingType: string;
   heldOn: string;
   prefecture: string;
   municipality: string;
@@ -43,14 +42,12 @@ function queryMeetings(db: Db, input: z.input<typeof meetingsListSchema>, limit:
       conditions.push(like(municipalities.name, `%${token}%`));
     }
   }
-  if (input.meetingType) conditions.push(eq(meetings.meetingType, input.meetingType));
   if (input.cursor) conditions.push(lt(meetings.id, input.cursor));
 
   const query = db
     .select({
       id: meetings.id,
       title: meetings.title,
-      meetingType: meetings.meetingType,
       heldOn: meetings.heldOn,
       prefecture: municipalities.prefecture,
       municipality: municipalities.name,
@@ -87,7 +84,6 @@ export async function getMeetingStatements(
     .select({
       id: meetings.id,
       title: meetings.title,
-      meetingType: meetings.meetingType,
       heldOn: meetings.heldOn,
       prefecture: municipalities.prefecture,
       municipality: municipalities.name,

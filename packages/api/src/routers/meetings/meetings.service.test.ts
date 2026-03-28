@@ -137,37 +137,6 @@ describe("listMeetings", () => {
     });
   });
 
-  it("meetingType でフィルタ", async () => {
-    await withRollback(db, async (tx) => {
-      await tx.insert(municipalities).values({
-        code: "010001",
-        name: "札幌市",
-        prefecture: "北海道",
-      });
-      await tx.insert(meetings).values([
-        {
-          id: "meeting-regular",
-          municipalityCode: "010001",
-          title: "定例会",
-          meetingType: "定例会",
-          heldOn: "2024-03-01",
-        },
-        {
-          id: "meeting-special",
-          municipalityCode: "010001",
-          title: "臨時会",
-          meetingType: "臨時会",
-          heldOn: "2024-03-01",
-        },
-      ]);
-
-      const result = await listMeetings(tx, { meetingType: "臨時会" });
-
-      expect(result.meetings).toHaveLength(1);
-      expect(result.meetings[0]!.title).toBe("臨時会");
-    });
-  });
-
   it("カーソルベースページネーション", async () => {
     await withRollback(db, async (tx) => {
       await tx.insert(municipalities).values({
