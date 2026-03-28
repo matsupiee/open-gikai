@@ -1,6 +1,7 @@
 import type { Db } from "@open-gikai/db";
 import * as schema from "@open-gikai/db/schema";
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware, APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin } from "better-auth/plugins/admin";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
@@ -12,6 +13,15 @@ export interface CreateAuthOptions {
   trustedOrigins: string;
   resendApiKey: string;
   emailFrom: string;
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 export function createAuth({
@@ -35,15 +45,12 @@ export function createAuth({
     },
     emailVerification: {
       sendVerificationEmail: async ({ user, url }) => {
-        if (!isAllowedEmailDomain(user.email)) {
-          throw new Error("許可されていないメールドメインです");
-        }
-        void resend.emails.send({
+        await resend.emails.send({
           from: emailFrom,
           to: user.email,
           subject: "【open-gikai】メールアドレスの確認",
           html: `
-            <p>${user.name ?? ""} 様</p>
+            <p>${escapeHtml(user.name ?? "")} 様</p>
             <p>open-gikai にご登録いただきありがとうございます。</p>
             <p>以下のリンクをクリックしてメールアドレスを確認してください。</p>
             <p><a href="${url}">メールアドレスを確認する</a></p>
@@ -53,6 +60,17 @@ export function createAuth({
       },
       autoSignInAfterVerification: true,
       sendOnSignUp: true,
+    },
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/sign-up/email") return;
+        const email = ctx.body?.email;
+        if (typeof email === "string" && !isAllowedEmailDomain(email)) {
+          throw new APIError("BAD_REQUEST", {
+            message: "許可されていないメールドメインです",
+          });
+        }
+      }),
     },
     plugins: [tanstackStartCookies(), admin({ defaultRole: "user" })],
     advanced: {

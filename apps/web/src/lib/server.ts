@@ -39,6 +39,11 @@ export function getDb(): Db {
  */
 export function getAuth(): Auth {
   const e = getEnv();
+  if (!e.RESEND_API_KEY) {
+    console.warn(
+      "[auth] RESEND_API_KEY が未設定です。メール確認機能が動作しません。"
+    );
+  }
   return createAuth({
     db: getDb(),
     trustedOrigins: e.CORS_ORIGIN,

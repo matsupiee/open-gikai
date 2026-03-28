@@ -43,7 +43,10 @@ export default function SignInForm() {
             toast.success("ログインに成功しました");
           },
           onError: (error) => {
-            if (error.error.status === 403) {
+            if (
+              error.error.status === 403 &&
+              error.error.message === "Email not verified"
+            ) {
               toast.error(
                 "メールアドレスが未確認です。確認メール内のリンクをクリックしてください。"
               );
