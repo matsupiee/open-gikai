@@ -14,10 +14,7 @@ interface MunicipalitySelectorProps {
   onChange: (codes: string[]) => void;
 }
 
-export function MunicipalitySelector({
-  selectedCodes,
-  onChange,
-}: MunicipalitySelectorProps) {
+export function MunicipalitySelector({ selectedCodes, onChange }: MunicipalitySelectorProps) {
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const debouncedSearch = useDebouncedValue(search, 300);
@@ -108,7 +105,7 @@ export function MunicipalitySelector({
       <div className="relative">
         <Input
           type="text"
-          placeholder="自治体名で検索..."
+          placeholder="検索したい自治体名を入力してください"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -121,10 +118,7 @@ export function MunicipalitySelector({
         {/* Dropdown */}
         {isOpen && (
           <>
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => setIsOpen(false)}
-            />
+            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
             <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded border border-border bg-popover shadow-md">
               {municipalities.length === 0 && (
                 <div className="px-3 py-2 text-xs text-muted-foreground">
@@ -157,11 +151,7 @@ export function MunicipalitySelector({
                           stroke="currentColor"
                           strokeWidth={3}
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M5 13l4 4L19 7"
-                          />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </span>
