@@ -11,6 +11,8 @@ export interface ImportTarget {
 export interface CollectOptions {
   /** true の場合、imported 済みディレクトリをスキップする（本番用） */
   skipImported: boolean;
+  /** 指定した場合、この自治体コードに一致するディレクトリのみ対象にする */
+  municipalityCodes?: string[];
 }
 
 /**
@@ -31,6 +33,11 @@ export function collectImportTargets(dataDir: string, options: CollectOptions): 
     for (const codeEntry of readdirSync(yearDir)) {
       const codeDir = resolve(yearDir, codeEntry);
       if (!statSync(codeDir).isDirectory()) continue;
+
+      // municipalityCodes が指定されている場合、一致しないコードをスキップ
+      if (options.municipalityCodes && options.municipalityCodes.length > 0) {
+        if (!options.municipalityCodes.includes(codeEntry)) continue;
+      }
 
       // _complete が存在しない場合はスキップする
       const completePath = resolve(codeDir, "_complete");

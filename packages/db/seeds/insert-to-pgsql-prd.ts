@@ -6,6 +6,7 @@
  *
  * 使い方:
  *   DATABASE_URL_FOR_PRD_IMPORT="postgresql://..." bun run db:import:prd
+ *   DATABASE_URL_FOR_PRD_IMPORT="postgresql://..." bun run db:import:prd 011002 012025  # 特定の自治体のみ
  *
  * - _complete が存在し、かつ imported フラグが立っていないディレクトリのみ処理する
  * - 各ディレクトリの処理成功後に _complete へ imported フラグを記録する
@@ -36,7 +37,13 @@ async function main() {
     process.exit(1);
   }
 
-  const targets = collectImportTargets(dataDir, { skipImported: true });
+  const municipalityCodes = process.argv.slice(2).filter((arg) => !arg.startsWith("-"));
+
+  if (municipalityCodes.length > 0) {
+    console.log(`[import:prd] 対象自治体コード: ${municipalityCodes.join(", ")}`);
+  }
+
+  const targets = collectImportTargets(dataDir, { skipImported: true, municipalityCodes });
 
   if (targets.length === 0) {
     console.log(
