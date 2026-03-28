@@ -7,11 +7,9 @@
 # 注意: set -e は使わない。各ステップの失敗がスクリプト全体を中断させると
 # worktree パスが stdout に出力されず、Claude Code がフォールバック動作になる。
 
-# --- 0. PATH にツールを追加 ---
-export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$HOME/.bun/bin:$PATH"
-if command -v mise &>/dev/null; then
-  eval "$(mise env 2>/dev/null)" || true
-fi
+# --- 0. mise でツールチェインを有効化 ---
+export PATH="$HOME/.local/bin:$PATH"
+eval "$(mise activate bash --shims 2>/dev/null)" || true
 
 # --- 1. stdin から worktree 名を取得し、worktree を作成 ---
 NAME=$(jq -r .name)
@@ -39,13 +37,14 @@ if [ -f "$CLAUDE_PROJECT_DIR/.env.local" ]; then
   echo "✓ .env.local copied from main repo" >&2
 fi
 
-# --- 3. mise trust ---
+# --- 3. mise trust & install ---
 cd "$DIR" || true
 if command -v mise &>/dev/null; then
   mise trust >&2 || echo "⚠ mise trust failed" >&2
-  echo "✓ mise trust done" >&2
+  mise install >&2 || echo "⚠ mise install failed" >&2
+  echo "✓ mise setup done" >&2
 else
-  echo "⚠ mise not found, skipping mise trust" >&2
+  echo "⚠ mise not found, skipping mise setup" >&2
 fi
 
 # --- 4. bun install ---
