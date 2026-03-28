@@ -8,8 +8,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/shared/_components/ui/collapsible";
-import { Input } from "@/shared/_components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/shared/_components/ui/native-select";
+
+import { DateWheelPicker } from "./date-wheel-picker";
 
 interface SearchFiltersProps {
   kind: string;
@@ -94,28 +95,24 @@ export function SearchFilters({
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <span className="text-xs text-muted-foreground shrink-0">開催日</span>
-              <Input
-                type="date"
+              <DateWheelPicker
                 value={heldOnFrom}
-                max={heldOnTo || undefined}
-                onChange={(e) => setHeldOnFrom(e.target.value)}
-                className="text-xs flex-1 min-w-0"
-                aria-label="開催日（開始）"
-                aria-invalid={dateError ? "true" : undefined}
-                aria-describedby={dateError ? "date-error" : undefined}
+                onChange={setHeldOnFrom}
+                label="開催日（開始）"
+                defaultYear={2021}
+                defaultMonth={1}
+                defaultDay={1}
               />
               <span className="text-xs text-muted-foreground" aria-hidden="true">
                 ~
               </span>
-              <Input
-                type="date"
+              <DateWheelPicker
                 value={heldOnTo}
-                min={heldOnFrom || undefined}
-                onChange={(e) => setHeldOnTo(e.target.value)}
-                className="text-xs flex-1 min-w-0"
-                aria-label="開催日（終了）"
-                aria-invalid={dateError ? "true" : undefined}
-                aria-describedby={dateError ? "date-error" : undefined}
+                onChange={setHeldOnTo}
+                label="開催日（終了）"
+                defaultYear={new Date().getFullYear()}
+                defaultMonth={new Date().getMonth() + 1}
+                defaultDay={new Date().getDate()}
               />
             </div>
 
