@@ -172,7 +172,9 @@ describe("検索ページ", () => {
       { timeout: 3000 },
     );
 
-    expect(screen.getByText("予算について質問します")).toBeTruthy();
+    expect(
+      screen.getByText((_, element) => element?.textContent === "予算について質問します"),
+    ).toBeTruthy();
     expect(screen.getByText("教育政策について回答します")).toBeTruthy();
     expect(screen.getAllByText("札幌定例会")).toHaveLength(2);
     expect(screen.getAllByText("質問").length).toBeGreaterThanOrEqual(1);
