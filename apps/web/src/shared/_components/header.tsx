@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 
-import { authClient } from "@/lib/better-auth/auth-client";
 import UserMenu from "./user-menu";
 import {
   Sheet,
@@ -14,7 +13,6 @@ import { FileSearch, Menu } from "lucide-react";
 const links = [
   { to: "/search", label: "答弁検索" },
   { to: "/meetings", label: "会議一覧" },
-  { to: "/municipalities", label: "自治体一覧" },
 ] as const;
 
 function NavLink({
@@ -45,16 +43,7 @@ function NavLink({
 
 export default function Header() {
   const { location } = useRouterState();
-  const { data: session } = authClient.useSession();
-  const isAdmin = session?.user?.role === "admin";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const allLinks = [
-    ...links,
-    ...(isAdmin
-      ? [{ to: "/admin/scrapers" as const, label: "スクレイピング" }]
-      : []),
-  ];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -64,7 +53,7 @@ export default function Header() {
             <FileSearch className="h-8 w-8" />
           </Link>
           <nav className="hidden min-[481px]:flex items-center gap-1">
-            {allLinks.map(({ to, label }) => (
+            {links.map(({ to, label }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -94,7 +83,7 @@ export default function Header() {
             <SheetTitle>メニュー</SheetTitle>
           </SheetHeader>
           <nav className="flex flex-col gap-1 px-4">
-            {allLinks.map(({ to, label }) => (
+            {links.map(({ to, label }) => (
               <NavLink
                 key={to}
                 to={to}
