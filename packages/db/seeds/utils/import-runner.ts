@@ -10,7 +10,7 @@ import { parseMunicipalitiesCsv } from "../parse-data/municipalities";
 import { markAsImported } from "./complete-marker";
 import type { ImportTarget } from "./collect-import-targets";
 
-const BATCH_SIZE = 100;
+const BATCH_SIZE = 500;
 
 export interface ImportAllOptions {
   municipalitiesCsvPath: string | null;
