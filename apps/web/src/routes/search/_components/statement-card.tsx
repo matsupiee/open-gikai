@@ -4,7 +4,7 @@ import { Badge } from "@/shared/_components/ui/badge";
 import { Button } from "@/shared/_components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/_components/ui/card";
 
-import { getKindColor, getKindLabel, highlightText } from "../_utils/helpers";
+import { buildSnippet, getKindColor, getKindLabel, highlightText } from "../_utils/helpers";
 
 interface StatementCardProps {
   statement: {
@@ -25,9 +25,11 @@ interface StatementCardProps {
 
 export function StatementCard({ statement, showSimilarity, query }: StatementCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const isTruncated = statement.content.length > 200;
-  const displayContent =
-    expanded || !isTruncated ? statement.content : statement.content.substring(0, 200) + "...";
+  const snippet = query
+    ? buildSnippet(statement.content, query)
+    : { text: statement.content.substring(0, 200) + (statement.content.length > 200 ? "..." : ""), truncated: statement.content.length > 200 };
+  const displayContent = expanded ? statement.content : snippet.text;
+  const isTruncated = snippet.truncated;
 
   return (
     <Card role="article" aria-label={`${statement.meetingTitle} - ${getKindLabel(statement.kind)}`}>
