@@ -37,6 +37,7 @@ vi.mock("@tanstack/react-router", () => ({
     useSearch: () => searchParamsRef.current,
   }),
   useNavigate: () => mockNavigate,
+  Link: ({ children, ...props }: { children: React.ReactNode; to: string; params?: Record<string, string>; className?: string }) => <a href={props.to} className={props.className}>{children}</a>,
 }));
 
 vi.mock("@/lib/orpc/orpc", () => ({

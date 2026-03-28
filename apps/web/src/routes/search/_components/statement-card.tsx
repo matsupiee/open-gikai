@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { Badge } from "@/shared/_components/ui/badge";
@@ -9,6 +10,7 @@ import { buildSnippet, getKindColor, getKindLabel, highlightText } from "../_uti
 interface StatementCardProps {
   statement: {
     id: string;
+    meetingId: string;
     meetingTitle: string;
     kind: string;
     heldOn: string;
@@ -35,7 +37,15 @@ export function StatementCard({ statement, showSimilarity, query }: StatementCar
       <CardHeader>
         <div className="flex flex-col gap-2">
           <div className="flex items-start justify-between gap-2">
-            <CardTitle className="text-sm font-semibold">{statement.meetingTitle}</CardTitle>
+            <CardTitle className="text-sm font-semibold">
+              <Link
+                to="/meetings/$meetingId"
+                params={{ meetingId: statement.meetingId }}
+                className="hover:underline"
+              >
+                {statement.meetingTitle}
+              </Link>
+            </CardTitle>
             <Badge className={getKindColor(statement.kind)}>
               {getKindLabel(statement.kind)}
             </Badge>
