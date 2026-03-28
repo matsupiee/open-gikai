@@ -138,8 +138,18 @@ export function DateWheelPicker({
       </DrawerTrigger>
       <DrawerContent>
         <div className="mx-auto w-full max-w-[480px]">
-          <DrawerHeader>
+          <DrawerHeader className="flex flex-row items-center justify-between">
             <DrawerTitle className="text-sm">{label}</DrawerTitle>
+            {value && (
+              <Button
+                variant="link"
+                size="sm"
+                className="text-xs text-muted-foreground h-auto p-0"
+                onClick={handleClear}
+              >
+                クリア
+              </Button>
+            )}
           </DrawerHeader>
           <div className="flex justify-center px-4 pb-2">
             <WheelPickerWrapper className="w-full max-w-xs">
@@ -161,9 +171,6 @@ export function DateWheelPicker({
             </WheelPickerWrapper>
           </div>
           <DrawerFooter className="flex-row gap-2">
-            <Button variant="outline" size="sm" className="flex-1" onClick={handleClear}>
-              クリア
-            </Button>
             <DrawerClose asChild>
               <Button variant="outline" size="sm" className="flex-1">
                 キャンセル
