@@ -31,7 +31,6 @@ export function MunicipalitySelector({ selectedCodes, onChange }: MunicipalitySe
 
   const municipalities = data?.municipalities ?? [];
 
-  // Fetch selected municipalities by their codes for name resolution
   const { data: selectedData } = useQuery({
     ...orpc.municipalities.list.queryOptions({
       input: {
@@ -69,15 +68,17 @@ export function MunicipalitySelector({ selectedCodes, onChange }: MunicipalitySe
     onChange(selectedCodes.filter((c) => c !== code));
   };
 
+  const listboxId = "municipality-listbox";
+
   return (
-    <div className="flex flex-col gap-2">
-      <Label className="text-sm font-semibold">
-        自治体を選択 <span className="text-destructive">*</span>
+    <div className="flex flex-col gap-2" role="group" aria-labelledby="municipality-label">
+      <Label id="municipality-label" className="text-sm font-semibold">
+        自治体を選択 <span aria-hidden="true" className="text-destructive">*</span>
+        <span className="sr-only">（必須）</span>
       </Label>
 
-      {/* Selected chips */}
       {selectedCodes.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1" aria-label="選択中の自治体">
           {selectedCodes.map((code) => (
             <Badge key={code} variant="secondary" className="gap-1 pr-1">
               {selectedNames.get(code) ?? code}
@@ -85,8 +86,9 @@ export function MunicipalitySelector({ selectedCodes, onChange }: MunicipalitySe
                 type="button"
                 onClick={() => removeCode(code)}
                 className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20"
+                aria-label={`${selectedNames.get(code) ?? code}を解除`}
               >
-                <XIcon className="size-3" />
+                <XIcon className="size-3" aria-hidden="true" />
               </button>
             </Badge>
           ))}
@@ -101,7 +103,6 @@ export function MunicipalitySelector({ selectedCodes, onChange }: MunicipalitySe
         </div>
       )}
 
-      {/* Search input */}
       <div className="relative">
         <Input
           type="text"
@@ -113,61 +114,76 @@ export function MunicipalitySelector({ selectedCodes, onChange }: MunicipalitySe
           }}
           onFocus={() => setIsOpen(true)}
           className="text-sm"
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-controls={listboxId}
+          aria-haspopup="listbox"
+          aria-label="自治体を検索"
         />
 
-        {/* Dropdown */}
         {isOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-            <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded border border-border bg-popover shadow-md">
+            <ul
+              id={listboxId}
+              role="listbox"
+              aria-label="自治体一覧"
+              className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded border border-border bg-popover shadow-md"
+            >
               {municipalities.length === 0 && (
-                <div className="px-3 py-2 text-xs text-muted-foreground">
+                <li className="px-3 py-2 text-xs text-muted-foreground" role="option" aria-selected={false} aria-disabled="true">
                   {search ? "該当する自治体が見つかりません" : "読み込み中..."}
-                </div>
+                </li>
               )}
               {municipalities.map((m) => {
                 const isSelected = selectedCodes.includes(m.code);
                 return (
-                  <button
+                  <li
                     key={m.code}
-                    type="button"
-                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-accent ${
-                      isSelected ? "bg-accent/50 font-medium" : ""
-                    }`}
-                    onClick={() => toggleCode(m.code)}
+                    role="option"
+                    aria-selected={isSelected}
                   >
-                    <span
-                      className={`flex size-4 shrink-0 items-center justify-center rounded border ${
-                        isSelected
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-input"
+                    <button
+                      type="button"
+                      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-accent ${
+                        isSelected ? "bg-accent/50 font-medium" : ""
                       }`}
+                      onClick={() => toggleCode(m.code)}
                     >
-                      {isSelected && (
-                        <svg
-                          className="size-3"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={3}
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </span>
-                    <span>
-                      {m.prefecture} {m.name}
-                    </span>
-                  </button>
+                      <span
+                        className={`flex size-4 shrink-0 items-center justify-center rounded border ${
+                          isSelected
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-input"
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {isSelected && (
+                          <svg
+                            className="size-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={3}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </span>
+                      <span>
+                        {m.prefecture} {m.name}
+                      </span>
+                    </button>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           </>
         )}
       </div>
 
       {selectedCodes.length === 0 && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground" role="status">
           検索するには、少なくとも1つの自治体を選択してください
         </p>
       )}
