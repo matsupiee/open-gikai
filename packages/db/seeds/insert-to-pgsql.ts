@@ -6,6 +6,7 @@
  *
  * 使い方:
  *   DATABASE_URL="postgresql://..." bun run db:import
+ *   DATABASE_URL="postgresql://..." bun run db:import 011002 012025  # 特定の自治体のみ
  *
  * - _complete が存在するディレクトリをすべて処理する（imported フラグは無視）
  * - imported フラグの記録は行わない
@@ -36,7 +37,13 @@ async function main() {
     process.exit(1);
   }
 
-  const targets = collectImportTargets(dataDir, { skipImported: false });
+  const municipalityCodes = process.argv.slice(2).filter((arg) => !arg.startsWith("-"));
+
+  if (municipalityCodes.length > 0) {
+    console.log(`[import] 対象自治体コード: ${municipalityCodes.join(", ")}`);
+  }
+
+  const targets = collectImportTargets(dataDir, { skipImported: false, municipalityCodes });
 
   if (targets.length === 0) {
     console.log(

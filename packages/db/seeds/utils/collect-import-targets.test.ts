@@ -99,4 +99,41 @@ describe("collectImportTargets", () => {
     const targets = collectImportTargets(dataDir, { skipImported: false });
     expect(targets).toHaveLength(3);
   });
+
+  test("municipalityCodes を指定すると該当コードのみ収集する", () => {
+    for (const [year, code] of [["2024", "011002"], ["2024", "012025"], ["2025", "011002"]]) {
+      const codeDir = join(dataDir, year!, code!);
+      mkdirSync(codeDir, { recursive: true });
+      writeFileSync(join(codeDir, "_complete"), JSON.stringify({ completedAt: "2025-01-01T00:00:00.000Z", meetings: 1 }));
+      writeFileSync(join(codeDir, "meetings.ndjson"), "{}");
+    }
+
+    const targets = collectImportTargets(dataDir, { skipImported: false, municipalityCodes: ["012025"] });
+    expect(targets).toHaveLength(1);
+    expect(targets[0]!.codeDir).toBe(join(dataDir, "2024", "012025"));
+  });
+
+  test("municipalityCodes を複数指定すると該当コードすべてを収集する", () => {
+    for (const [year, code] of [["2024", "011002"], ["2024", "012025"], ["2025", "011002"]]) {
+      const codeDir = join(dataDir, year!, code!);
+      mkdirSync(codeDir, { recursive: true });
+      writeFileSync(join(codeDir, "_complete"), JSON.stringify({ completedAt: "2025-01-01T00:00:00.000Z", meetings: 1 }));
+      writeFileSync(join(codeDir, "meetings.ndjson"), "{}");
+    }
+
+    const targets = collectImportTargets(dataDir, { skipImported: false, municipalityCodes: ["011002", "012025"] });
+    expect(targets).toHaveLength(3);
+  });
+
+  test("municipalityCodes が空配列の場合はフィルタしない", () => {
+    for (const [year, code] of [["2024", "011002"], ["2024", "012025"]]) {
+      const codeDir = join(dataDir, year!, code!);
+      mkdirSync(codeDir, { recursive: true });
+      writeFileSync(join(codeDir, "_complete"), JSON.stringify({ completedAt: "2025-01-01T00:00:00.000Z", meetings: 1 }));
+      writeFileSync(join(codeDir, "meetings.ndjson"), "{}");
+    }
+
+    const targets = collectImportTargets(dataDir, { skipImported: false, municipalityCodes: [] });
+    expect(targets).toHaveLength(2);
+  });
 });
