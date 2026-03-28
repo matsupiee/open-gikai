@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { XIcon } from "lucide-react";
 
@@ -13,17 +13,29 @@ interface MunicipalitySelectorProps {
   onChange: (codes: string[]) => void;
 }
 
+function useDebouncedValue<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 export function MunicipalitySelector({
   selectedCodes,
   onChange,
 }: MunicipalitySelectorProps) {
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const debouncedSearch = useDebouncedValue(search, 300);
 
   const { data } = useQuery({
     ...orpc.municipalities.list.queryOptions({
       input: {
-        query: search || undefined,
+        query: debouncedSearch || undefined,
         limit: 50,
         sortBy: "code",
       },
@@ -32,15 +44,15 @@ export function MunicipalitySelector({
 
   const municipalities = data?.municipalities ?? [];
 
-  // Fetch selected municipalities' names if not in current search results
+  // Fetch selected municipalities by their codes for name resolution
   const { data: selectedData } = useQuery({
     ...orpc.municipalities.list.queryOptions({
       input: {
+        codes: selectedCodes,
         limit: 100,
         sortBy: "code",
       },
     }),
-    // Only need this for resolving names of selected items
     enabled: selectedCodes.length > 0,
   });
 
