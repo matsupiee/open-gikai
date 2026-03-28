@@ -22,6 +22,8 @@ function getEnv(): Cloudflare.Env {
     CORS_ORIGIN: process.env.CORS_ORIGIN ?? "http://localhost:4030",
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? "",
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? "http://localhost:4030",
+    RESEND_API_KEY: process.env.RESEND_API_KEY ?? "",
+    EMAIL_FROM: process.env.EMAIL_FROM ?? "noreply@open-gikai.jp",
   } as unknown as Cloudflare.Env;
 }
 
@@ -40,5 +42,7 @@ export function getAuth(): Auth {
   return createAuth({
     db: getDb(),
     trustedOrigins: e.CORS_ORIGIN,
+    resendApiKey: e.RESEND_API_KEY,
+    emailFrom: e.EMAIL_FROM,
   });
 }

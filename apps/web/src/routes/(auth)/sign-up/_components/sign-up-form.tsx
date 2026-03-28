@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import z from "zod";
 
+import { isAllowedEmailDomain } from "@open-gikai/auth/allowed-email-domains";
 import { authClient } from "@/lib/better-auth/auth-client";
 
 import Loader from "../../../../shared/_components/loader";
@@ -23,6 +25,7 @@ export default function SignUpForm() {
     from: "/",
   });
   const { isPending } = authClient.useSession();
+  const [emailSent, setEmailSent] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -38,10 +41,7 @@ export default function SignUpForm() {
         },
         {
           onSuccess: () => {
-            navigate({
-              to: "/search",
-            });
-            toast.success("アカウント登録に成功しました");
+            setEmailSent(true);
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
@@ -51,7 +51,9 @@ export default function SignUpForm() {
     },
     validators: {
       onSubmit: z.object({
-        email: z.email("メールアドレスが不正です"),
+        email: z
+          .email("メールアドレスが不正です")
+          .refine(isAllowedEmailDomain, "このメールドメインでは登録できません"),
         password: z.string().min(8, "パスワードは8文字以上で入力してください"),
       }),
     },
@@ -59,6 +61,28 @@ export default function SignUpForm() {
 
   if (isPending) {
     return <Loader />;
+  }
+
+  if (emailSent) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">確認メールを送信しました</CardTitle>
+          <CardDescription>
+            ご登録いただいたメールアドレスに確認メールを送信しました。
+            メール内のリンクをクリックして、登録を完了してください。
+          </CardDescription>
+        </CardHeader>
+        <CardFooter className="justify-center">
+          <Button
+            variant="link"
+            onClick={() => navigate({ to: "/sign-in" })}
+          >
+            ログインページへ
+          </Button>
+        </CardFooter>
+      </Card>
+    );
   }
 
   return (
