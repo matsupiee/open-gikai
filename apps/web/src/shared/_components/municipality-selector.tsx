@@ -12,9 +12,10 @@ import { useDebouncedValue } from "@/shared/_hooks/use-debounced-value";
 interface MunicipalitySelectorProps {
   selectedCodes: string[];
   onChange: (codes: string[]) => void;
+  required?: boolean;
 }
 
-export function MunicipalitySelector({ selectedCodes, onChange }: MunicipalitySelectorProps) {
+export function MunicipalitySelector({ selectedCodes, onChange, required = false }: MunicipalitySelectorProps) {
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const debouncedSearch = useDebouncedValue(search, 300);
@@ -73,8 +74,8 @@ export function MunicipalitySelector({ selectedCodes, onChange }: MunicipalitySe
   return (
     <div className="flex flex-col gap-2" role="group" aria-labelledby="municipality-label">
       <Label id="municipality-label" className="text-sm font-semibold">
-        自治体を選択 <span aria-hidden="true" className="text-destructive">*</span>
-        <span className="sr-only">（必須）</span>
+        自治体を選択{required && <> <span aria-hidden="true" className="text-destructive">*</span>
+        <span className="sr-only">（必須）</span></>}
       </Label>
 
       {selectedCodes.length > 0 && (
@@ -182,7 +183,7 @@ export function MunicipalitySelector({ selectedCodes, onChange }: MunicipalitySe
         )}
       </div>
 
-      {selectedCodes.length === 0 && (
+      {required && selectedCodes.length === 0 && (
         <p className="text-xs text-muted-foreground" role="status">
           検索するには、少なくとも1つの自治体を選択してください
         </p>

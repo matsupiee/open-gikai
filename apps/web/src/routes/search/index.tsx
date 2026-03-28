@@ -68,7 +68,7 @@ export function RouteComponent() {
         </div>
 
         <div className="mb-3 flex flex-col gap-3 rounded border border-border bg-card px-4 py-3">
-          <MunicipalitySelector selectedCodes={municipalityCodes} onChange={setMunicipalityCodes} />
+          <MunicipalitySelector selectedCodes={municipalityCodes} onChange={setMunicipalityCodes} required />
 
           {!canSearch && (
             <p className="text-sm text-muted-foreground text-center py-4" role="status">
