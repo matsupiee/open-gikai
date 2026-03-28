@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
 # WorktreeCreate hook: デフォルトの git worktree add を置き換える
 # stdin から JSON を受け取り、worktree を作成してセットアップする
 # 最後に worktree の絶対パスを stdout に出力する（必須）
+#
+# 注意: set -e は使わない。各ステップの失敗がスクリプト全体を中断させると
+# worktree パスが stdout に出力されず、Claude Code がフォールバック動作になる。
 
 # --- 0. PATH にツールを追加 ---
 export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$HOME/.bun/bin:$PATH"
@@ -15,8 +17,13 @@ fi
 NAME=$(jq -r .name)
 DIR="$CLAUDE_PROJECT_DIR/.claude/worktrees/$NAME"
 
-git worktree add "$DIR" HEAD >&2
+if ! git worktree add "$DIR" HEAD >&2; then
+  echo "✗ git worktree add failed" >&2
+  exit 1
+fi
 echo "Worktree created: $DIR" >&2
+
+# --- ここから先は worktree 作成済み。失敗してもパス出力は保証する ---
 
 # --- 2. .env をメインリポジトリからコピー ---
 if [ -f "$CLAUDE_PROJECT_DIR/.env" ]; then
@@ -33,9 +40,9 @@ if [ -f "$CLAUDE_PROJECT_DIR/.env.local" ]; then
 fi
 
 # --- 3. mise trust ---
-cd "$DIR"
+cd "$DIR" || true
 if command -v mise &>/dev/null; then
-  mise trust >&2
+  mise trust >&2 || echo "⚠ mise trust failed" >&2
   echo "✓ mise trust done" >&2
 else
   echo "⚠ mise not found, skipping mise trust" >&2
@@ -43,8 +50,11 @@ fi
 
 # --- 4. bun install ---
 if command -v bun &>/dev/null; then
-  bun install >&2
-  echo "✓ bun install done" >&2
+  if bun install >&2; then
+    echo "✓ bun install done" >&2
+  else
+    echo "✗ bun install failed (exit $?)" >&2
+  fi
 else
   echo "⚠ bun not found, skipping bun install" >&2
 fi
