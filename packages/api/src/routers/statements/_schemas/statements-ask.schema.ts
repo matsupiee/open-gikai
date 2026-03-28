@@ -6,7 +6,7 @@ export const statementsAskSchema = z.object({
   filters: z
     .object({
       prefecture: z.string().optional(),
-      municipality: z.string().optional(),
+      municipalityCodes: z.array(z.string()).optional(),
       heldOnFrom: z.string().optional(),
       heldOnTo: z.string().optional(),
     })

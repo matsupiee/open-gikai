@@ -8,7 +8,7 @@ export const statementsSearchSchema = z.object({
   heldOnFrom: z.string().optional(),
   heldOnTo: z.string().optional(),
   prefecture: z.string().optional(),
-  municipality: z.string().optional(),
+  municipalityCodes: z.array(z.string()).optional(),
   limit: z.number().int().min(1).max(50).default(20),
   cursor: z.string().optional(),
 });

@@ -28,10 +28,35 @@ type SubmittedQuery = {
   heldOnFrom?: string;
   heldOnTo?: string;
   prefecture?: string;
-  municipality?: string;
+  municipalityCodes?: string[];
   semanticQuery?: string;
   topK?: number;
 } | null;
+
+const STORAGE_KEY = "open-gikai:selectedMunicipalityCodes";
+
+function loadMunicipalityCodes(): string[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.every((v) => typeof v === "string")) {
+        return parsed;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
+function saveMunicipalityCodes(codes: string[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(codes));
+  } catch {
+    // ignore
+  }
+}
 
 export function useSearch() {
   const [pageMode, setPageMode] = useState<PageMode>("question");
@@ -44,10 +69,15 @@ export function useSearch() {
   const [heldOnFrom, setHeldOnFrom] = useState("");
   const [heldOnTo, setHeldOnTo] = useState("");
   const [prefecture, setPrefecture] = useState("");
-  const [municipality, setMunicipality] = useState("");
+  const [municipalityCodes, setMunicipalityCodesState] = useState<string[]>(loadMunicipalityCodes);
   const [assemblyLevel, setAssemblyLevel] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState<SubmittedQuery>(null);
   const [citations, setCitations] = useState<Statement[]>([]);
+
+  const setMunicipalityCodes = (codes: string[]) => {
+    setMunicipalityCodesState(codes);
+    saveMunicipalityCodes(codes);
+  };
 
   const keywordQuery = useQuery({
     ...orpc.statements.search.queryOptions({
@@ -65,7 +95,7 @@ export function useSearch() {
               heldOnFrom: submittedQuery.heldOnFrom || undefined,
               heldOnTo: submittedQuery.heldOnTo || undefined,
               prefecture: submittedQuery.prefecture || undefined,
-              municipality: submittedQuery.municipality || undefined,
+              municipalityCodes: submittedQuery.municipalityCodes,
             }
           : {},
     }),
@@ -81,7 +111,7 @@ export function useSearch() {
               topK: submittedQuery.topK || 10,
               filters: {
                 prefecture: submittedQuery.prefecture || undefined,
-                municipality: submittedQuery.municipality || undefined,
+                municipalityCodes: submittedQuery.municipalityCodes,
                 heldOnFrom: submittedQuery.heldOnFrom || undefined,
                 heldOnTo: submittedQuery.heldOnTo || undefined,
               },
@@ -109,7 +139,7 @@ export function useSearch() {
     overrideFilters?: {
       kind?: string;
       prefecture?: string;
-      municipality?: string;
+      municipalityCodes?: string[];
       heldOnFrom?: string;
       heldOnTo?: string;
     }
@@ -122,17 +152,21 @@ export function useSearch() {
       heldOnFrom: overrideFilters?.heldOnFrom ?? (heldOnFrom || undefined),
       heldOnTo: overrideFilters?.heldOnTo ?? (heldOnTo || undefined),
       prefecture: overrideFilters?.prefecture ?? (prefecture || undefined),
-      municipality: overrideFilters?.municipality ?? (municipality || undefined),
+      municipalityCodes:
+        overrideFilters?.municipalityCodes ??
+        (municipalityCodes.length > 0 ? municipalityCodes : undefined),
       topK: 10,
     });
   };
 
   const handleSearch = () => {
     if (!query.trim() && searchMode === "keyword") return;
+    if (municipalityCodes.length === 0) return;
     triggerSearch(query, searchMode);
   };
 
   const handleCategorySearch = (categoryQuery: string) => {
+    if (municipalityCodes.length === 0) return;
     setQuery(categoryQuery);
     triggerSearch(categoryQuery, "keyword");
   };
@@ -144,7 +178,6 @@ export function useSearch() {
     setHeldOnFrom("");
     setHeldOnTo("");
     setPrefecture("");
-    setMunicipality("");
     setAssemblyLevel("");
     setSubmittedQuery(null);
   };
@@ -177,8 +210,8 @@ export function useSearch() {
     setHeldOnTo,
     prefecture,
     setPrefecture,
-    municipality,
-    setMunicipality,
+    municipalityCodes,
+    setMunicipalityCodes,
     statements,
     isLoading,
     hasSearched,
