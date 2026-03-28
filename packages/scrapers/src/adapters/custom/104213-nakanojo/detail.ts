@@ -15,20 +15,13 @@
  */
 
 import { createHash } from "node:crypto";
-import { writeFile, unlink } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { extractPdfText } from "../../../utils/pdf";
 import type { MeetingData, ParsedStatement } from "../../../utils/types";
 import {
   detectMeetingType,
   fetchBinary,
   normalizeFullWidth,
 } from "./shared";
-
-const execFileAsync = promisify(execFile);
-
 // 役職サフィックス（長い方を先に置いて誤マッチを防ぐ）
 const ROLE_SUFFIXES = [
   "副委員長",
@@ -243,20 +236,11 @@ async function fetchPdfText(pdfUrl: string): Promise<string | null> {
   const buffer = await fetchBinary(pdfUrl);
   if (!buffer) return null;
 
-  const tmpPath = join(tmpdir(), `nakanojo_${Date.now()}.pdf`);
-  try {
-    await writeFile(tmpPath, Buffer.from(buffer));
-    const { stdout } = await execFileAsync("pdftotext", ["-layout", tmpPath, "-"]);
-    return stdout;
-  } catch (err) {
-    console.warn(
-      `[104213-nakanojo] PDF テキスト抽出失敗: ${pdfUrl}`,
-      err instanceof Error ? err.message : err,
-    );
-    return null;
-  } finally {
-    await unlink(tmpPath).catch(() => {});
-  }
+  return extractPdfText(buffer, {
+    pdfUrl,
+    strategy: "pdftotext",
+    tempPrefix: "nakanojo",
+  });
 }
 
 export interface NakanojoDetailParams {
