@@ -5,33 +5,12 @@ import {
   timestamp,
   index,
   uniqueIndex,
-  customType,
 } from "drizzle-orm/pg-core";
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import { meetings } from "./meetings";
 import { createId } from "@paralleldrive/cuid2";
 
-/**
- * 全文検索用のカスタム型。
- * PostgreSQL の tsvector(text search = 全文検索) 型にマッピングする。
- * content カラムの内容から自動生成され、手動更新は不要。
- *
- * 余計な単語を削除して意味のある単語だけを検索用インデックス形式で保存する
- *
- * 例
- * "The cat is very cute" -> "cat":2  "cute":5
- */
-const tsvector = () =>
-  customType<{ data: unknown; driverData: unknown }>({
-    dataType() {
-      return "tsvector";
-    },
-  })("content_tsv");
-
-/**
- * 会議の発言データを格納するテーブル。
- * ベクトル検索（意味的類似度）と全文検索の両方に対応している。
- */
+/** 会議の発言データを格納するテーブル。 */
 export const statements = pgTable(
   "statements",
   {
@@ -58,8 +37,6 @@ export const statements = pgTable(
     // 原文ドキュメント内での位置（文字オフセット）
     startOffset: integer(),
     endOffset: integer(),
-    // 全文検索用インデックス（content から自動生成される仮想カラム）
-    contentTsv: tsvector().generatedAlwaysAs(sql`to_tsvector('simple', coalesce(content, ''))`),
   },
   (table) => [
     // 同じ会議内での発言重複を防ぐユニーク制約

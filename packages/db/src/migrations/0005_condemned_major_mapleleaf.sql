@@ -1,0 +1,1 @@
+ALTER TABLE "statements" DROP COLUMN "content_tsv";
