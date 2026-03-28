@@ -7,6 +7,7 @@ import { Badge } from "@/shared/_components/ui/badge";
 import { Button } from "@/shared/_components/ui/button";
 import { Input } from "@/shared/_components/ui/input";
 import { Label } from "@/shared/_components/ui/label";
+import { useDebouncedValue } from "@/shared/_hooks/use-debounced-value";
 
 interface MunicipalitySelectorProps {
   selectedCodes: string[];
@@ -19,11 +20,12 @@ export function MunicipalitySelector({
 }: MunicipalitySelectorProps) {
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const debouncedSearch = useDebouncedValue(search, 300);
 
   const { data } = useQuery({
     ...orpc.municipalities.list.queryOptions({
       input: {
-        query: search || undefined,
+        query: debouncedSearch || undefined,
         limit: 50,
         sortBy: "code",
       },
@@ -32,15 +34,15 @@ export function MunicipalitySelector({
 
   const municipalities = data?.municipalities ?? [];
 
-  // Fetch selected municipalities' names if not in current search results
+  // Fetch selected municipalities by their codes for name resolution
   const { data: selectedData } = useQuery({
     ...orpc.municipalities.list.queryOptions({
       input: {
+        codes: selectedCodes,
         limit: 100,
         sortBy: "code",
       },
     }),
-    // Only need this for resolving names of selected items
     enabled: selectedCodes.length > 0,
   });
 

@@ -191,6 +191,28 @@ describe("listMunicipalities", () => {
     });
   });
 
+  it("codes で指定した自治体コードのみ返す", async () => {
+    await withRollback(db, async (tx) => {
+      await tx.insert(municipalities).values([
+        { code: "010001", name: "札幌市", prefecture: "北海道" },
+        { code: "020001", name: "青森市", prefecture: "青森県" },
+        { code: "131001", name: "千代田区", prefecture: "東京都" },
+      ]);
+
+      const result = await listMunicipalities(
+        tx,
+        { codes: ["010001", "131001"] },
+        false,
+      );
+
+      expect(result.total).toBe(2);
+      expect(result.municipalities.map((m) => m.code)).toEqual([
+        "010001",
+        "131001",
+      ]);
+    });
+  });
+
   it("データが0件のとき空配列と total: 0 を返す", async () => {
     await withRollback(db, async (tx) => {
       const result = await listMunicipalities(tx, {}, false);

@@ -1,6 +1,6 @@
 import type { Db } from "@open-gikai/db";
 import { municipalities } from "@open-gikai/db/schema";
-import { asc, count, like, or, sql, and } from "drizzle-orm";
+import { asc, count, like, or, sql, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 
 import type { municipalitiesListSchema } from "./_schemas";
@@ -30,6 +30,10 @@ export async function listMunicipalities(
   const offset = input.offset ?? 0;
 
   const conditions = [];
+
+  if (input.codes && input.codes.length > 0) {
+    conditions.push(inArray(municipalities.code, input.codes));
+  }
 
   if (input.query) {
     const tokens = input.query.trim().split(/\s+/).filter(Boolean);
