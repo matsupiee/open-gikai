@@ -138,13 +138,13 @@ export function DateWheelPicker({
       </DrawerTrigger>
       <DrawerContent>
         <div className="mx-auto w-full max-w-[480px]">
-          <DrawerHeader className="flex flex-row items-center justify-between">
+          <DrawerHeader className="relative">
             <DrawerTitle className="text-sm">{label}</DrawerTitle>
             {value && (
               <Button
                 variant="link"
                 size="sm"
-                className="text-xs text-muted-foreground h-auto p-0"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-muted-foreground h-auto p-0"
                 onClick={handleClear}
               >
                 クリア
