@@ -114,7 +114,7 @@ export function MunicipalitySelector({ selectedCodes, onChange, required = false
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          className="text-sm"
+          className="text-base md:text-sm"
           role="combobox"
           aria-expanded={isOpen}
           aria-controls={listboxId}
