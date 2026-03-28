@@ -6,7 +6,6 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { orpc } from "@/lib/orpc/orpc";
 import { DateWheelPicker } from "@/shared/_components/date-wheel-picker";
 import { MunicipalitySelector } from "@/shared/_components/municipality-selector";
-import { Badge } from "@/shared/_components/ui/badge";
 import { Button } from "@/shared/_components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/_components/ui/card";
 import { Input } from "@/shared/_components/ui/input";
@@ -213,7 +212,6 @@ interface MeetingCardProps {
   meeting: {
     id: string;
     title: string;
-    meetingType: string;
     heldOn: string;
     prefecture: string;
     municipality: string;
@@ -225,12 +223,7 @@ function MeetingCard({ meeting }: MeetingCardProps) {
     <Link to="/meetings/$meetingId" params={{ meetingId: meeting.id }} className="block">
       <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
         <CardHeader className="pb-2">
-          <div className="flex items-start justify-between gap-2">
-            <CardTitle className="text-sm font-semibold">{meeting.title}</CardTitle>
-            <Badge variant="outline" className="shrink-0 text-xs">
-              {meeting.meetingType}
-            </Badge>
-          </div>
+          <CardTitle className="text-sm font-semibold">{meeting.title}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">

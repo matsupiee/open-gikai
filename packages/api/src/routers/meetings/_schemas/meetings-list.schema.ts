@@ -6,7 +6,6 @@ export const meetingsListSchema = z.object({
   prefecture: z.string().optional(),
   municipality: z.string().optional(),
   municipalityCodes: z.array(z.string()).optional(),
-  meetingType: z.string().optional(),
   title: z.string().optional(),
   limit: z.number().min(1).max(50).default(20),
   cursor: z.string().optional(),
