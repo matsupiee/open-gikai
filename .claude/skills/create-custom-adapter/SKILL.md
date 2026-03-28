@@ -51,14 +51,16 @@ ScraperAdapter インターフェース (packages/scrapers/src/adapters/adapter.
 - **文字コード**: UTF-8 or Shift_JIS
 - **ページネーション**: 年度別ページ遷移、次ページリンク等
 
-情報がない場合はスキップする
+情報がない場合は、自治体の会議録ページを調査する
+もし会議録がhtmlやpdf形式で提供されてない場合は、`docs/custom-scraping/{引数}.md`に「スクレイピング不可能」という一行を加えて、PRを出す。
+すでに、「スクレイピング不可能」という情報が書かれている場合は、何もせずに終了していい
 
 ### Step 2: 自治体コードの特定
 
-`packages/db/src/seeds/municipalities.csv` から自治体コードを取得する:
+`municipalities.csv` から自治体コードを取得する:
 
 ```bash
-grep -i '{自治体名}' packages/db/src/seeds/municipalities.csv
+grep -i '{自治体名}' data/municipalities.csv
 ```
 
 ### Step 3: ディレクトリとファイル作成
@@ -357,7 +359,7 @@ cd apps/scraper-worker && bun run scrape:ndjson -- --target {自治体コード}
 
 ### Step 12: コミット・プッシュ・PR
 
-worktree ルールに従い、PR まで自動で作成する。
+.claude/rules/worktree-workflow ルールに従い、PR まで自動で作成する。
 
 **ブランチは必ず `main` から切る（CRITICAL）:**
 
