@@ -7,8 +7,6 @@
  * 香春町議会は会議録検索システムを導入しておらず、
  * 公開されているのは議決結果 PDF のみで会議録本文は存在しない。
  * スクレイピング対象となる会議録がないため、常に空リストを返す。
- *
- * 参考: docs/custom-scraping/kawara.md
  */
 
 import type { ListRecord, ScraperAdapter } from "../../adapter";

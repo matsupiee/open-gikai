@@ -8,8 +8,6 @@
  * テキスト会議録や会議録 PDF への導線が確認できない。
  * 現時点ではスクレイピング可能な会議録データが存在しないため、
  * テキストスクレイピングの対象外とする。
- *
- * 参考: docs/custom-scraping/kawakami-nara.md
  */
 
 import type { ListRecord, ScraperAdapter } from "../../adapter";
