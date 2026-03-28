@@ -1,12 +1,15 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { client } from "@/lib/orpc/orpc";
+import { useDebouncedValue } from "@/shared/_hooks/use-debounced-value";
 
 import { usePersistedMunicipalityCodes } from "./usePersistedMunicipalityCodes";
 
 import type { SearchParams } from "../index";
 
+const DEBOUNCE_MS = 300;
 const LIMIT = 10;
 
 export function useSearch(searchParams: SearchParams) {
@@ -14,34 +17,31 @@ export function useSearch(searchParams: SearchParams) {
 
   const { municipalityCodes, setMunicipalityCodes } = usePersistedMunicipalityCodes();
 
-  const query = searchParams.q ?? "";
-  const kind = searchParams.kind ?? "";
-  const heldOnFrom = searchParams.heldOnFrom ?? "";
-  const heldOnTo = searchParams.heldOnTo ?? "";
+  // Local state initialized from URL params (for responsive input)
+  const [query, setQuery] = useState(searchParams.q ?? "");
+  const [kind, setKind] = useState<"question" | "answer" | "">(searchParams.kind ?? "");
+  const [heldOnFrom, setHeldOnFrom] = useState(searchParams.heldOnFrom ?? "");
+  const [heldOnTo, setHeldOnTo] = useState(searchParams.heldOnTo ?? "");
 
-  const setSearchParam = <K extends keyof SearchParams>(key: K, value: SearchParams[K]) => {
+  const debouncedQuery = useDebouncedValue(query, DEBOUNCE_MS);
+
+  // Sync debounced/filter state to URL params
+  useEffect(() => {
+    const params: SearchParams = {};
+    if (debouncedQuery) params.q = debouncedQuery;
+    if (kind) params.kind = kind;
+    if (heldOnFrom) params.heldOnFrom = heldOnFrom;
+    if (heldOnTo) params.heldOnTo = heldOnTo;
+
     navigate({
       to: "/search",
-      search: (prev) => {
-        const next = { ...prev, [key]: value };
-        for (const k of Object.keys(next) as (keyof SearchParams)[]) {
-          if (next[k] === "" || next[k] === undefined) {
-            delete next[k];
-          }
-        }
-        return next;
-      },
+      search: params,
       replace: true,
     });
-  };
-
-  const setQuery = (v: string) => setSearchParam("q", v);
-  const setKind = (v: "question" | "answer" | "") => setSearchParam("kind", v);
-  const setHeldOnFrom = (v: string) => setSearchParam("heldOnFrom", v);
-  const setHeldOnTo = (v: string) => setSearchParam("heldOnTo", v);
+  }, [debouncedQuery, kind, heldOnFrom, heldOnTo, navigate]);
 
   const searchInput = {
-    q: query.trim() || undefined,
+    q: debouncedQuery.trim() || undefined,
     kind: (kind || undefined) as "question" | "answer" | undefined,
     heldOnFrom: heldOnFrom || undefined,
     heldOnTo: heldOnTo || undefined,
@@ -49,7 +49,7 @@ export function useSearch(searchParams: SearchParams) {
     limit: LIMIT,
   };
 
-  const searchReady = municipalityCodes.length > 0 && query.trim().length > 0;
+  const searchReady = municipalityCodes.length > 0 && debouncedQuery.trim().length > 0;
 
   const infiniteQuery = useInfiniteQuery({
     queryKey: ["statements", "search", searchInput],
@@ -65,14 +65,13 @@ export function useSearch(searchParams: SearchParams) {
 
   const statements = infiniteQuery.data?.pages.flatMap((page) => page.statements) ?? [];
 
-  const hasSearched = query.trim().length > 0;
+  const hasSearched = debouncedQuery.trim().length > 0;
 
   const handleReset = () => {
-    navigate({
-      to: "/search",
-      search: {},
-      replace: true,
-    });
+    setQuery("");
+    setKind("");
+    setHeldOnFrom("");
+    setHeldOnTo("");
   };
 
   return {
