@@ -43,13 +43,8 @@ fi
 
 # --- 4. bun install ---
 if command -v bun &>/dev/null; then
-  if bun install --frozen-lockfile >&2; then
-    echo "✓ bun install done" >&2
-  else
-    echo "⚠ --frozen-lockfile failed, retrying without it..." >&2
-    bun install >&2
-    echo "✓ bun install done (without frozen-lockfile)" >&2
-  fi
+  bun install >&2
+  echo "✓ bun install done" >&2
 else
   echo "⚠ bun not found, skipping bun install" >&2
 fi
