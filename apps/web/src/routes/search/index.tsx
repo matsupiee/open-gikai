@@ -7,6 +7,7 @@ import { Input } from "@/shared/_components/ui/input";
 
 import { CitationPanel } from "./_components/citation-panel";
 import { DraftAnswerWorkspace } from "./_components/draft-answer-workspace";
+import { MunicipalitySelector } from "./_components/municipality-selector";
 import { PolicyCategoryBrowser } from "./_components/policy-category-browser";
 import { SearchFilters } from "./_components/search-filters";
 import { SkeletonCard } from "./_components/skeleton-card";
@@ -31,8 +32,8 @@ export function RouteComponent() {
     setHeldOnTo,
     prefecture,
     setPrefecture,
-    municipality,
-    setMunicipality,
+    municipalityCodes,
+    setMunicipalityCodes,
     assemblyLevel,
     setAssemblyLevel,
     statements,
@@ -55,6 +56,8 @@ export function RouteComponent() {
 
   const questionPlaceholder = "例: 「待機児童対策の現状と今後の方針は？」と入力してください";
 
+  const canSearch = municipalityCodes.length > 0;
+
   const handlePageModeChange = (mode: typeof pageMode) => {
     setPageMode(mode);
     handleReset();
@@ -72,12 +75,21 @@ export function RouteComponent() {
           </p>
         </div>
 
+        {/* Municipality Selector */}
+        <div className="mb-6 rounded border border-border bg-card p-4">
+          <MunicipalitySelector
+            selectedCodes={municipalityCodes}
+            onChange={setMunicipalityCodes}
+          />
+        </div>
+
         {/* Mode Toggle */}
         <div className="flex gap-2 mb-6">
           <Button
             variant={pageMode === "question" ? "default" : "outline"}
             onClick={() => handlePageModeChange("question")}
             size="sm"
+            disabled={!canSearch}
           >
             質問から探す
           </Button>
@@ -85,18 +97,27 @@ export function RouteComponent() {
             variant={pageMode === "policy" ? "default" : "outline"}
             onClick={() => handlePageModeChange("policy")}
             size="sm"
+            disabled={!canSearch}
           >
             政策から探す
           </Button>
         </div>
 
+        {!canSearch && (
+          <div className="rounded border border-border bg-card p-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              上のセレクターから自治体を選択すると、検索が可能になります
+            </p>
+          </div>
+        )}
+
         {/* Policy Browse Mode */}
-        {pageMode === "policy" && !hasSearched && (
+        {canSearch && pageMode === "policy" && !hasSearched && (
           <PolicyCategoryBrowser onSelectCategory={handleCategorySearch} />
         )}
 
         {/* Question Mode or Policy Mode after search */}
-        {(pageMode === "question" || hasSearched) && (
+        {canSearch && (pageMode === "question" || hasSearched) && (
           <div className="flex flex-col gap-4">
             {/* STEP 1: Search Input */}
             <div className="flex flex-col gap-3 rounded border border-border bg-card p-4">
@@ -139,8 +160,6 @@ export function RouteComponent() {
                   setHeldOnTo={setHeldOnTo}
                   prefecture={prefecture}
                   setPrefecture={setPrefecture}
-                  municipality={municipality}
-                  setMunicipality={setMunicipality}
                   assemblyLevel={assemblyLevel}
                   setAssemblyLevel={setAssemblyLevel}
                   onReset={handleReset}

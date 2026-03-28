@@ -282,7 +282,7 @@ describe("searchStatements", () => {
         },
       ]);
 
-      const result = await searchStatements(tx, { municipality: "千代田区" });
+      const result = await searchStatements(tx, { municipalityCodes: ["131001"] });
 
       expect(result.statements).toHaveLength(1);
       expect(result.statements[0]!.content).toBe("千代田の発言");
@@ -587,7 +587,7 @@ describe("semanticSearchStatements", () => {
       const result = await semanticSearchStatements(tx, {
         query: "予算",
         topK: 10,
-        filters: { municipality: "旭川市" },
+        filters: { municipalityCodes: ["012025"] },
       });
 
       expect(result.statements).toHaveLength(1);

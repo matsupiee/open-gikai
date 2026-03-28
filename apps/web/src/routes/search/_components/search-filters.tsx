@@ -12,8 +12,6 @@ interface SearchFiltersProps {
   setHeldOnTo: (v: string) => void;
   prefecture: string;
   setPrefecture: (v: string) => void;
-  municipality: string;
-  setMunicipality: (v: string) => void;
   assemblyLevel: string;
   setAssemblyLevel: (v: string) => void;
   onReset: () => void;
@@ -28,13 +26,11 @@ export function SearchFilters({
   setHeldOnTo,
   prefecture,
   setPrefecture,
-  municipality,
-  setMunicipality,
   assemblyLevel,
   setAssemblyLevel,
   onReset,
 }: SearchFiltersProps) {
-  const hasActiveFilters = !!(kind || heldOnFrom || heldOnTo || prefecture || municipality || assemblyLevel);
+  const hasActiveFilters = !!(kind || heldOnFrom || heldOnTo || prefecture || assemblyLevel);
 
   return (
     <div className="grid gap-3 rounded border border-border bg-card p-4">
@@ -82,17 +78,6 @@ export function SearchFilters({
             placeholder="東京都"
             value={prefecture}
             onChange={(e) => setPrefecture(e.target.value)}
-            className="text-xs"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs">自治体名</Label>
-          <Input
-            type="text"
-            placeholder="千代田区"
-            value={municipality}
-            onChange={(e) => setMunicipality(e.target.value)}
             className="text-xs"
           />
         </div>

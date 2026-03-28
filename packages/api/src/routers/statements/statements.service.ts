@@ -5,7 +5,7 @@ import {
   statements,
 } from "@open-gikai/db/schema";
 import { ORPCError } from "@orpc/server";
-import { and, desc, eq, gte, like, lte, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, like, lte, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { generateAnswer } from "../../shared/llm";
 import type {
@@ -58,8 +58,8 @@ function buildMeetingFilters(input: z.input<typeof statementsSearchSchema>) {
   if (input.prefecture) {
     conditions.push(eq(municipalities.prefecture, input.prefecture));
   }
-  if (input.municipality) {
-    conditions.push(eq(municipalities.name, input.municipality));
+  if (input.municipalityCodes && input.municipalityCodes.length > 0) {
+    conditions.push(inArray(municipalities.code, input.municipalityCodes));
   }
 
   return conditions;
@@ -165,8 +165,8 @@ function querySemanticStatements(
   if (input.filters?.prefecture) {
     conditions.push(eq(municipalities.prefecture, input.filters.prefecture));
   }
-  if (input.filters?.municipality) {
-    conditions.push(eq(municipalities.name, input.filters.municipality));
+  if (input.filters?.municipalityCodes && input.filters.municipalityCodes.length > 0) {
+    conditions.push(inArray(municipalities.code, input.filters.municipalityCodes));
   }
 
   const query = db
