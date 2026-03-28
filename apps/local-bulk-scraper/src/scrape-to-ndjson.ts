@@ -23,7 +23,7 @@ import {
   detectAdapterKey,
   getAdapter,
   initAdapterRegistry,
-} from "./utils/scrapers";
+} from "@open-gikai/scrapers";
 import {
   CUSTOM_SYSTEM_TYPE,
   parseYear,

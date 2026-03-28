@@ -1,4 +1,4 @@
-import { SharedSystemAdapterKey } from "./scrapers";
+import { SharedSystemAdapterKey } from "@open-gikai/scrapers";
 import { extractGroupKey } from "./group-key";
 
 /** 全ホストグループを通じた同時実行数の上限 */

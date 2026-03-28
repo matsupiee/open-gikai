@@ -3,7 +3,7 @@ import {
   type MeetingData,
   type ScraperAdapter,
   SharedSystemAdapterKey,
-} from "./scrapers";
+} from "@open-gikai/scrapers";
 import { scrapeOneYear } from "./scrape-one-year";
 
 beforeEach(() => {
