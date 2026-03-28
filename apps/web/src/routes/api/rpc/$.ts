@@ -11,17 +11,6 @@ import { getAuth, getDb } from "@/lib/server";
 
 import { isBlockedBot } from "./_utils/block-bot";
 
-function withSecurityHeaders(response: Response): Response {
-  const headers = new Headers(response.headers);
-  headers.set("X-Robots-Tag", "noindex, nofollow");
-  headers.set("Cache-Control", "no-store");
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
-}
-
 const rpcHandler = new RPCHandler(appRouter, {
   interceptors: [
     onError((error) => {
@@ -59,13 +48,13 @@ async function handle({ request }: { request: Request }) {
     prefix: "/api/rpc",
     context,
   });
-  if (rpcResult.response) return withSecurityHeaders(rpcResult.response);
+  if (rpcResult.response) return rpcResult.response;
 
   const apiResult = await apiHandler.handle(request, {
     prefix: "/api/rpc/api-reference",
     context,
   });
-  if (apiResult.response) return withSecurityHeaders(apiResult.response);
+  if (apiResult.response) return apiResult.response;
 
   return new Response("Not found", { status: 404 });
 }
