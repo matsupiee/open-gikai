@@ -1,9 +1,5 @@
 import type { Db } from "@open-gikai/db";
-import {
-  meetings,
-  municipalities,
-  statements,
-} from "@open-gikai/db/schema";
+import { meetings, municipalities, statements } from "@open-gikai/db/schema";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq, gte, inArray, like, lte, lt, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -93,11 +89,7 @@ function buildFtsConditions(q: string) {
   return tokens.map((token) => like(statements.content, `%${token}%`));
 }
 
-function queryStatements(
-  db: Db,
-  input: z.input<typeof statementsSearchSchema>,
-  limit: number,
-) {
+function queryStatements(db: Db, input: z.input<typeof statementsSearchSchema>, limit: number) {
   const meetingFilters = buildMeetingFilters(input);
   const statementFilters = buildStatementFilters(input);
 
@@ -125,19 +117,16 @@ function queryStatements(
     allConditions.push(...buildFtsConditions(input.q));
   }
 
-  const finalQuery =
-    allConditions.length > 0 ? query.where(and(...allConditions)) : query;
+  const finalQuery = allConditions.length > 0 ? query.where(and(...allConditions)) : query;
 
-  return finalQuery
-    .orderBy(desc(statements.createdAt), desc(statements.id))
-    .limit(limit);
+  return finalQuery.orderBy(desc(statements.createdAt), desc(statements.id)).limit(limit);
 }
 
 export async function searchStatements(
   db: Db,
   input: z.input<typeof statementsSearchSchema>,
 ): Promise<SearchResponse> {
-  const limit = input.limit ?? 20;
+  const limit = Math.min(input.limit ?? 10, 30); // デフォルト10件、最大30件までに制限
   const results = await queryStatements(db, input, limit + 1);
 
   const hasMore = results.length > limit;
@@ -149,10 +138,7 @@ export async function searchStatements(
   };
 }
 
-function querySemanticStatements(
-  db: Db,
-  input: z.input<typeof statementsSemanticSearchSchema>,
-) {
+function querySemanticStatements(db: Db, input: z.input<typeof statementsSemanticSearchSchema>) {
   const conditions = [];
 
   conditions.push(...buildFtsConditions(input.query));
@@ -186,17 +172,11 @@ function querySemanticStatements(
     })
     .from(statements)
     .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-    .innerJoin(
-      municipalities,
-      eq(meetings.municipalityCode, municipalities.code),
-    );
+    .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code));
 
-  const finalQuery =
-    conditions.length > 0 ? query.where(and(...conditions)) : query;
+  const finalQuery = conditions.length > 0 ? query.where(and(...conditions)) : query;
 
-  return finalQuery
-    .orderBy(desc(statements.createdAt), desc(statements.id))
-    .limit(input.topK ?? 5);
+  return finalQuery.orderBy(desc(statements.createdAt), desc(statements.id)).limit(input.topK ?? 5);
 }
 
 export async function semanticSearchStatements(
@@ -220,8 +200,7 @@ export async function askStatements(
 
     if (sources.length === 0) {
       return {
-        answer:
-          "関連する発言が見つかりませんでした。検索条件を変えてお試しください。",
+        answer: "関連する発言が見つかりませんでした。検索条件を変えてお試しください。",
         sources: [],
       };
     }

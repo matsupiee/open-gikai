@@ -10,10 +10,6 @@ interface SearchFiltersProps {
   setHeldOnFrom: (v: string) => void;
   heldOnTo: string;
   setHeldOnTo: (v: string) => void;
-  prefecture: string;
-  setPrefecture: (v: string) => void;
-  assemblyLevel: string;
-  setAssemblyLevel: (v: string) => void;
   onReset: () => void;
 }
 
@@ -24,13 +20,9 @@ export function SearchFilters({
   setHeldOnFrom,
   heldOnTo,
   setHeldOnTo,
-  prefecture,
-  setPrefecture,
-  assemblyLevel,
-  setAssemblyLevel,
   onReset,
 }: SearchFiltersProps) {
-  const hasActiveFilters = !!(kind || heldOnFrom || heldOnTo || prefecture || assemblyLevel);
+  const hasActiveFilters = !!(kind || heldOnFrom || heldOnTo);
 
   return (
     <div className="grid gap-3 rounded border border-border bg-card p-4">
@@ -59,40 +51,10 @@ export function SearchFilters({
 
         <div className="flex flex-col gap-1">
           <Label className="text-xs">発言種別</Label>
-          <NativeSelect
-            value={kind}
-            onChange={(e) => setKind(e.target.value)}
-            className="w-full"
-          >
+          <NativeSelect value={kind} onChange={(e) => setKind(e.target.value)} className="w-full">
             <NativeSelectOption value="">すべて</NativeSelectOption>
             <NativeSelectOption value="question">質問</NativeSelectOption>
             <NativeSelectOption value="answer">答弁</NativeSelectOption>
-            <NativeSelectOption value="remark">発言</NativeSelectOption>
-          </NativeSelect>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs">都道府県名</Label>
-          <Input
-            type="text"
-            placeholder="東京都"
-            value={prefecture}
-            onChange={(e) => setPrefecture(e.target.value)}
-            className="text-xs"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs">議会レベル</Label>
-          <NativeSelect
-            value={assemblyLevel}
-            onChange={(e) => setAssemblyLevel(e.target.value)}
-            className="w-full"
-          >
-            <NativeSelectOption value="">すべて</NativeSelectOption>
-            <NativeSelectOption value="national">国会</NativeSelectOption>
-            <NativeSelectOption value="prefectural">都道府県</NativeSelectOption>
-            <NativeSelectOption value="municipal">市区町村</NativeSelectOption>
           </NativeSelect>
         </div>
       </div>
