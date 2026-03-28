@@ -4,6 +4,7 @@ import { betterAuth } from "better-auth";
 import { createAuthMiddleware, APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin } from "better-auth/plugins/admin";
+import { emailOTP } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { Resend } from "resend";
 import { isAllowedEmailDomain } from "./allowed-email-domains";
@@ -13,15 +14,6 @@ export interface CreateAuthOptions {
   trustedOrigins: string;
   resendApiKey: string;
   emailFrom: string;
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
 
 export function createAuth({
@@ -43,24 +35,6 @@ export function createAuth({
       enabled: true,
       requireEmailVerification: true,
     },
-    emailVerification: {
-      sendVerificationEmail: async ({ user, url }) => {
-        await resend.emails.send({
-          from: emailFrom,
-          to: user.email,
-          subject: "【open-gikai】メールアドレスの確認",
-          html: `
-            <p>${escapeHtml(user.name ?? "")} 様</p>
-            <p>open-gikai にご登録いただきありがとうございます。</p>
-            <p>以下のリンクをクリックしてメールアドレスを確認してください。</p>
-            <p><a href="${url}">メールアドレスを確認する</a></p>
-            <p>このメールに心当たりがない場合は無視してください。</p>
-          `,
-        });
-      },
-      autoSignInAfterVerification: true,
-      sendOnSignUp: true,
-    },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         if (ctx.path !== "/sign-up/email") return;
@@ -72,7 +46,29 @@ export function createAuth({
         }
       }),
     },
-    plugins: [tanstackStartCookies(), admin({ defaultRole: "user" })],
+    plugins: [
+      tanstackStartCookies(),
+      admin({ defaultRole: "user" }),
+      emailOTP({
+        otpLength: 6,
+        expiresIn: 600,
+        sendVerificationOnSignUp: true,
+        async sendVerificationOTP({ email, otp, type }) {
+          if (type !== "email-verification") return;
+          await resend.emails.send({
+            from: emailFrom,
+            to: email,
+            subject: "【open-gikai】確認コード",
+            html: `
+              <p>open-gikai の確認コードは以下のとおりです。</p>
+              <p style="font-size: 32px; font-weight: bold; letter-spacing: 0.3em;">${otp}</p>
+              <p>このコードは10分間有効です。</p>
+              <p>このメールに心当たりがない場合は無視してください。</p>
+            `,
+          });
+        },
+      }),
+    ],
     advanced: {
       ipAddress: {
         ipAddressHeaders: ["cf-connecting-ip"],

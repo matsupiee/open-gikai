@@ -8,6 +8,7 @@ import { isAllowedEmailDomain } from "@open-gikai/auth/allowed-email-domains";
 import { authClient } from "@/lib/better-auth/auth-client";
 
 import AllowedDomainDialog from "./allowed-domain-dialog";
+import OtpVerificationForm from "./otp-verification-form";
 import Loader from "../../../../shared/_components/loader";
 import { Button } from "../../../../shared/_components/ui/button";
 import {
@@ -26,7 +27,7 @@ export default function SignUpForm() {
     from: "/",
   });
   const { isPending } = authClient.useSession();
-  const [emailSent, setEmailSent] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [showDomainDialog, setShowDomainDialog] = useState(false);
 
   const form = useForm({
@@ -43,7 +44,7 @@ export default function SignUpForm() {
         },
         {
           onSuccess: () => {
-            setEmailSent(true);
+            setRegisteredEmail(value.email);
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
@@ -65,25 +66,15 @@ export default function SignUpForm() {
     return <Loader />;
   }
 
-  if (emailSent) {
+  if (registeredEmail) {
     return (
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">確認メールを送信しました</CardTitle>
-          <CardDescription>
-            ご登録いただいたメールアドレスに確認メールを送信しました。
-            メール内のリンクをクリックして、登録を完了してください。
-          </CardDescription>
-        </CardHeader>
-        <CardFooter className="justify-center">
-          <Button
-            variant="link"
-            onClick={() => navigate({ to: "/sign-in" })}
-          >
-            ログインページへ
-          </Button>
-        </CardFooter>
-      </Card>
+      <OtpVerificationForm
+        email={registeredEmail}
+        onVerified={() => {
+          navigate({ to: "/search" });
+          toast.success("アカウント登録に成功しました");
+        }}
+      />
     );
   }
 
