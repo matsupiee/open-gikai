@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shared/_components/ui/button";
 import { Input } from "@/shared/_components/ui/input";
 
-import { MunicipalitySelector } from "./_components/municipality-selector";
+import { MunicipalitySelector } from "@/shared/_components/municipality-selector";
 import { SearchFilters } from "./_components/search-filters";
 import { SkeletonCard } from "./_components/skeleton-card";
 import { StatementCard } from "./_components/statement-card";

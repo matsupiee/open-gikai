@@ -1,6 +1,6 @@
 import type { Db } from "@open-gikai/db";
 import { meetings, municipalities, statements } from "@open-gikai/db/schema";
-import { and, asc, desc, eq, gte, like, lte, lt } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, like, lte, lt } from "drizzle-orm";
 import { z } from "zod";
 
 import type { meetingsListSchema, meetingStatementsSchema } from "./_schemas";
@@ -43,7 +43,11 @@ function queryMeetings(db: Db, input: z.input<typeof meetingsListSchema>, limit:
       conditions.push(like(municipalities.name, `%${token}%`));
     }
   }
+  if (input.municipalityCodes && input.municipalityCodes.length > 0) {
+    conditions.push(inArray(meetings.municipalityCode, input.municipalityCodes));
+  }
   if (input.meetingType) conditions.push(eq(meetings.meetingType, input.meetingType));
+  if (input.title) conditions.push(like(meetings.title, `%${input.title}%`));
   if (input.cursor) conditions.push(lt(meetings.id, input.cursor));
 
   const query = db
