@@ -11,6 +11,7 @@ import {
   findMeetingsWithTopics,
   getMeetingDigest,
   searchTopics,
+  timelineTopic,
 } from "./topics.service";
 
 type TestDb = ReturnType<typeof getTestDb>;
@@ -574,6 +575,462 @@ describe("findMeetingsWithTopics", () => {
       expect(rows).toHaveLength(2);
       expect(rows[0]!.title).toBe("新しい会議");
       expect(rows[1]!.title).toBe("古い会議");
+    });
+  });
+
+  it("municipalityCode / municipalityName / prefecture を返す", async () => {
+    await withRollback(db, async (tx) => {
+      await tx.insert(municipalities).values({
+        code: "462012",
+        name: "鹿児島市",
+        prefecture: "鹿児島県",
+      });
+      await tx.insert(meetings).values({
+        municipalityCode: "462012",
+        title: "両方マッチ",
+        meetingType: "定例会",
+        heldOn: "2024-06-01",
+        topicDigests: [
+          { topic: "A", relevance: "primary", digest: "A", speakers: [] },
+          { topic: "B", relevance: "primary", digest: "B", speakers: [] },
+        ],
+      });
+
+      const rows = await findMeetingsWithTopics(tx, { topics: ["A", "B"] });
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.municipalityCode).toBe("462012");
+      expect(rows[0]!.municipalityName).toBe("鹿児島市");
+      expect(rows[0]!.prefecture).toBe("鹿児島県");
+    });
+  });
+});
+
+describe("timelineTopic", () => {
+  it("該当会議を held_on 昇順で返す", async () => {
+    await withRollback(db, async (tx) => {
+      await tx.insert(municipalities).values({
+        code: "462012",
+        name: "鹿児島市",
+        prefecture: "鹿児島県",
+      });
+      await tx.insert(meetings).values([
+        {
+          municipalityCode: "462012",
+          title: "9月会議",
+          meetingType: "定例会",
+          heldOn: "2024-09-01",
+          topicDigests: [
+            {
+              topic: "市バス路線再編",
+              relevance: "primary",
+              digest: "9月の議論",
+              speakers: ["田中議員"],
+            },
+          ],
+        },
+        {
+          municipalityCode: "462012",
+          title: "3月会議",
+          meetingType: "定例会",
+          heldOn: "2024-03-01",
+          topicDigests: [
+            {
+              topic: "市バス路線再編",
+              relevance: "primary",
+              digest: "3月の議論",
+              speakers: ["佐藤議員"],
+            },
+          ],
+        },
+        {
+          municipalityCode: "462012",
+          title: "6月会議",
+          meetingType: "定例会",
+          heldOn: "2024-06-01",
+          topicDigests: [
+            {
+              topic: "市バス路線再編",
+              relevance: "primary",
+              digest: "6月の議論",
+              speakers: ["山本議員"],
+            },
+          ],
+        },
+      ]);
+
+      const entries = await timelineTopic(tx, { topic: "市バス" });
+
+      expect(entries).toHaveLength(3);
+      expect(entries[0]!.title).toBe("3月会議");
+      expect(entries[1]!.title).toBe("6月会議");
+      expect(entries[2]!.title).toBe("9月会議");
+      expect(entries[0]!.municipalityCode).toBe("462012");
+      expect(entries[0]!.municipalityName).toBe("鹿児島市");
+      expect(entries[0]!.prefecture).toBe("鹿児島県");
+      expect(entries[0]!.matchedTopics).toHaveLength(1);
+      expect(entries[0]!.matchedTopics[0]!.topic).toBe("市バス路線再編");
+      expect(entries[0]!.matchedTopics[0]!.relevance).toBe("primary");
+      expect(entries[0]!.matchedTopics[0]!.digest).toBe("3月の議論");
+      expect(entries[0]!.matchedTopics[0]!.speakers).toEqual(["佐藤議員"]);
+    });
+  });
+
+  it("municipalityCode でフィルタできる", async () => {
+    await withRollback(db, async (tx) => {
+      await tx.insert(municipalities).values([
+        { code: "462012", name: "鹿児島市", prefecture: "鹿児島県" },
+        { code: "131001", name: "千代田区", prefecture: "東京都" },
+      ]);
+      await tx.insert(meetings).values([
+        {
+          municipalityCode: "462012",
+          title: "鹿児島の会議",
+          meetingType: "定例会",
+          heldOn: "2024-06-01",
+          topicDigests: [
+            {
+              topic: "観光振興",
+              relevance: "primary",
+              digest: "観光客誘致",
+              speakers: [],
+            },
+          ],
+        },
+        {
+          municipalityCode: "131001",
+          title: "千代田の会議",
+          meetingType: "定例会",
+          heldOn: "2024-06-01",
+          topicDigests: [
+            {
+              topic: "観光振興",
+              relevance: "primary",
+              digest: "観光客誘致",
+              speakers: [],
+            },
+          ],
+        },
+      ]);
+
+      const entries = await timelineTopic(tx, {
+        topic: "観光",
+        municipalityCode: "462012",
+      });
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0]!.title).toBe("鹿児島の会議");
+    });
+  });
+
+  it("dateFrom / dateTo で開催日フィルタ", async () => {
+    await withRollback(db, async (tx) => {
+      await tx.insert(municipalities).values({
+        code: "462012",
+        name: "鹿児島市",
+        prefecture: "鹿児島県",
+      });
+      await tx.insert(meetings).values([
+        {
+          municipalityCode: "462012",
+          title: "2023年の会議",
+          meetingType: "定例会",
+          heldOn: "2023-03-01",
+          topicDigests: [
+            { topic: "防災", relevance: "primary", digest: "防災", speakers: [] },
+          ],
+        },
+        {
+          municipalityCode: "462012",
+          title: "2024年の会議",
+          meetingType: "定例会",
+          heldOn: "2024-06-01",
+          topicDigests: [
+            { topic: "防災", relevance: "primary", digest: "防災", speakers: [] },
+          ],
+        },
+        {
+          municipalityCode: "462012",
+          title: "2025年の会議",
+          meetingType: "定例会",
+          heldOn: "2025-06-01",
+          topicDigests: [
+            { topic: "防災", relevance: "primary", digest: "防災", speakers: [] },
+          ],
+        },
+      ]);
+
+      const entries = await timelineTopic(tx, {
+        topic: "防災",
+        dateFrom: "2024-01-01",
+        dateTo: "2024-12-31",
+      });
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0]!.title).toBe("2024年の会議");
+    });
+  });
+
+  it("1 会議内に同 topic 複数 digest があれば全部返す", async () => {
+    await withRollback(db, async (tx) => {
+      await tx.insert(municipalities).values({
+        code: "462012",
+        name: "鹿児島市",
+        prefecture: "鹿児島県",
+      });
+      await tx.insert(meetings).values({
+        municipalityCode: "462012",
+        title: "防災まみれの会議",
+        meetingType: "定例会",
+        heldOn: "2024-06-01",
+        topicDigests: [
+          {
+            topic: "防災計画",
+            relevance: "primary",
+            digest: "防災計画の見直しについて議論",
+            speakers: ["田中議員"],
+          },
+          {
+            topic: "避難所運営",
+            relevance: "secondary",
+            digest: "防災の観点から避難所運営について",
+            speakers: ["山本議員"],
+          },
+          {
+            topic: "観光振興",
+            relevance: "primary",
+            digest: "観光客誘致",
+            speakers: [],
+          },
+          {
+            topic: "消防団",
+            relevance: "secondary",
+            digest: "消防団員の確保と防災訓練",
+            speakers: ["佐藤議員"],
+          },
+        ],
+      });
+
+      const entries = await timelineTopic(tx, { topic: "防災" });
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0]!.matchedTopics).toHaveLength(3);
+      const matchedTopicNames = entries[0]!.matchedTopics.map((t) => t.topic);
+      expect(matchedTopicNames).toContain("防災計画");
+      expect(matchedTopicNames).toContain("避難所運営");
+      expect(matchedTopicNames).toContain("消防団");
+      expect(matchedTopicNames).not.toContain("観光振興");
+    });
+  });
+
+  it("マッチしない場合は空配列", async () => {
+    await withRollback(db, async (tx) => {
+      await tx.insert(municipalities).values({
+        code: "462012",
+        name: "鹿児島市",
+        prefecture: "鹿児島県",
+      });
+      await tx.insert(meetings).values({
+        municipalityCode: "462012",
+        title: "別件の会議",
+        meetingType: "定例会",
+        heldOn: "2024-06-01",
+        topicDigests: [
+          {
+            topic: "観光振興",
+            relevance: "primary",
+            digest: "観光客誘致",
+            speakers: [],
+          },
+        ],
+      });
+
+      const entries = await timelineTopic(tx, { topic: "存在しない議題" });
+
+      expect(entries).toHaveLength(0);
+    });
+  });
+});
+
+describe("topics.compare (findMeetingsWithTopics wrapper view)", () => {
+  it("2 キーワード両方にヒットする会議を返す", async () => {
+    await withRollback(db, async (tx) => {
+      await tx.insert(municipalities).values({
+        code: "462012",
+        name: "鹿児島市",
+        prefecture: "鹿児島県",
+      });
+      const [matched] = await tx
+        .insert(meetings)
+        .values({
+          municipalityCode: "462012",
+          title: "両方含む会議",
+          meetingType: "定例会",
+          heldOn: "2024-06-01",
+          topicDigests: [
+            {
+              topic: "市バス路線再編",
+              relevance: "primary",
+              digest: "路線の再編",
+              speakers: [],
+            },
+            {
+              topic: "ICカード事業",
+              relevance: "primary",
+              digest: "ICカードの導入",
+              speakers: [],
+            },
+          ],
+        })
+        .returning();
+
+      const rows = await findMeetingsWithTopics(tx, {
+        topics: ["市バス", "ICカード"],
+      });
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.meetingId).toBe(matched!.id);
+      expect(rows[0]!.matchedTopicsByQuery["市バス"]).toEqual([
+        "市バス路線再編",
+      ]);
+      expect(rows[0]!.matchedTopicsByQuery["ICカード"]).toEqual([
+        "ICカード事業",
+      ]);
+    });
+  });
+
+  it("片方しかヒットしない会議は含まれない", async () => {
+    await withRollback(db, async (tx) => {
+      await tx.insert(municipalities).values({
+        code: "462012",
+        name: "鹿児島市",
+        prefecture: "鹿児島県",
+      });
+      await tx.insert(meetings).values({
+        municipalityCode: "462012",
+        title: "片方だけ",
+        meetingType: "定例会",
+        heldOn: "2024-06-01",
+        topicDigests: [
+          {
+            topic: "市バス路線再編",
+            relevance: "primary",
+            digest: "路線の再編",
+            speakers: [],
+          },
+        ],
+      });
+
+      const rows = await findMeetingsWithTopics(tx, {
+        topics: ["市バス", "ICカード"],
+      });
+
+      expect(rows).toHaveLength(0);
+    });
+  });
+
+  it("0 件のときは空配列", async () => {
+    await withRollback(db, async (tx) => {
+      await tx.insert(municipalities).values({
+        code: "462012",
+        name: "鹿児島市",
+        prefecture: "鹿児島県",
+      });
+
+      const rows = await findMeetingsWithTopics(tx, {
+        topics: ["存在しないA", "存在しないB"],
+      });
+
+      expect(rows).toHaveLength(0);
+    });
+  });
+
+  it("municipalityCode フィルタが効く", async () => {
+    await withRollback(db, async (tx) => {
+      await tx.insert(municipalities).values([
+        { code: "462012", name: "鹿児島市", prefecture: "鹿児島県" },
+        { code: "131001", name: "千代田区", prefecture: "東京都" },
+      ]);
+      await tx.insert(meetings).values([
+        {
+          municipalityCode: "462012",
+          title: "鹿児島の会議",
+          meetingType: "定例会",
+          heldOn: "2024-06-01",
+          topicDigests: [
+            { topic: "A議題", relevance: "primary", digest: "A", speakers: [] },
+            { topic: "B議題", relevance: "primary", digest: "B", speakers: [] },
+          ],
+        },
+        {
+          municipalityCode: "131001",
+          title: "千代田の会議",
+          meetingType: "定例会",
+          heldOn: "2024-06-01",
+          topicDigests: [
+            { topic: "A議題", relevance: "primary", digest: "A", speakers: [] },
+            { topic: "B議題", relevance: "primary", digest: "B", speakers: [] },
+          ],
+        },
+      ]);
+
+      const rows = await findMeetingsWithTopics(tx, {
+        topics: ["A議題", "B議題"],
+        municipalityCode: "131001",
+      });
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.title).toBe("千代田の会議");
+      expect(rows[0]!.municipalityCode).toBe("131001");
+      expect(rows[0]!.municipalityName).toBe("千代田区");
+      expect(rows[0]!.prefecture).toBe("東京都");
+    });
+  });
+
+  it("matchedTopicsByQuery は各クエリごとにマッチした topic 名を配列で持つ", async () => {
+    await withRollback(db, async (tx) => {
+      await tx.insert(municipalities).values({
+        code: "462012",
+        name: "鹿児島市",
+        prefecture: "鹿児島県",
+      });
+      await tx.insert(meetings).values({
+        municipalityCode: "462012",
+        title: "複数ヒットの会議",
+        meetingType: "定例会",
+        heldOn: "2024-06-01",
+        topicDigests: [
+          {
+            topic: "防災計画",
+            relevance: "primary",
+            digest: "防災計画",
+            speakers: [],
+          },
+          {
+            topic: "消防団",
+            relevance: "secondary",
+            digest: "消防団員と防災訓練",
+            speakers: [],
+          },
+          {
+            topic: "観光振興",
+            relevance: "primary",
+            digest: "観光客誘致",
+            speakers: [],
+          },
+        ],
+      });
+
+      const rows = await findMeetingsWithTopics(tx, {
+        topics: ["防災", "観光"],
+      });
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.matchedTopicsByQuery["防災"]).toEqual([
+        "防災計画",
+        "消防団",
+      ]);
+      expect(rows[0]!.matchedTopicsByQuery["観光"]).toEqual(["観光振興"]);
     });
   });
 });
