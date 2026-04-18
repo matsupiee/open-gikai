@@ -33,7 +33,9 @@
     "db:migrate": "turbo -F @open-gikai/db db:migrate",
     "scrape:ndjson": "bun run --cwd apps/local-bulk-scraper scrape:ndjson",
     "test": "turbo test",
-    "check": "oxlint && oxfmt --write"
+    "check": "oxlint && oxfmt --write",
+    "agent:format": "oxfmt --write",
+    "agent:check": "oxlint && turbo check-types --filter='*' && turbo test --filter='*' --concurrency=1"
   },
   "dependencies": {
     "dotenv": "catalog:",
