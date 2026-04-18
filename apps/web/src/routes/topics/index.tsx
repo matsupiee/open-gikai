@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { orpc } from "@/lib/orpc/orpc";
+import { MunicipalitySelector } from "@/shared/_components/municipality-selector";
 import { Badge } from "@/shared/_components/ui/badge";
 import { Button } from "@/shared/_components/ui/button";
 import { Card, CardContent } from "@/shared/_components/ui/card";
@@ -34,14 +35,16 @@ function TopicsSearchPage() {
   const navigate = useNavigate();
 
   const [query, setQuery] = useState(searchParams.q ?? "");
-  const [municipalityCode, setMunicipalityCode] = useState(searchParams.municipalityCode ?? "");
+  const [municipalityCodes, setMunicipalityCodes] = useState<string[]>(
+    searchParams.municipalityCode ? [searchParams.municipalityCode] : [],
+  );
   const [dateFrom, setDateFrom] = useState(searchParams.dateFrom ?? "");
   const [dateTo, setDateTo] = useState(searchParams.dateTo ?? "");
 
   // Sync local state when URL params change (e.g. browser back/forward, external links)
   useEffect(() => {
     setQuery(searchParams.q ?? "");
-    setMunicipalityCode(searchParams.municipalityCode ?? "");
+    setMunicipalityCodes(searchParams.municipalityCode ? [searchParams.municipalityCode] : []);
     setDateFrom(searchParams.dateFrom ?? "");
     setDateTo(searchParams.dateTo ?? "");
   }, [searchParams.q, searchParams.municipalityCode, searchParams.dateFrom, searchParams.dateTo]);
@@ -68,7 +71,8 @@ function TopicsSearchPage() {
     const trimmed = query.trim();
     if (!trimmed) return;
     const next: TopicsSearchParams = { q: trimmed };
-    if (municipalityCode.trim()) next.municipalityCode = municipalityCode.trim();
+    // 複数選択されている場合は先頭のコードのみ API に渡す暫定仕様
+    if (municipalityCodes.length > 0) next.municipalityCode = municipalityCodes[0];
     if (dateFrom) next.dateFrom = dateFrom;
     if (dateTo) next.dateTo = dateTo;
     navigate({ to: "/topics", search: next });
@@ -102,33 +106,35 @@ function TopicsSearchPage() {
                   </Button>
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="topics-municipality">自治体コード（任意）</Label>
-                  <Input
-                    id="topics-municipality"
-                    value={municipalityCode}
-                    onChange={(e) => setMunicipalityCode(e.target.value)}
-                    placeholder="例: 462012"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="topics-date-from">期間（開始・任意）</Label>
-                  <Input
-                    id="topics-date-from"
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="topics-date-to">期間（終了・任意）</Label>
-                  <Input
-                    id="topics-date-to"
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                  />
+              <div className="flex flex-col gap-3">
+                <MunicipalitySelector
+                  selectedCodes={municipalityCodes}
+                  onChange={setMunicipalityCodes}
+                />
+                {municipalityCodes.length >= 2 && (
+                  <p className="text-xs text-muted-foreground" role="status">
+                    現在の議題検索は 1 自治体のみ対応しています。先頭の自治体のみで検索します。
+                  </p>
+                )}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="topics-date-from">期間（開始・任意）</Label>
+                    <Input
+                      id="topics-date-from"
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="topics-date-to">期間（終了・任意）</Label>
+                    <Input
+                      id="topics-date-to"
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             </form>
