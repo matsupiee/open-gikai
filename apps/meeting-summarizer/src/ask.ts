@@ -3,7 +3,12 @@
  *
  * 使い方:
  *   bun run src/ask.ts -- --municipality 462012 "市バス事業について調べて"
- *   bun run src/ask.ts -- --municipality 462012 "市バス路線再編と市バスICカード事業の関連を調べて"
+ *   bun run src/ask.ts -- --municipality 462012 --preset policy "市バス路線再編の変遷"
+ *   bun run src/ask.ts -- --municipality 462012 --preset member "〇〇議員の追及してきた議題"
+ *   bun run src/ask.ts -- --municipality 462012 --no-save "一時的な質問"
+ *
+ * --preset: default | member | policy | compare
+ * --save / --no-save: 実行ログを runs/YYYYMMDD-HHMMSS.md に保存するか（デフォルト: --save）
  */
 
 import { resolve } from "node:path";
@@ -16,48 +21,28 @@ import {
   type Tool,
 } from "@google/genai";
 import { createDb, type Db } from "@open-gikai/db";
+import {
+  AGENT_PRESET_NAMES,
+  getAgentSystemPrompt,
+  isAgentPresetName,
+  type AgentPresetName,
+} from "./agent-presets";
 import { callWithRetry } from "./retry";
+import {
+  buildToolCallIteration,
+  formatRunTimestamp,
+  saveRunLog,
+  type AgentIteration,
+  type AgentRunLog,
+} from "./run-log";
 import { findMeetingsWithTopics, getMeetingDigest, searchTopics } from "./tools";
 
 const root = resolve(fileURLToPath(import.meta.url), "../../../../");
 dotenv.config({ path: resolve(root, ".env.local"), override: true });
 
 const DEFAULT_MODEL = "gemini-2.5-flash-lite";
+const DEFAULT_PRESET: AgentPresetName = "default";
 const MAX_ITERATIONS = 15;
-
-const AGENT_SYSTEM_PROMPT = `あなたは地方議会の議事録サマリを検索し、ユーザーの質問に時系列で整理した議論の流れを提示するアシスタントです。
-
-# 使えるツール
-
-- \`search_topics(query, municipality_code?, date_from?, date_to?)\`: 議題名・ダイジェスト本文・会議サマリのいずれかに \`query\` が含まれる会議を、新しい順に返す
-- \`get_meeting_digest(meeting_id)\`: 特定の会議のサマリと全 topic_digests を取得する
-- \`find_meetings_with_topics(topics, municipality_code?)\`: 複数の議題すべてを扱っている会議を返す（関連分析用）
-
-# 手順
-
-1. ユーザーの質問から検索キーワードを抽出し、\`search_topics\` で関連会議を探す
-2. 関連度が高そうな会議について \`get_meeting_digest\` で詳細を取得し、該当 topic の digest を確認する
-3. 複数議題の関連を問う質問なら \`find_meetings_with_topics\` を使う
-4. 集めた情報を **時系列（古い→新しい）** に整理し、以下のフォーマットで回答する:
-
-   ## 〇〇について
-
-   ### 議論の流れ（〜年）
-   - 〇〇年〇月: [会議名] で △△議員が〜と質問し、当局は〜と回答
-   - ...
-
-   ### 主なポイント
-   - ...
-
-   ### 関連議題（あれば）
-   - ...
-
-# ルール
-
-- 必ずツールで取得した情報のみに基づいて回答する。推測や一般論で埋めない
-- 日付・数字・固有名詞は省略せず引用する
-- 情報が見つからない場合は「該当する議事録サマリは見つかりませんでした」と率直に回答する
-- ツールを最大 ${MAX_ITERATIONS - 1} 回まで呼べる。無駄な呼び出しは避ける`;
 
 const TOOLS: Tool[] = [
   {
@@ -137,7 +122,14 @@ async function main() {
   const db = createDb(databaseUrl);
   const client = new GoogleGenAI({ apiKey });
 
-  console.error(`[ask] model=${args.model} municipality=${args.municipalityCode ?? "any"}`);
+  const startedAt = new Date();
+  const systemPrompt = getAgentSystemPrompt(args.preset, {
+    maxToolCalls: MAX_ITERATIONS - 1,
+  });
+
+  console.error(
+    `[ask] preset=${args.preset} model=${args.model} municipality=${args.municipalityCode ?? "any"}`,
+  );
   console.error(`[ask] question: ${args.question}`);
   console.error("");
 
@@ -152,58 +144,105 @@ async function main() {
     },
   ];
 
+  const iterations: AgentIteration[] = [];
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
+  let totalApiCalls = 0;
+  let endReason: AgentRunLog["endReason"] = "max_iterations";
+  let errorMessage: string | undefined;
+  let finalText: string | undefined;
 
-  for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
-    const response = await callWithRetry(() =>
-      client.models.generateContent({
+  try {
+    for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
+      const response = await callWithRetry(() =>
+        client.models.generateContent({
+          model: args.model,
+          contents: history,
+          config: {
+            systemInstruction: systemPrompt,
+            tools: TOOLS,
+          },
+        }),
+      );
+      totalApiCalls++;
+      totalInputTokens += response.usageMetadata?.promptTokenCount ?? 0;
+      totalOutputTokens += response.usageMetadata?.candidatesTokenCount ?? 0;
+
+      const parts = response.candidates?.[0]?.content?.parts ?? [];
+      history.push({ role: "model", parts });
+
+      const functionCalls = parts
+        .map((p) => p.functionCall)
+        .filter((fc): fc is FunctionCall => Boolean(fc));
+
+      if (functionCalls.length === 0) {
+        finalText = parts
+          .map((p) => p.text)
+          .filter((t): t is string => Boolean(t))
+          .join("");
+        iterations.push({ kind: "final", index: iter + 1, text: finalText });
+        endReason = "final";
+        console.log(finalText);
+        console.error("");
+        console.error(
+          `[ask] iterations=${iter + 1} in=${totalInputTokens} out=${totalOutputTokens}`,
+        );
+        break;
+      }
+
+      const results: unknown[] = [];
+      const functionResponses = [];
+      for (const call of functionCalls) {
+        console.error(`[ask] → ${call.name}(${JSON.stringify(call.args)})`);
+        const result = await executeFunction(db, args.municipalityCode, call);
+        console.error(`[ask] ← ${summarizeResult(result)}`);
+        results.push(result);
+        functionResponses.push({
+          functionResponse: {
+            name: call.name,
+            response: result as Record<string, unknown>,
+          },
+        });
+      }
+      iterations.push(buildToolCallIteration(iter + 1, functionCalls, results));
+      history.push({ role: "user", parts: functionResponses });
+    }
+
+    if (endReason === "max_iterations") {
+      console.error(`[ask] iteration cap (${MAX_ITERATIONS}) reached without final answer`);
+    }
+  } catch (err) {
+    endReason = "error";
+    errorMessage = err instanceof Error ? err.message : String(err);
+    console.error(`[ask] error: ${errorMessage}`);
+  } finally {
+    if (args.save) {
+      const runPath = resolve(
+        root,
+        "apps/meeting-summarizer/runs",
+        `${formatRunTimestamp(startedAt)}.md`,
+      );
+      const log: AgentRunLog = {
+        startedAt,
+        question: args.question,
+        preset: args.preset,
         model: args.model,
-        contents: history,
-        config: {
-          systemInstruction: AGENT_SYSTEM_PROMPT,
-          tools: TOOLS,
+        municipalityCode: args.municipalityCode,
+        iterations,
+        usage: {
+          inputTokens: totalInputTokens,
+          outputTokens: totalOutputTokens,
+          totalApiCalls,
         },
-      }),
-    );
-
-    totalInputTokens += response.usageMetadata?.promptTokenCount ?? 0;
-    totalOutputTokens += response.usageMetadata?.candidatesTokenCount ?? 0;
-
-    const parts = response.candidates?.[0]?.content?.parts ?? [];
-    history.push({ role: "model", parts });
-
-    const functionCalls = parts
-      .map((p) => p.functionCall)
-      .filter((fc): fc is FunctionCall => Boolean(fc));
-
-    if (functionCalls.length === 0) {
-      const finalText = parts
-        .map((p) => p.text)
-        .filter((t): t is string => Boolean(t))
-        .join("");
-      console.log(finalText);
-      console.error("");
-      console.error(`[ask] iterations=${iter + 1} in=${totalInputTokens} out=${totalOutputTokens}`);
-      return;
+        endReason,
+        errorMessage,
+      };
+      await saveRunLog(runPath, log);
+      console.error(`[ask] saved run log: ${runPath}`);
     }
-
-    const functionResponses = [];
-    for (const call of functionCalls) {
-      console.error(`[ask] → ${call.name}(${JSON.stringify(call.args)})`);
-      const result = await executeFunction(db, args.municipalityCode, call);
-      console.error(`[ask] ← ${summarizeResult(result)}`);
-      functionResponses.push({
-        functionResponse: {
-          name: call.name,
-          response: result as Record<string, unknown>,
-        },
-      });
-    }
-    history.push({ role: "user", parts: functionResponses });
   }
 
-  console.error(`[ask] iteration cap (${MAX_ITERATIONS}) reached without final answer`);
+  if (endReason === "error") process.exit(1);
 }
 
 async function executeFunction(
@@ -255,19 +294,39 @@ function summarizeResult(result: unknown): string {
   return JSON.stringify(r).slice(0, 120);
 }
 
-function parseArgs(argv: string[]): { question: string; municipalityCode?: string; model: string } {
+type ParsedArgs = {
+  question: string;
+  municipalityCode?: string;
+  model: string;
+  preset: AgentPresetName;
+  save: boolean;
+};
+
+function parseArgs(argv: string[]): ParsedArgs {
   let municipality: string | undefined;
   let model = DEFAULT_MODEL;
+  let preset: AgentPresetName = DEFAULT_PRESET;
+  let save = true;
   const rest: string[] = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--municipality") municipality = argv[++i];
     else if (a === "--model") model = argv[++i]!;
+    else if (a === "--preset") {
+      const value = argv[++i];
+      if (!value || !isAgentPresetName(value)) {
+        throw new Error(
+          `--preset must be one of: ${AGENT_PRESET_NAMES.join(", ")} (got: ${value ?? "(empty)"})`,
+        );
+      }
+      preset = value;
+    } else if (a === "--save") save = true;
+    else if (a === "--no-save") save = false;
     else rest.push(a!);
   }
   const question = rest.join(" ").trim();
   if (!question) throw new Error("question is required (pass as positional arg)");
-  return { question, municipalityCode: municipality, model };
+  return { question, municipalityCode: municipality, model, preset, save };
 }
 
 main()

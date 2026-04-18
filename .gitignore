@@ -46,6 +46,9 @@ coverage
 # Scraper NDJSON output
 apps/local-bulk-scraper/output/
 
+# meeting-summarizer agent run logs
+apps/meeting-summarizer/runs/
+
 # Misc
 *.tgz
 .cache
