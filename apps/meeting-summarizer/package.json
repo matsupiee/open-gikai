@@ -7,6 +7,8 @@
     "test": "vitest run",
     "summarize:one": "bun src/summarize-one.ts",
     "summarize:batch": "bun src/summarize-batch.ts",
+    "cluster:topics": "bun src/cluster-topics.ts",
+    "check:filter": "bun src/check-filter.ts",
     "ask": "bun src/ask.ts"
   },
   "dependencies": {

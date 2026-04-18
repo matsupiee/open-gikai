@@ -1,6 +1,7 @@
 import { pgTable, text, integer, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { meetings } from "./meetings";
+import { topics } from "./topics";
 
 /**
  * 自治体マスタテーブル。
@@ -35,4 +36,5 @@ export const municipalities = pgTable(
 
 export const municipalitiesRelations = relations(municipalities, ({ many }) => ({
   meetings: many(meetings),
+  topics: many(topics),
 }));
