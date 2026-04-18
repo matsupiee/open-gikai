@@ -23,6 +23,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:import": "bun run seeds/insert-to-pgsql.ts",
     "db:import:prd": "bun run seeds/insert-to-pgsql-prd.ts",
+    "db:delete-statements:prd": "bun run seeds/delete-statements-prd.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
