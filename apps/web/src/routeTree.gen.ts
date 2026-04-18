@@ -15,6 +15,7 @@ import { Route as MeetingsIndexRouteImport } from './routes/meetings/index'
 import { Route as MeetingsMeetingIdRouteImport } from './routes/meetings/$meetingId'
 import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
 import { Route as AdminLayoutIndexRouteImport } from './routes/admin/_layout/index'
+import { Route as AdminLayoutAskRouteImport } from './routes/admin/_layout/ask'
 import { Route as authSignUpIndexRouteImport } from './routes/(auth)/sign-up/index'
 import { Route as authSignInIndexRouteImport } from './routes/(auth)/sign-in/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
@@ -49,6 +50,11 @@ const AdminLayoutRoute = AdminLayoutRouteImport.update({
 const AdminLayoutIndexRoute = AdminLayoutIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminLayoutRoute,
+} as any)
+const AdminLayoutAskRoute = AdminLayoutAskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
   getParentRoute: () => AdminLayoutRoute,
 } as any)
 const authSignUpIndexRoute = authSignUpIndexRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/sign-in/': typeof authSignInIndexRoute
   '/sign-up/': typeof authSignUpIndexRoute
   '/admin/': typeof AdminLayoutIndexRoute
+  '/admin/ask': typeof AdminLayoutAskRoute
   '/sign-up/otp/': typeof authSignUpOtpIndexRoute
 }
 export interface FileRoutesByTo {
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof authSignInIndexRoute
   '/sign-up': typeof authSignUpIndexRoute
   '/admin': typeof AdminLayoutIndexRoute
+  '/admin/ask': typeof AdminLayoutAskRoute
   '/sign-up/otp': typeof authSignUpOtpIndexRoute
 }
 export interface FileRoutesById {
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   '/(auth)/sign-in/': typeof authSignInIndexRoute
   '/(auth)/sign-up/': typeof authSignUpIndexRoute
   '/admin/_layout/': typeof AdminLayoutIndexRoute
+  '/admin/_layout/ask': typeof AdminLayoutAskRoute
   '/(auth)/sign-up/otp/': typeof authSignUpOtpIndexRoute
 }
 export interface FileRouteTypes {
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/sign-in/'
     | '/sign-up/'
     | '/admin/'
+    | '/admin/ask'
     | '/sign-up/otp/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/admin'
+    | '/admin/ask'
     | '/sign-up/otp'
   id:
     | '__root__'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/(auth)/sign-in/'
     | '/(auth)/sign-up/'
     | '/admin/_layout/'
+    | '/admin/_layout/ask'
     | '/(auth)/sign-up/otp/'
   fileRoutesById: FileRoutesById
 }
@@ -214,6 +226,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLayoutIndexRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
+    '/admin/_layout/ask': {
+      id: '/admin/_layout/ask'
+      path: '/ask'
+      fullPath: '/admin/ask'
+      preLoaderRoute: typeof AdminLayoutAskRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
     '/(auth)/sign-up/': {
       id: '/(auth)/sign-up/'
       path: '/sign-up'
@@ -254,10 +273,12 @@ declare module '@tanstack/react-router' {
 
 interface AdminLayoutRouteChildren {
   AdminLayoutIndexRoute: typeof AdminLayoutIndexRoute
+  AdminLayoutAskRoute: typeof AdminLayoutAskRoute
 }
 
 const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
   AdminLayoutIndexRoute: AdminLayoutIndexRoute,
+  AdminLayoutAskRoute: AdminLayoutAskRoute,
 }
 
 const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(

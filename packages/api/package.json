@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@google/genai": "^1.50.1",
     "@open-gikai/auth": "workspace:*",
     "@open-gikai/db": "workspace:*",
     "@orpc/client": "catalog:",
