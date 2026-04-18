@@ -1,0 +1,24 @@
+{
+  "name": "@open-gikai/meeting-summarizer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "summarize:one": "bun src/summarize-one.ts",
+    "summarize:batch": "bun src/summarize-batch.ts",
+    "ask": "bun src/ask.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^1.50.1",
+    "@open-gikai/db": "workspace:*",
+    "drizzle-orm": "^0.45.1"
+  },
+  "devDependencies": {
+    "@open-gikai/config": "workspace:*",
+    "bun-types": "catalog:",
+    "dotenv": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "^4.1.0"
+  }
+}

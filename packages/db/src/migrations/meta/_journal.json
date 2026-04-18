@@ -43,6 +43,13 @@
       "when": 1774657253172,
       "tag": "0005_condemned_major_mapleleaf",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776492979435,
+      "tag": "0006_serious_reaper",
+      "breakpoints": true
     }
   ]
 }
