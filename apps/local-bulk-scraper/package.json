@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "type-check": "tsc --noEmit",
+    "check-types": "tsc --noEmit",
     "test": "vitest run",
     "scrape:ndjson": "caffeinate -i bun src/scrape-to-ndjson.ts"
   },

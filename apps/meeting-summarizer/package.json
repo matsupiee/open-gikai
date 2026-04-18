@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "type-check": "tsc --noEmit",
-    "test": "vitest run",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
     "summarize:one": "bun src/summarize-one.ts",
     "summarize:batch": "bun src/summarize-batch.ts",
     "cluster:topics": "bun src/cluster-topics.ts",
