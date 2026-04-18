@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TopicsIndexRouteImport } from './routes/topics/index'
+import { Route as TopicsTopicRouteImport } from './routes/topics/$topic'
 import { Route as SearchIndexRouteImport } from './routes/search/index'
 import { Route as MeetingsIndexRouteImport } from './routes/meetings/index'
 import { Route as MeetingsMeetingIdRouteImport } from './routes/meetings/$meetingId'
@@ -25,6 +27,16 @@ import { Route as authSignUpOtpIndexRouteImport } from './routes/(auth)/sign-up/
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TopicsIndexRoute = TopicsIndexRouteImport.update({
+  id: '/topics/',
+  path: '/topics/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TopicsTopicRoute = TopicsTopicRouteImport.update({
+  id: '/topics/$topic',
+  path: '/topics/$topic',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SearchIndexRoute = SearchIndexRouteImport.update({
@@ -89,6 +101,8 @@ export interface FileRoutesByFullPath {
   '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
   '/meetings/': typeof MeetingsIndexRoute
   '/search/': typeof SearchIndexRoute
+  '/topics/$topic': typeof TopicsTopicRoute
+  '/topics/': typeof TopicsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/sign-in/': typeof authSignInIndexRoute
@@ -102,6 +116,8 @@ export interface FileRoutesByTo {
   '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
   '/meetings': typeof MeetingsIndexRoute
   '/search': typeof SearchIndexRoute
+  '/topics/$topic': typeof TopicsTopicRoute
+  '/topics': typeof TopicsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/sign-in': typeof authSignInIndexRoute
@@ -117,6 +133,8 @@ export interface FileRoutesById {
   '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
   '/meetings/': typeof MeetingsIndexRoute
   '/search/': typeof SearchIndexRoute
+  '/topics/$topic': typeof TopicsTopicRoute
+  '/topics/': typeof TopicsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/(auth)/sign-in/': typeof authSignInIndexRoute
@@ -133,6 +151,8 @@ export interface FileRouteTypes {
     | '/meetings/$meetingId'
     | '/meetings/'
     | '/search/'
+    | '/topics/$topic'
+    | '/topics/'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/sign-in/'
@@ -146,6 +166,8 @@ export interface FileRouteTypes {
     | '/meetings/$meetingId'
     | '/meetings'
     | '/search'
+    | '/topics/$topic'
+    | '/topics'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/sign-in'
@@ -160,6 +182,8 @@ export interface FileRouteTypes {
     | '/meetings/$meetingId'
     | '/meetings/'
     | '/search/'
+    | '/topics/$topic'
+    | '/topics/'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/(auth)/sign-in/'
@@ -175,6 +199,8 @@ export interface RootRouteChildren {
   MeetingsMeetingIdRoute: typeof MeetingsMeetingIdRoute
   MeetingsIndexRoute: typeof MeetingsIndexRoute
   SearchIndexRoute: typeof SearchIndexRoute
+  TopicsTopicRoute: typeof TopicsTopicRoute
+  TopicsIndexRoute: typeof TopicsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   authSignInIndexRoute: typeof authSignInIndexRoute
@@ -196,6 +222,20 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search/'
       preLoaderRoute: typeof SearchIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/topics/': {
+      id: '/topics/'
+      path: '/topics'
+      fullPath: '/topics/'
+      preLoaderRoute: typeof TopicsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/topics/$topic': {
+      id: '/topics/$topic'
+      path: '/topics/$topic'
+      fullPath: '/topics/$topic'
+      preLoaderRoute: typeof TopicsTopicRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/meetings/': {
@@ -291,6 +331,8 @@ const rootRouteChildren: RootRouteChildren = {
   MeetingsMeetingIdRoute: MeetingsMeetingIdRoute,
   MeetingsIndexRoute: MeetingsIndexRoute,
   SearchIndexRoute: SearchIndexRoute,
+  TopicsTopicRoute: TopicsTopicRoute,
+  TopicsIndexRoute: TopicsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   authSignInIndexRoute: authSignInIndexRoute,
