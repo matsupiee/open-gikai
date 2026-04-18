@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TopicsIndexRouteImport } from './routes/topics/index'
+import { Route as TopicsCompareRouteImport } from './routes/topics/compare'
 import { Route as TopicsTopicRouteImport } from './routes/topics/$topic'
 import { Route as SearchIndexRouteImport } from './routes/search/index'
 import { Route as MeetingsIndexRouteImport } from './routes/meetings/index'
@@ -32,6 +33,11 @@ const IndexRoute = IndexRouteImport.update({
 const TopicsIndexRoute = TopicsIndexRouteImport.update({
   id: '/topics/',
   path: '/topics/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TopicsCompareRoute = TopicsCompareRouteImport.update({
+  id: '/topics/compare',
+  path: '/topics/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TopicsTopicRoute = TopicsTopicRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
   '/meetings/': typeof MeetingsIndexRoute
   '/search/': typeof SearchIndexRoute
+  '/topics/compare': typeof TopicsCompareRoute
   '/topics/$topic': typeof TopicsTopicRoute
   '/topics/': typeof TopicsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
   '/meetings': typeof MeetingsIndexRoute
   '/search': typeof SearchIndexRoute
+  '/topics/compare': typeof TopicsCompareRoute
   '/topics/$topic': typeof TopicsTopicRoute
   '/topics': typeof TopicsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
   '/meetings/': typeof MeetingsIndexRoute
   '/search/': typeof SearchIndexRoute
+  '/topics/compare': typeof TopicsCompareRoute
   '/topics/$topic': typeof TopicsTopicRoute
   '/topics/': typeof TopicsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/meetings/$meetingId'
     | '/meetings/'
     | '/search/'
+    | '/topics/compare'
     | '/topics/$topic'
     | '/topics/'
     | '/api/auth/$'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/meetings/$meetingId'
     | '/meetings'
     | '/search'
+    | '/topics/compare'
     | '/topics/$topic'
     | '/topics'
     | '/api/auth/$'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/meetings/$meetingId'
     | '/meetings/'
     | '/search/'
+    | '/topics/compare'
     | '/topics/$topic'
     | '/topics/'
     | '/api/auth/$'
@@ -199,6 +211,7 @@ export interface RootRouteChildren {
   MeetingsMeetingIdRoute: typeof MeetingsMeetingIdRoute
   MeetingsIndexRoute: typeof MeetingsIndexRoute
   SearchIndexRoute: typeof SearchIndexRoute
+  TopicsCompareRoute: typeof TopicsCompareRoute
   TopicsTopicRoute: typeof TopicsTopicRoute
   TopicsIndexRoute: typeof TopicsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -229,6 +242,13 @@ declare module '@tanstack/react-router' {
       path: '/topics'
       fullPath: '/topics/'
       preLoaderRoute: typeof TopicsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/topics/compare': {
+      id: '/topics/compare'
+      path: '/topics/compare'
+      fullPath: '/topics/compare'
+      preLoaderRoute: typeof TopicsCompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/topics/$topic': {
@@ -331,6 +351,7 @@ const rootRouteChildren: RootRouteChildren = {
   MeetingsMeetingIdRoute: MeetingsMeetingIdRoute,
   MeetingsIndexRoute: MeetingsIndexRoute,
   SearchIndexRoute: SearchIndexRoute,
+  TopicsCompareRoute: TopicsCompareRoute,
   TopicsTopicRoute: TopicsTopicRoute,
   TopicsIndexRoute: TopicsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
