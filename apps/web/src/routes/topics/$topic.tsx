@@ -5,6 +5,7 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 
 import { orpc } from "@/lib/orpc/orpc";
+import { MunicipalitySelector } from "@/shared/_components/municipality-selector";
 import { Badge } from "@/shared/_components/ui/badge";
 import { Button } from "@/shared/_components/ui/button";
 import { Card, CardContent } from "@/shared/_components/ui/card";
@@ -63,12 +64,16 @@ function TopicDetailPage() {
 
   const entries = data?.entries ?? [];
 
-  const [filterMunicipality, setFilterMunicipality] = useState(searchParams.municipalityCode ?? "");
+  const [filterMunicipalityCodes, setFilterMunicipalityCodes] = useState<string[]>(
+    searchParams.municipalityCode ? [searchParams.municipalityCode] : [],
+  );
   const [filterFrom, setFilterFrom] = useState(searchParams.dateFrom ?? "");
   const [filterTo, setFilterTo] = useState(searchParams.dateTo ?? "");
 
   useEffect(() => {
-    setFilterMunicipality(searchParams.municipalityCode ?? "");
+    setFilterMunicipalityCodes(
+      searchParams.municipalityCode ? [searchParams.municipalityCode] : [],
+    );
     setFilterFrom(searchParams.dateFrom ?? "");
     setFilterTo(searchParams.dateTo ?? "");
   }, [searchParams.municipalityCode, searchParams.dateFrom, searchParams.dateTo]);
@@ -80,7 +85,8 @@ function TopicDetailPage() {
   const onApplyFilters = (e: React.FormEvent) => {
     e.preventDefault();
     const next: TopicDetailSearchParams = {};
-    if (filterMunicipality.trim()) next.municipalityCode = filterMunicipality.trim();
+    // 複数選択されている場合は先頭のコードのみ API に渡す暫定仕様
+    if (filterMunicipalityCodes.length > 0) next.municipalityCode = filterMunicipalityCodes[0];
     if (filterFrom) next.dateFrom = filterFrom;
     if (filterTo) next.dateTo = filterTo;
     navigate({
@@ -91,7 +97,7 @@ function TopicDetailPage() {
   };
 
   const onClearFilters = () => {
-    setFilterMunicipality("");
+    setFilterMunicipalityCodes([]);
     setFilterFrom("");
     setFilterTo("");
     navigate({
@@ -139,16 +145,16 @@ function TopicDetailPage() {
             <Card>
               <CardContent className="p-4">
                 <form onSubmit={onApplyFilters} className="space-y-3">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="filter-municipality">自治体コード</Label>
-                      <Input
-                        id="filter-municipality"
-                        value={filterMunicipality}
-                        onChange={(e) => setFilterMunicipality(e.target.value)}
-                        placeholder="例: 462012"
-                      />
-                    </div>
+                  <MunicipalitySelector
+                    selectedCodes={filterMunicipalityCodes}
+                    onChange={setFilterMunicipalityCodes}
+                  />
+                  {filterMunicipalityCodes.length >= 2 && (
+                    <p className="text-xs text-muted-foreground" role="status">
+                      現在の議題検索は 1 自治体のみ対応しています。先頭の自治体のみで検索します。
+                    </p>
+                  )}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="filter-from">期間（開始）</Label>
                       <Input
