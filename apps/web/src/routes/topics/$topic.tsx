@@ -119,6 +119,9 @@ function TopicDetailPage() {
             議題検索に戻る
           </Link>
           <h1 className="text-2xl font-bold leading-snug">{topic}</h1>
+          <div className="mt-2">
+            <Link to="/topics/compare" search={{ topics: topic }} className="text-xs underline text-muted-foreground hover:text-foreground">この議題を他の議題と比較 →</Link>
+          </div>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {searchParams.municipalityCode && (
               <Badge variant="secondary">自治体: {searchParams.municipalityCode}</Badge>
