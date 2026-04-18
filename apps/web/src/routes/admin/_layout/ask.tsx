@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
-import { orpc } from "@/lib/orpc/orpc";
+import { client, orpc } from "@/lib/orpc/orpc";
 import { Button } from "@/shared/_components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/_components/ui/card";
 import {
@@ -121,19 +121,95 @@ function TopicsSearchSection() {
   );
 }
 
+interface AskProgressEntry {
+  iteration: number;
+  tool: string;
+  args: unknown;
+  resultSummary: string | null;
+}
+
+interface AskFinalResult {
+  answer: string;
+  iterations: number;
+  inputTokens: number;
+  outputTokens: number;
+  trace: { tool: string; args: unknown; resultSummary: string }[];
+}
+
 function MeetingsAskSection() {
   const [municipalityCode, setMunicipalityCode] = useState("");
   const [question, setQuestion] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [progress, setProgress] = useState<AskProgressEntry[]>([]);
+  const [currentIteration, setCurrentIteration] = useState<number | null>(null);
+  const [finalResult, setFinalResult] = useState<AskFinalResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const mutation = useMutation(orpc.meetings.ask.mutationOptions());
-
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!question.trim()) return;
-    mutation.mutate({
-      question: question.trim(),
-      municipalityCode: municipalityCode.trim() || undefined,
-    });
+    if (!question.trim() || isStreaming) return;
+
+    // 以前のリクエストをキャンセル
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setIsStreaming(true);
+    setProgress([]);
+    setCurrentIteration(null);
+    setFinalResult(null);
+    setError(null);
+
+    try {
+      const stream = await client.meetings.askStream(
+        {
+          question: question.trim(),
+          municipalityCode: municipalityCode.trim() || undefined,
+        },
+        { signal: controller.signal },
+      );
+
+      for await (const event of stream) {
+        if (event.type === "iteration_start") {
+          setCurrentIteration(event.iteration);
+        } else if (event.type === "tool_call") {
+          setProgress((prev) => [
+            ...prev,
+            {
+              iteration: event.iteration,
+              tool: event.tool,
+              args: event.args,
+              resultSummary: null,
+            },
+          ]);
+        } else if (event.type === "tool_result") {
+          setProgress((prev) => {
+            // 同じ iteration + tool の最後の未確定エントリを更新する
+            const next = [...prev];
+            for (let i = next.length - 1; i >= 0; i--) {
+              const entry = next[i]!;
+              if (
+                entry.iteration === event.iteration &&
+                entry.tool === event.tool &&
+                entry.resultSummary === null
+              ) {
+                next[i] = { ...entry, resultSummary: event.resultSummary };
+                break;
+              }
+            }
+            return next;
+          });
+        } else if (event.type === "done") {
+          setFinalResult(event.result);
+        }
+      }
+    } catch (err) {
+      if (controller.signal.aborted) return;
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsStreaming(false);
+    }
   };
 
   return (
@@ -162,21 +238,47 @@ function MeetingsAskSection() {
               rows={5}
             />
           </div>
-          <Button type="submit" disabled={!question.trim() || mutation.isPending}>
-            {mutation.isPending ? "問い合わせ中..." : "聞く"}
+          <Button type="submit" disabled={!question.trim() || isStreaming}>
+            {isStreaming
+              ? `問い合わせ中... (iter ${currentIteration ?? "-"})`
+              : "聞く"}
           </Button>
         </form>
 
-        {mutation.error && (
-          <p className="text-sm text-destructive">エラー: {mutation.error.message}</p>
+        {error && <p className="text-sm text-destructive">エラー: {error}</p>}
+
+        {(isStreaming || progress.length > 0) && (
+          <div className="space-y-2">
+            <div className="text-xs text-muted-foreground">
+              進捗 ({progress.length} 件のツール呼び出し)
+            </div>
+            {progress.map((entry, idx) => (
+              <Card key={idx} className="border">
+                <CardContent className="py-2 space-y-1 text-xs">
+                  <div className="font-semibold">
+                    iter #{entry.iteration} · {entry.tool}
+                  </div>
+                  <div className="font-mono text-muted-foreground break-all">
+                    args: {JSON.stringify(entry.args)}
+                  </div>
+                  <div className="text-muted-foreground">
+                    result:{" "}
+                    {entry.resultSummary ?? (
+                      <span className="italic">実行中...</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
 
-        {mutation.data && (
+        {finalResult && (
           <div className="space-y-3">
             <div className="flex gap-4 text-xs text-muted-foreground">
-              <span>iterations: {mutation.data.iterations}</span>
-              <span>input tokens: {mutation.data.inputTokens}</span>
-              <span>output tokens: {mutation.data.outputTokens}</span>
+              <span>iterations: {finalResult.iterations}</span>
+              <span>input tokens: {finalResult.inputTokens}</span>
+              <span>output tokens: {finalResult.outputTokens}</span>
             </div>
             <Card className="border">
               <CardHeader className="pb-2">
@@ -184,7 +286,7 @@ function MeetingsAskSection() {
               </CardHeader>
               <CardContent>
                 <pre className="whitespace-pre-wrap text-sm font-sans">
-                  {mutation.data.answer}
+                  {finalResult.answer}
                 </pre>
               </CardContent>
             </Card>
@@ -192,11 +294,11 @@ function MeetingsAskSection() {
             <Collapsible>
               <CollapsibleTrigger asChild>
                 <Button variant="outline" size="sm">
-                  trace を表示 ({mutation.data.trace.length} 件)
+                  trace を表示 ({finalResult.trace.length} 件)
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-2 space-y-2">
-                {mutation.data.trace.map((t, idx) => (
+                {finalResult.trace.map((t, idx) => (
                   <Card key={idx} className="border">
                     <CardContent className="py-2 space-y-1 text-xs">
                       <div className="font-semibold">

@@ -256,10 +256,55 @@ export interface AskMeetingsResponse {
   trace: AskMeetingsTraceEntry[];
 }
 
+export type AskMeetingsStreamEvent =
+  | {
+      type: "iteration_start";
+      iteration: number;
+    }
+  | {
+      type: "tool_call";
+      iteration: number;
+      tool: string;
+      args: unknown;
+    }
+  | {
+      type: "tool_result";
+      iteration: number;
+      tool: string;
+      resultSummary: string;
+    }
+  | {
+      type: "final_delta";
+      text: string;
+    }
+  | {
+      type: "done";
+      result: AskMeetingsResponse;
+    };
+
 export async function askMeetings(
   db: Db,
   input: z.input<typeof meetingsAskSchema>,
 ): Promise<AskMeetingsResponse> {
+  // ストリーム実装を最後まで駆動し最終結果だけ返す（非ストリームの互換維持用）
+  let finalResult: AskMeetingsResponse | null = null;
+  for await (const event of askMeetingsStream(db, input)) {
+    if (event.type === "done") {
+      finalResult = event.result;
+    }
+  }
+  if (!finalResult) {
+    throw new ORPCError("INTERNAL_SERVER_ERROR", {
+      message: "askMeetingsStream did not yield a done event",
+    });
+  }
+  return finalResult;
+}
+
+export async function* askMeetingsStream(
+  db: Db,
+  input: z.input<typeof meetingsAskSchema>,
+): AsyncGenerator<AskMeetingsStreamEvent, void, unknown> {
   const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
   if (!apiKey) {
     throw new ORPCError("INTERNAL_SERVER_ERROR", {
@@ -286,6 +331,8 @@ export async function askMeetings(
   let totalOutputTokens = 0;
 
   for (let iter = 0; iter < MAX_ASK_ITERATIONS; iter++) {
+    yield { type: "iteration_start", iteration: iter + 1 };
+
     const response = await callWithRetry(() =>
       client.models.generateContent({
         model,
@@ -312,23 +359,46 @@ export async function askMeetings(
         .map((p) => p.text)
         .filter((t): t is string => Boolean(t))
         .join("");
-      return {
+
+      if (finalText) {
+        yield { type: "final_delta", text: finalText };
+      }
+
+      const result: AskMeetingsResponse = {
         answer: finalText,
         iterations: iter + 1,
         inputTokens: totalInputTokens,
         outputTokens: totalOutputTokens,
         trace,
       };
+      yield { type: "done", result };
+      return;
     }
 
     const functionResponses = [];
     for (const call of functionCalls) {
-      const result = await executeAskFunction(db, input.municipalityCode, call);
-      trace.push({
-        tool: call.name ?? "unknown",
+      const toolName = call.name ?? "unknown";
+      yield {
+        type: "tool_call",
+        iteration: iter + 1,
+        tool: toolName,
         args: call.args ?? {},
-        resultSummary: summarizeAskResult(result),
+      };
+
+      const result = await executeAskFunction(db, input.municipalityCode, call);
+      const resultSummary = summarizeAskResult(result);
+      trace.push({
+        tool: toolName,
+        args: call.args ?? {},
+        resultSummary,
       });
+      yield {
+        type: "tool_result",
+        iteration: iter + 1,
+        tool: toolName,
+        resultSummary,
+      };
+
       functionResponses.push({
         functionResponse: {
           name: call.name,
@@ -339,13 +409,14 @@ export async function askMeetings(
     history.push({ role: "user", parts: functionResponses });
   }
 
-  return {
+  const result: AskMeetingsResponse = {
     answer: "",
     iterations: MAX_ASK_ITERATIONS,
     inputTokens: totalInputTokens,
     outputTokens: totalOutputTokens,
     trace,
   };
+  yield { type: "done", result };
 }
 
 async function executeAskFunction(
