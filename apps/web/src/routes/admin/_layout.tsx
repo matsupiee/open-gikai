@@ -27,6 +27,12 @@ function AdminLayout() {
             >
               ダッシュボード
             </a>
+            <a
+              href="/admin/ask"
+              className="font-medium text-foreground hover:text-primary"
+            >
+              ask
+            </a>
           </nav>
         </div>
       </div>
