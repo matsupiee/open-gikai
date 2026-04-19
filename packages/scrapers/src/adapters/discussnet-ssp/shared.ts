@@ -5,7 +5,7 @@
 const DEFAULT_API_BASE = "https://ssp.kaigiroku.net/dnp/search";
 export const SSP_HOST = "https://ssp.kaigiroku.net";
 export const USER_AGENT =
-  "open-gikai-bot/1.0 (https://github.com/matsupiee/open-gikai; contact: please see github)";
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 /** baseUrl からホスト部分を抽出し、API ベース URL を構築する */
 export function buildApiBase(baseUrl: string): string {
@@ -23,11 +23,11 @@ export function extractHost(baseUrl: string): string {
 export async function postJson<T>(
   endpoint: string,
   params: Record<string, string | number>,
-  apiBase?: string
+  apiBase?: string,
 ): Promise<T | null> {
   const base = apiBase ?? DEFAULT_API_BASE;
   const body = new URLSearchParams(
-    Object.entries(params).map(([k, v]) => [k, String(v)] as [string, string])
+    Object.entries(params).map(([k, v]) => [k, String(v)] as [string, string]),
   );
   try {
     const res = await fetch(`${base}/${endpoint}`, {
@@ -47,7 +47,5 @@ export async function postJson<T>(
 
 /** 全角数字を半角に正規化する */
 export function normalizeFullWidth(str: string): string {
-  return str.replace(/[０-９]/g, (c) =>
-    String.fromCharCode(c.charCodeAt(0) - 0xfee0)
-  );
+  return str.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
 }
