@@ -3,9 +3,7 @@ import { createInterface } from "node:readline";
 import type { Db } from "../../src/index";
 import { municipalities } from "../../src/schema/municipalities";
 import { meetings } from "../../src/schema/meetings";
-import { statements } from "../../src/schema/statements";
 import { parseMeetingNdjsonLine, type MeetingNdjsonRow } from "../parse-data/meetings";
-import { parseStatementNdjsonLine, type StatementNdjsonRow } from "../parse-data/statements";
 import { parseMunicipalitiesCsv } from "../parse-data/municipalities";
 import { markAsImported } from "./complete-marker";
 import type { ImportTarget } from "./collect-import-targets";
@@ -46,7 +44,7 @@ export async function importAll(
   for (const target of targets) {
     const label = target.codeDir.replace(dataDir + "/", "");
     try {
-      await importDirectory(db, target.meetingsPath, target.statementsPath, label);
+      await importDirectory(db, target.meetingsPath, label);
       if (options.markImported) {
         markAsImported(target.codeDir);
       }
@@ -66,16 +64,10 @@ export async function importAll(
   return { totalDirs, failedDirs };
 }
 
-async function importDirectory(
-  db: Db,
-  meetingsPath: string,
-  statementsPath: string | null,
-  label: string,
-): Promise<void> {
+async function importDirectory(db: Db, meetingsPath: string, label: string): Promise<void> {
   // ── バリデーションフェーズ ──
   // meetings.ndjson を読み込み
   const meetingRows: MeetingNdjsonRow[] = [];
-  const allKnownMeetingIds = new Set<string>();
 
   for await (const line of createInterface({
     input: createReadStream(meetingsPath),
@@ -85,38 +77,10 @@ async function importDirectory(
     if (!m) {
       throw new Error(`meetings.ndjson のパースに失敗: ${line.slice(0, 200)}`);
     }
-    allKnownMeetingIds.add(m.id);
     if (!m.heldOn) {
       throw new Error(`meetings.ndjson に heldOn が未設定の会議があります: id=${m.id}`);
     }
     meetingRows.push(m);
-  }
-
-  // statements.ndjson を読み込み + meetingId の整合性チェック
-  const statementRows: StatementNdjsonRow[] = [];
-  const insertableMeetingIds = new Set(meetingRows.map((m) => m.id));
-
-  if (statementsPath) {
-    for await (const line of createInterface({
-      input: createReadStream(statementsPath),
-      crlfDelay: Infinity,
-    })) {
-      const s = parseStatementNdjsonLine(line);
-      if (!s) {
-        throw new Error(`statements.ndjson のパースに失敗: ${line.slice(0, 200)}`);
-      }
-      if (!allKnownMeetingIds.has(s.meetingId)) {
-        throw new Error(
-          `statements.ndjson に meetings.ndjson に存在しない meetingId があります: meetingId=${s.meetingId}`,
-        );
-      }
-      if (!insertableMeetingIds.has(s.meetingId)) {
-        throw new Error(
-          `statements.ndjson に heldOn 未設定の会議に紐づく発言があります: meetingId=${s.meetingId}`,
-        );
-      }
-      statementRows.push(s);
-    }
   }
 
   // ── INSERT フェーズ（バリデーション通過後のみ実行） ──
@@ -126,13 +90,7 @@ async function importDirectory(
     await insertMeetings(db, chunk);
   }
 
-  // statements INSERT
-  for (let i = 0; i < statementRows.length; i += BATCH_SIZE) {
-    const chunk = statementRows.slice(i, i + BATCH_SIZE);
-    await insertStatements(db, chunk);
-  }
-
-  console.log(`[import]   ${label}: ${meetingRows.length} 会議, ${statementRows.length} 発言`);
+  console.log(`[import]   ${label}: ${meetingRows.length} 会議`);
 }
 
 async function insertMeetings(db: Db, rows: MeetingNdjsonRow[]): Promise<string[]> {
@@ -152,23 +110,4 @@ async function insertMeetings(db: Db, rows: MeetingNdjsonRow[]): Promise<string[
     .onConflictDoNothing()
     .returning({ id: meetings.id });
   return result.map((r) => r.id);
-}
-
-async function insertStatements(db: Db, rows: StatementNdjsonRow[]): Promise<void> {
-  await db
-    .insert(statements)
-    .values(
-      rows.map((s) => ({
-        id: s.id,
-        meetingId: s.meetingId,
-        kind: s.kind,
-        speakerName: s.speakerName ?? null,
-        speakerRole: s.speakerRole ?? null,
-        content: s.content,
-        contentHash: s.contentHash,
-        startOffset: s.startOffset ?? null,
-        endOffset: s.endOffset ?? null,
-      })),
-    )
-    .onConflictDoNothing();
 }

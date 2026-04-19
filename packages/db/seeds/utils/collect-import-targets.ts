@@ -5,7 +5,6 @@ import { isAlreadyImported } from "./complete-marker";
 export interface ImportTarget {
   codeDir: string;
   meetingsPath: string;
-  statementsPath: string | null;
 }
 
 export interface CollectOptions {
@@ -50,12 +49,9 @@ export function collectImportTargets(dataDir: string, options: CollectOptions): 
       const meetingsPath = resolve(codeDir, "meetings.ndjson");
       if (!existsSync(meetingsPath)) continue;
 
-      const statementsPath = resolve(codeDir, "statements.ndjson");
-
       targets.push({
         codeDir,
         meetingsPath,
-        statementsPath: existsSync(statementsPath) ? statementsPath : null,
       });
     }
   }
