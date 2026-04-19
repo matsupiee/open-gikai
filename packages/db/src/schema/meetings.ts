@@ -1,6 +1,5 @@
 import { pgTable, text, date, timestamp, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { statements } from "./statements";
 import { municipalities } from "./municipalities";
 import { meetingTopics } from "./topics";
 import { createId } from "@paralleldrive/cuid2";
@@ -54,6 +53,5 @@ export const meetingsRelations = relations(meetings, ({ one, many }) => ({
     fields: [meetings.municipalityCode],
     references: [municipalities.code],
   }),
-  statements: many(statements),
   meetingTopics: many(meetingTopics),
 }));

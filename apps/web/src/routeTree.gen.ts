@@ -14,7 +14,6 @@ import { Route as TopicsIndexRouteImport } from './routes/topics/index'
 import { Route as MeetingsIndexRouteImport } from './routes/meetings/index'
 import { Route as TopicsCompareRouteImport } from './routes/topics/compare'
 import { Route as TopicsTopicRouteImport } from './routes/topics/$topic'
-import { Route as MeetingsMeetingIdRouteImport } from './routes/meetings/$meetingId'
 import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
 import { Route as AdminLayoutIndexRouteImport } from './routes/admin/_layout/index'
 import { Route as authSignUpIndexRouteImport } from './routes/(auth)/sign-up/index'
@@ -47,11 +46,6 @@ const TopicsCompareRoute = TopicsCompareRouteImport.update({
 const TopicsTopicRoute = TopicsTopicRouteImport.update({
   id: '/topics/$topic',
   path: '/topics/$topic',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MeetingsMeetingIdRoute = MeetingsMeetingIdRouteImport.update({
-  id: '/meetings/$meetingId',
-  path: '/meetings/$meetingId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminLayoutRoute = AdminLayoutRouteImport.update({
@@ -98,7 +92,6 @@ const authSignUpOtpIndexRoute = authSignUpOtpIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminLayoutRouteWithChildren
-  '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
   '/topics/$topic': typeof TopicsTopicRoute
   '/topics/compare': typeof TopicsCompareRoute
   '/meetings/': typeof MeetingsIndexRoute
@@ -113,7 +106,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
   '/topics/$topic': typeof TopicsTopicRoute
   '/topics/compare': typeof TopicsCompareRoute
   '/meetings': typeof MeetingsIndexRoute
@@ -130,7 +122,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin/_layout': typeof AdminLayoutRouteWithChildren
-  '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
   '/topics/$topic': typeof TopicsTopicRoute
   '/topics/compare': typeof TopicsCompareRoute
   '/meetings/': typeof MeetingsIndexRoute
@@ -148,7 +139,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/meetings/$meetingId'
     | '/topics/$topic'
     | '/topics/compare'
     | '/meetings/'
@@ -163,7 +153,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/meetings/$meetingId'
     | '/topics/$topic'
     | '/topics/compare'
     | '/meetings'
@@ -179,7 +168,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin/_layout'
-    | '/meetings/$meetingId'
     | '/topics/$topic'
     | '/topics/compare'
     | '/meetings/'
@@ -196,7 +184,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminLayoutRoute: typeof AdminLayoutRouteWithChildren
-  MeetingsMeetingIdRoute: typeof MeetingsMeetingIdRoute
   TopicsTopicRoute: typeof TopicsTopicRoute
   TopicsCompareRoute: typeof TopicsCompareRoute
   MeetingsIndexRoute: typeof MeetingsIndexRoute
@@ -243,13 +230,6 @@ declare module '@tanstack/react-router' {
       path: '/topics/$topic'
       fullPath: '/topics/$topic'
       preLoaderRoute: typeof TopicsTopicRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/meetings/$meetingId': {
-      id: '/meetings/$meetingId'
-      path: '/meetings/$meetingId'
-      fullPath: '/meetings/$meetingId'
-      preLoaderRoute: typeof MeetingsMeetingIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/_layout': {
@@ -328,7 +308,6 @@ const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminLayoutRoute: AdminLayoutRouteWithChildren,
-  MeetingsMeetingIdRoute: MeetingsMeetingIdRoute,
   TopicsTopicRoute: TopicsTopicRoute,
   TopicsCompareRoute: TopicsCompareRoute,
   MeetingsIndexRoute: MeetingsIndexRoute,

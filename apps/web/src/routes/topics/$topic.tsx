@@ -126,13 +126,21 @@ function TopicDetailPage() {
           </Link>
           <h1 className="text-2xl font-bold leading-snug">{topic}</h1>
           <div className="mt-2">
-            <Link to="/topics/compare" search={{ topics: topic }} className="text-xs underline text-muted-foreground hover:text-foreground">この議題を他の議題と比較 →</Link>
+            <Link
+              to="/topics/compare"
+              search={{ topics: topic }}
+              className="text-xs underline text-muted-foreground hover:text-foreground"
+            >
+              この議題を他の議題と比較 →
+            </Link>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {searchParams.municipalityCode && (
               <Badge variant="secondary">自治体: {searchParams.municipalityCode}</Badge>
             )}
-            {searchParams.dateFrom && <Badge variant="secondary">from: {searchParams.dateFrom}</Badge>}
+            {searchParams.dateFrom && (
+              <Badge variant="secondary">from: {searchParams.dateFrom}</Badge>
+            )}
             {searchParams.dateTo && <Badge variant="secondary">to: {searchParams.dateTo}</Badge>}
             {!hasActiveFilters && <span>フィルタなし（全期間・全自治体）</span>}
           </div>
@@ -214,9 +222,7 @@ function TopicDetailPage() {
 
         {!isLoading && !error && entries.length === 0 && (
           <div className="rounded border border-border bg-card p-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              該当する会議が見つかりませんでした
-            </p>
+            <p className="text-sm text-muted-foreground">該当する会議が見つかりませんでした</p>
           </div>
         )}
 
@@ -240,15 +246,7 @@ function TopicDetailPage() {
                         <span>・</span>
                         <span>{entry.meetingType}</span>
                       </div>
-                      <div className="text-base font-semibold leading-snug">
-                        <Link
-                          to="/meetings/$meetingId"
-                          params={{ meetingId: entry.meetingId }}
-                          className="hover:underline"
-                        >
-                          {entry.title}
-                        </Link>
-                      </div>
+                      <div className="text-base font-semibold leading-snug">{entry.title}</div>
                       {entry.sourceUrl && (
                         <div>
                           <a

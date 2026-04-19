@@ -1,7 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { getTestDb, withRollback, createTestDatabase, runMigrations, closeTestDb } from "@open-gikai/db/test-helpers";
-import { municipalities, meetings, statements } from "@open-gikai/db/schema";
-import { listMeetings, getMeetingStatements } from "./meetings.service";
+import {
+  getTestDb,
+  withRollback,
+  createTestDatabase,
+  runMigrations,
+  closeTestDb,
+} from "@open-gikai/db/test-helpers";
+import { municipalities, meetings } from "@open-gikai/db/schema";
+import { listMeetings } from "./meetings.service";
 
 type TestDb = ReturnType<typeof getTestDb>;
 
@@ -228,134 +234,6 @@ describe("listMeetings", () => {
       expect(result.meetings[0]!.title).toBe("6月の会議");
       expect(result.meetings[1]!.title).toBe("3月の会議");
       expect(result.meetings[2]!.title).toBe("1月の会議");
-    });
-  });
-});
-
-describe("getMeetingStatements", () => {
-  it("会議とその発言一覧を取得できる", async () => {
-    await withRollback(db, async (tx) => {
-      await tx.insert(municipalities).values({
-        code: "010001",
-        name: "札幌市",
-        prefecture: "北海道",
-      });
-      await tx.insert(meetings).values({
-        id: "meeting-1",
-        municipalityCode: "010001",
-        title: "令和6年第1回定例会",
-        meetingType: "定例会",
-        heldOn: "2024-03-01",
-      });
-      await tx.insert(statements).values([
-        {
-          id: "stmt-1",
-          meetingId: "meeting-1",
-          kind: "question",
-          speakerName: "田中太郎",
-          speakerRole: "議員",
-          content: "質問です",
-          contentHash: "hash-1",
-        },
-        {
-          id: "stmt-2",
-          meetingId: "meeting-1",
-          kind: "answer",
-          speakerName: "市長",
-          speakerRole: "市長",
-          content: "回答です",
-          contentHash: "hash-2",
-        },
-      ]);
-
-      const result = await getMeetingStatements(tx, {
-        meetingId: "meeting-1",
-      });
-
-      expect(result.title).toBe("令和6年第1回定例会");
-      expect(result.prefecture).toBe("北海道");
-      expect(result.municipality).toBe("札幌市");
-      expect(result.statements).toHaveLength(2);
-      expect(result.statements[0]!.kind).toBe("question");
-      expect(result.statements[0]!.speakerName).toBe("田中太郎");
-      expect(result.statements[0]!.content).toBe("質問です");
-      expect(result.statements[1]!.kind).toBe("answer");
-    });
-  });
-
-  it("存在しない meetingId で Error を投げる", async () => {
-    await withRollback(db, async (tx) => {
-      await expect(
-        getMeetingStatements(tx, { meetingId: "nonexistent" }),
-      ).rejects.toThrow("Meeting not found");
-    });
-  });
-
-  it("発言が0件の会議は空配列を返す", async () => {
-    await withRollback(db, async (tx) => {
-      await tx.insert(municipalities).values({
-        code: "010001",
-        name: "札幌市",
-        prefecture: "北海道",
-      });
-      await tx.insert(meetings).values({
-        id: "meeting-empty",
-        municipalityCode: "010001",
-        title: "発言なしの会議",
-        meetingType: "定例会",
-        heldOn: "2024-03-01",
-      });
-
-      const result = await getMeetingStatements(tx, {
-        meetingId: "meeting-empty",
-      });
-
-      expect(result.title).toBe("発言なしの会議");
-      expect(result.statements).toHaveLength(0);
-    });
-  });
-
-  it("発言が startOffset 昇順でソートされる", async () => {
-    await withRollback(db, async (tx) => {
-      await tx.insert(municipalities).values({
-        code: "010001",
-        name: "札幌市",
-        prefecture: "北海道",
-      });
-      await tx.insert(meetings).values({
-        id: "meeting-1",
-        municipalityCode: "010001",
-        title: "テスト会議",
-        meetingType: "定例会",
-        heldOn: "2024-03-01",
-      });
-      await tx.insert(statements).values([
-        {
-          id: "zzz",
-          meetingId: "meeting-1",
-          kind: "question",
-          content: "2番目の発言",
-          contentHash: "hash-z",
-          startOffset: 100,
-          endOffset: 200,
-        },
-        {
-          id: "aaa",
-          meetingId: "meeting-1",
-          kind: "answer",
-          content: "1番目の発言",
-          contentHash: "hash-a",
-          startOffset: 0,
-          endOffset: 50,
-        },
-      ]);
-
-      const result = await getMeetingStatements(tx, {
-        meetingId: "meeting-1",
-      });
-
-      expect(result.statements[0]!.id).toBe("aaa");
-      expect(result.statements[1]!.id).toBe("zzz");
     });
   });
 });
