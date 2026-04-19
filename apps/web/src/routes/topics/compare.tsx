@@ -44,7 +44,10 @@ function TopicsComparePage() {
   const searchParams = Route.useSearch();
   const navigate = useNavigate();
 
-  const committedTopics = useMemo(() => parseTopicsParam(searchParams.topics), [searchParams.topics]);
+  const committedTopics = useMemo(
+    () => parseTopicsParam(searchParams.topics),
+    [searchParams.topics],
+  );
   const committedMunicipality = searchParams.municipalityCode;
 
   // Input state: show at least 2 slots, sync from URL on change.
@@ -228,15 +231,7 @@ function TopicsComparePage() {
                       <span>・</span>
                       <span>{row.meetingType}</span>
                     </div>
-                    <div className="text-base font-semibold leading-snug">
-                      <Link
-                        to="/meetings/$meetingId"
-                        params={{ meetingId: row.meetingId }}
-                        className="hover:underline"
-                      >
-                        {row.title}
-                      </Link>
-                    </div>
+                    <div className="text-base font-semibold leading-snug">{row.title}</div>
                     <div className="text-xs text-muted-foreground">
                       {row.municipalityName}（{row.prefecture}）
                     </div>

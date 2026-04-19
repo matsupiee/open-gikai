@@ -3,15 +3,10 @@ import { z } from "zod";
 
 import { protectedProcedure, publicProcedure } from "../../index";
 import { checkRateLimit } from "../../shared/rate-limit";
-import {
-  meetingsAskSchema,
-  meetingsListSchema,
-  meetingStatementsSchema,
-} from "./_schemas";
+import { meetingsAskSchema, meetingsListSchema } from "./_schemas";
 import {
   askMeetings,
   askMeetingsStream,
-  getMeetingStatements,
   listMeetings,
   type AskMeetingsStreamEvent,
 } from "./meetings.service";
@@ -27,16 +22,10 @@ export const meetingsRouter = {
     .input(meetingsListSchema)
     .handler(({ input, context }) => listMeetings(context.db, input)),
 
-  statements: publicProcedure
-    .input(meetingStatementsSchema)
-    .handler(({ input, context }) => getMeetingStatements(context.db, input)),
-
-  ask: protectedProcedure
-    .input(meetingsAskSchema)
-    .handler(({ input, context }) => {
-      enforceAskRateLimit(context.session.user.id);
-      return askMeetings(context.db, input);
-    }),
+  ask: protectedProcedure.input(meetingsAskSchema).handler(({ input, context }) => {
+    enforceAskRateLimit(context.session.user.id);
+    return askMeetings(context.db, input);
+  }),
 
   askStream: protectedProcedure
     .input(meetingsAskSchema)

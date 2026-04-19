@@ -7,18 +7,20 @@ Drizzle ORM によるスキーマ・マイグレーション・seeds。リポジ
 ## 依存
 
 使ってよい:
+
 - `drizzle-orm`, `postgres`, `pg`
 - `@paralleldrive/cuid2` — `id` 生成
 - `zod`
 
 使わない:
+
 - ビジネスロジック・認証判定・API レイヤーの責務をここに持ち込まない
 
 ## 公開入口
 
 - `src/index.ts` — クライアント生成（`createDb`）
 - `src/schema/` — テーブル定義
-  - `auth.ts` / `meetings.ts` / `municipalities.ts` / `statements.ts`
+  - `auth.ts` / `meetings.ts` / `municipalities.ts` / `topics.ts`
 - `src/migrations/` — **生成されたマイグレーション（手書き禁止）**
 - `seeds/` — 初期データ投入スクリプト
 - `test/` — `@open-gikai/db/test-helpers`（テスト用トランザクションヘルパー）

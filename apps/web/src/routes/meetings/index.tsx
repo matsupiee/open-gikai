@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 import { orpc } from "@/lib/orpc/orpc";
 import { DateWheelPicker } from "@/shared/_components/date-wheel-picker";
@@ -183,12 +183,7 @@ function RouteComponent() {
               ))}
 
               <div className="flex gap-2 justify-between pt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePrevPage}
-                  disabled={page === 0}
-                >
+                <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={page === 0}>
                   前のページ
                 </Button>
                 <Button
@@ -220,20 +215,18 @@ interface MeetingCardProps {
 
 function MeetingCard({ meeting }: MeetingCardProps) {
   return (
-    <Link to="/meetings/$meetingId" params={{ meetingId: meeting.id }} className="block">
-      <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">{meeting.title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span>{meeting.heldOn}</span>
-            <span>•</span>
-            <span>{meeting.prefecture}</span>
-            <span>{meeting.municipality}</span>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold">{meeting.title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <span>{meeting.heldOn}</span>
+          <span>•</span>
+          <span>{meeting.prefecture}</span>
+          <span>{meeting.municipality}</span>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

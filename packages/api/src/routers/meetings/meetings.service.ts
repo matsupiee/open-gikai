@@ -1,26 +1,13 @@
 import type { Db } from "@open-gikai/db";
-import { meetings, municipalities, statements } from "@open-gikai/db/schema";
-import {
-  GoogleGenAI,
-  type Content,
-  type FunctionCall,
-  type Tool,
-} from "@google/genai";
+import { meetings, municipalities } from "@open-gikai/db/schema";
+import { GoogleGenAI, type Content, type FunctionCall, type Tool } from "@google/genai";
 import { ORPCError } from "@orpc/server";
-import { and, asc, desc, eq, gte, inArray, like, lte, lt } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, like, lte, lt } from "drizzle-orm";
 import { z } from "zod";
 
 import { callWithRetry } from "../../shared/retry";
-import {
-  findMeetingsWithTopics,
-  getMeetingDigest,
-  searchTopics,
-} from "../topics/topics.service";
-import type {
-  meetingsListSchema,
-  meetingStatementsSchema,
-  meetingsAskSchema,
-} from "./_schemas";
+import { findMeetingsWithTopics, getMeetingDigest, searchTopics } from "../topics/topics.service";
+import type { meetingsListSchema, meetingsAskSchema } from "./_schemas";
 
 export interface MeetingListItem {
   id: string;
@@ -33,18 +20,6 @@ export interface MeetingListItem {
 export interface MeetingsListResponse {
   meetings: MeetingListItem[];
   nextCursor: string | null;
-}
-
-export interface MeetingStatement {
-  id: string;
-  kind: string;
-  speakerName: string | null;
-  speakerRole: string | null;
-  content: string;
-}
-
-export interface MeetingDetail extends MeetingListItem {
-  statements: MeetingStatement[];
 }
 
 function queryMeetings(db: Db, input: z.input<typeof meetingsListSchema>, limit: number) {
@@ -94,45 +69,6 @@ export async function listMeetings(
   return {
     meetings: meetingsList as MeetingListItem[],
     nextCursor: hasMore ? meetingsList[meetingsList.length - 1]!.id : null,
-  };
-}
-
-export async function getMeetingStatements(
-  db: Db,
-  input: z.input<typeof meetingStatementsSchema>,
-): Promise<MeetingDetail> {
-  const [meeting] = await db
-    .select({
-      id: meetings.id,
-      title: meetings.title,
-      heldOn: meetings.heldOn,
-      prefecture: municipalities.prefecture,
-      municipality: municipalities.name,
-    })
-    .from(meetings)
-    .innerJoin(municipalities, eq(meetings.municipalityCode, municipalities.code))
-    .where(eq(meetings.id, input.meetingId))
-    .limit(1);
-
-  if (!meeting) {
-    throw new Error("Meeting not found");
-  }
-
-  const statementRows = await db
-    .select({
-      id: statements.id,
-      kind: statements.kind,
-      speakerName: statements.speakerName,
-      speakerRole: statements.speakerRole,
-      content: statements.content,
-    })
-    .from(statements)
-    .where(eq(statements.meetingId, input.meetingId))
-    .orderBy(asc(statements.startOffset));
-
-  return {
-    ...(meeting as MeetingListItem),
-    statements: statementRows as MeetingStatement[],
   };
 }
 
@@ -188,8 +124,7 @@ const ASK_TOOLS: Tool[] = [
             },
             municipality_code: {
               type: "string",
-              description:
-                "自治体コード（例: 462012 = 鹿児島市）。絞り込みたい場合に指定",
+              description: "自治体コード（例: 462012 = 鹿児島市）。絞り込みたい場合に指定",
             },
             date_from: {
               type: "string",
@@ -209,8 +144,7 @@ const ASK_TOOLS: Tool[] = [
       },
       {
         name: "get_meeting_digest",
-        description:
-          "特定の会議の全サマリ情報（summary + topic_digests 配列）を取得する。",
+        description: "特定の会議の全サマリ情報（summary + topic_digests 配列）を取得する。",
         parametersJsonSchema: {
           type: "object",
           properties: {
@@ -221,16 +155,14 @@ const ASK_TOOLS: Tool[] = [
       },
       {
         name: "find_meetings_with_topics",
-        description:
-          "複数の議題すべてを同じ会議内で扱っている会議を返す。関連性の分析に使う。",
+        description: "複数の議題すべてを同じ会議内で扱っている会議を返す。関連性の分析に使う。",
         parametersJsonSchema: {
           type: "object",
           properties: {
             topics: {
               type: "array",
               items: { type: "string" },
-              description:
-                "すべてにマッチすることを要求するキーワードの配列（2〜3 個推奨）",
+              description: "すべてにマッチすることを要求するキーワードの配列（2〜3 個推奨）",
             },
             municipality_code: { type: "string" },
             limit: { type: "integer" },
@@ -431,8 +363,7 @@ async function executeAskFunction(
         return {
           rows: await searchTopics(db, {
             query: String(a.query ?? ""),
-            municipalityCode:
-              (a.municipality_code as string | undefined) ?? defaultMunicipality,
+            municipalityCode: (a.municipality_code as string | undefined) ?? defaultMunicipality,
             dateFrom: a.date_from as string | undefined,
             dateTo: a.date_to as string | undefined,
             limit: a.limit as number | undefined,
@@ -446,8 +377,7 @@ async function executeAskFunction(
         return {
           rows: await findMeetingsWithTopics(db, {
             topics: (a.topics as string[]) ?? [],
-            municipalityCode:
-              (a.municipality_code as string | undefined) ?? defaultMunicipality,
+            municipalityCode: (a.municipality_code as string | undefined) ?? defaultMunicipality,
             limit: a.limit as number | undefined,
           }),
         };
