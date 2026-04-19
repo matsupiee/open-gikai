@@ -8,11 +8,14 @@
  *   # 鹿児島市の直近 plenary を自動選択
  *   bun run summarize:one -- --kagoshima-sample
  *
- *   # DB に書き込む場合は --write を付ける（デフォルトは dry-run）
- *   bun run summarize:one -- --kagoshima-sample --write
+ *   # サマリを NDJSON に書かず stdout 出力だけする場合
+ *   bun run summarize:one -- --kagoshima-sample --dry-run
  *
  *   # モデルを切り替え
  *   bun run summarize:one -- --kagoshima-sample --model gemini-2.5-pro
+ *
+ * サマリ結果は data/minutes/{year}/{municipalityCode}/summaries.ndjson に追記される。
+ * 本番 DB への反映は packages/db の `db:import:summaries:prd` スクリプトで行う。
  */
 
 import { resolve } from "node:path";
@@ -23,6 +26,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { createDb } from "@open-gikai/db";
 import { meetings } from "@open-gikai/db/schema";
 import { DEFAULT_MODEL, summarizeMeeting } from "./summarize";
+import { appendSummaryRow } from "./write-summary-ndjson";
 
 const root = resolve(fileURLToPath(import.meta.url), "../../../../");
 dotenv.config({ path: resolve(root, ".env.local"), override: true });
@@ -70,20 +74,23 @@ async function main() {
     JSON.stringify({ summary: result.summary, topic_digests: result.topicDigests }, null, 2),
   );
 
-  if (args.write) {
-    await db
-      .update(meetings)
-      .set({
-        summary: result.summary,
-        topicDigests: result.topicDigests,
-        summaryGeneratedAt: new Date(),
-        summaryModel: model,
-      })
-      .where(eq(meetings.id, meetingId));
-    console.error(`[meeting-summarizer] wrote to DB`);
-  } else {
-    console.error(`[meeting-summarizer] dry-run (pass --write to persist)`);
+  if (args.dryRun) {
+    console.error(`[meeting-summarizer] dry-run — not writing NDJSON`);
+    return;
   }
+
+  await appendSummaryRow(dataDir, {
+    meetingId,
+    municipalityCode: meeting.municipalityCode,
+    heldOn: meeting.heldOn,
+    summary: result.summary,
+    topicDigests: result.topicDigests,
+    summaryModel: model,
+    summaryGeneratedAt: new Date().toISOString(),
+  });
+  console.error(
+    `[meeting-summarizer] wrote summary to data/minutes/${meeting.heldOn.slice(0, 4)}/${meeting.municipalityCode}/summaries.ndjson`,
+  );
 }
 
 async function pickKagoshimaSample(db: ReturnType<typeof createDb>): Promise<string> {
@@ -95,23 +102,23 @@ async function pickKagoshimaSample(db: ReturnType<typeof createDb>): Promise<str
   return m.id;
 }
 
-function parseArgs(argv: string[]): { meetingId?: string; write: boolean; model?: string } {
+function parseArgs(argv: string[]): { meetingId?: string; dryRun: boolean; model?: string } {
   let meetingId: string | undefined;
-  let write = false;
+  let dryRun = false;
   let model: string | undefined;
   let useSample = false;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--meeting-id") meetingId = argv[++i];
     else if (a === "--kagoshima-sample") useSample = true;
-    else if (a === "--write") write = true;
+    else if (a === "--dry-run") dryRun = true;
     else if (a === "--model") model = argv[++i];
     else throw new Error(`unknown arg: ${a}`);
   }
   if (!meetingId && !useSample) {
     throw new Error("pass --meeting-id <id> or --kagoshima-sample");
   }
-  return { meetingId, write, model };
+  return { meetingId, dryRun, model };
 }
 
 main()

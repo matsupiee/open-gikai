@@ -6,13 +6,15 @@
  *   bun run summarize:batch -- --municipality 462012 --concurrency 5
  *   bun run summarize:batch -- --municipality 462012 --limit 10     # 先頭 10 件だけ
  *   bun run summarize:batch -- --municipality 462012 --skip-existing # 既にサマリある会議はスキップ
- *   bun run summarize:batch -- --municipality 462012 --dry-run       # DB に書かず件数だけ確認
+ *   bun run summarize:batch -- --municipality 462012 --dry-run       # LLM 呼ばずに件数だけ確認
  *
  * 基本方針:
  * - 自治体内の meetings を held_on 昇順で処理
  * - 並列度は --concurrency（デフォルト 3）
  * - 1 件失敗しても他を続ける（エラーは stderr に記録）
- * - 各件ごとにコミット（中断しても再開しやすい）
+ * - 各件ごとに data/minutes/{year}/{municipalityCode}/summaries.ndjson に追記
+ * - --skip-existing は DB の meetings.summary を参照する（NDJSON 重複は import 側で「最後の行が勝つ」）
+ * - 本番 DB への反映は packages/db の `db:import:summaries:prd` で行う
  */
 
 import { resolve } from "node:path";
@@ -23,6 +25,7 @@ import { and, asc, eq, isNull } from "drizzle-orm";
 import { createDb, type Db } from "@open-gikai/db";
 import { meetings } from "@open-gikai/db/schema";
 import { DEFAULT_MODEL, summarizeMeeting } from "./summarize";
+import { appendSummaryRow } from "./write-summary-ndjson";
 
 const root = resolve(fileURLToPath(import.meta.url), "../../../../");
 dotenv.config({ path: resolve(root, ".env.local"), override: true });
@@ -78,15 +81,15 @@ async function main() {
       const label = `[${idx + 1}/${targets.length}] ${m.heldOn} ${m.title.slice(0, 40)}`;
       try {
         const result = await summarizeMeeting(db, m.id, client, dataDir, args.model);
-        await db
-          .update(meetings)
-          .set({
-            summary: result.summary,
-            topicDigests: result.topicDigests,
-            summaryGeneratedAt: new Date(),
-            summaryModel: args.model,
-          })
-          .where(eq(meetings.id, m.id));
+        await appendSummaryRow(dataDir, {
+          meetingId: m.id,
+          municipalityCode: m.municipalityCode,
+          heldOn: m.heldOn,
+          summary: result.summary,
+          topicDigests: result.topicDigests,
+          summaryModel: args.model,
+          summaryGeneratedAt: new Date().toISOString(),
+        });
         stats.done++;
         stats.totalPromptTokens += result.usage.promptTokens;
         stats.totalOutputTokens += result.usage.candidateTokens;
@@ -126,7 +129,7 @@ async function loadTargets(db: Db, args: Args) {
   const rows = await db.query.meetings.findMany({
     where,
     orderBy: [asc(meetings.heldOn), asc(meetings.id)],
-    columns: { id: true, title: true, heldOn: true },
+    columns: { id: true, title: true, heldOn: true, municipalityCode: true },
     limit: args.limit,
   });
   return rows;
