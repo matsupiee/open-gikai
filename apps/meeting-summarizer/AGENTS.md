@@ -7,11 +7,15 @@ Google Gemini (`@google/genai`) を使って議事録のサマリ生成・議題
 ## 依存
 
 使ってよい:
-- `@open-gikai/db` — meetings / statements テーブルへの読み書き
+
+- `@open-gikai/db` — meetings テーブルへの読み書き（statements テーブルは参照しない）
 - `@google/genai` — LLM 呼び出し
 - `drizzle-orm`
 
+発言本文は DB ではなくローカルの NDJSON (`data/minutes/{year}/{municipalityCode}/statements.ndjson`) から読み込む。`src/read-statements-ndjson.ts` のヘルパー経由で取得する。
+
 使わない:
+
 - `@open-gikai/api`（apps/web 専用）
 - 他の `apps/*`
 
