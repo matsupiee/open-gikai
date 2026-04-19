@@ -1,7 +1,7 @@
 /**
  * NDJSON から PostgreSQL DB にインサートするスクリプト（ローカル用）
  *
- * data/minutes/ の meetings.ndjson / statements.ndjson を読み込み、
+ * data/minutes/ の meetings.ndjson を読み込み、
  * バッチ INSERT でデータベースに投入する。
  *
  * 使い方:
