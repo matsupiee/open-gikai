@@ -20,7 +20,7 @@ function LandingPage() {
     const trimmed = query.trim();
     if (!trimmed) return;
     navigate({
-      to: "/topics",
+      to: "/chat",
       search: { q: trimmed },
     });
   };
@@ -29,9 +29,9 @@ function LandingPage() {
     <div className="min-h-screen bg-background">
       <div className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-16">
         <div className="space-y-3 text-center">
-          <h1 className="text-3xl font-bold sm:text-4xl">議会議事録を議題で探す</h1>
+          <h1 className="text-3xl font-bold sm:text-4xl">議会議事録を AI に聞く</h1>
           <p className="text-sm text-muted-foreground sm:text-base">
-            全国の自治体議会で話し合われた議題から、関連する会議のサマリを横断的に探せます。
+            事業名や議題を入力すると、関連する議事録サマリを横断検索し、議論の流れを時系列でまとめます。
           </p>
         </div>
 
@@ -39,19 +39,19 @@ function LandingPage() {
           <CardContent className="p-6">
             <form onSubmit={onSubmit} className="flex flex-col gap-3">
               <Label htmlFor="landing-topic-query" className="text-sm">
-                議題キーワード
+                調べたい事業・議題
               </Label>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
                   id="landing-topic-query"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="例: 市バス事業、子ども医療費助成"
+                  placeholder="例: 市バス事業、市バス路線再編とICカード事業の関連"
                   className="flex-1"
                   autoFocus
                 />
                 <Button type="submit" disabled={!query.trim()} className="sm:w-32">
-                  検索
+                  AI に聞く
                 </Button>
               </div>
             </form>
