@@ -78,7 +78,6 @@ agent-browser get title
 | トップ | `http://localhost:4030/` |
 | ログイン | `http://localhost:4030/sign-in` |
 | サインアップ | `http://localhost:4030/sign-up` |
-| 検索 | `http://localhost:4030/search` |
 | 会議録一覧 | `http://localhost:4030/meetings` |
 | 自治体一覧 | `http://localhost:4030/municipalities` |
 | 管理画面 | `http://localhost:4030/admin` |

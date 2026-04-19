@@ -11,7 +11,6 @@ import {
 import { FileSearch, Menu } from "lucide-react";
 
 const links = [
-  { to: "/search", label: "答弁検索" },
   { to: "/meetings", label: "会議一覧" },
 ] as const;
 
