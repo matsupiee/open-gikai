@@ -2,16 +2,12 @@ import { useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 
 import UserMenu from "./user-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "./ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { FileSearch, Menu } from "lucide-react";
 
 const links = [
   { to: "/meetings", label: "会議一覧" },
+  { to: "/ask", label: "AI に質問" },
 ] as const;
 
 function NavLink({
@@ -53,11 +49,7 @@ export default function Header() {
           </Link>
           <nav className="hidden min-[481px]:flex items-center gap-1">
             {links.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                isActive={location.pathname.startsWith(to)}
-              >
+              <NavLink key={to} to={to} isActive={location.pathname.startsWith(to)}>
                 {label}
               </NavLink>
             ))}

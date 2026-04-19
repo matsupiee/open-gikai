@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as AskRouteImport } from './routes/ask'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TopicsIndexRouteImport } from './routes/topics/index'
 import { Route as MeetingsIndexRouteImport } from './routes/meetings/index'
@@ -27,6 +28,11 @@ import { Route as authSignUpOtpIndexRouteImport } from './routes/(auth)/sign-up/
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AskRoute = AskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -97,6 +103,7 @@ const authSignUpOtpIndexRoute = authSignUpOtpIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ask': typeof AskRoute
   '/chat': typeof ChatRoute
   '/admin': typeof AdminLayoutRouteWithChildren
   '/topics/$topic': typeof TopicsTopicRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ask': typeof AskRoute
   '/chat': typeof ChatRoute
   '/topics/$topic': typeof TopicsTopicRoute
   '/topics/compare': typeof TopicsCompareRoute
@@ -129,6 +137,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ask': typeof AskRoute
   '/chat': typeof ChatRoute
   '/admin/_layout': typeof AdminLayoutRouteWithChildren
   '/topics/$topic': typeof TopicsTopicRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ask'
     | '/chat'
     | '/admin'
     | '/topics/$topic'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ask'
     | '/chat'
     | '/topics/$topic'
     | '/topics/compare'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/ask'
     | '/chat'
     | '/admin/_layout'
     | '/topics/$topic'
@@ -195,6 +207,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AskRoute: typeof AskRoute
   ChatRoute: typeof ChatRoute
   AdminLayoutRoute: typeof AdminLayoutRouteWithChildren
   TopicsTopicRoute: typeof TopicsTopicRoute
@@ -215,6 +228,13 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/chat'
       preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ask': {
+      id: '/ask'
+      path: '/ask'
+      fullPath: '/ask'
+      preLoaderRoute: typeof AskRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -327,6 +347,7 @@ const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AskRoute: AskRoute,
   ChatRoute: ChatRoute,
   AdminLayoutRoute: AdminLayoutRouteWithChildren,
   TopicsTopicRoute: TopicsTopicRoute,

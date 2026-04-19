@@ -64,6 +64,13 @@
       "when": 1776589874241,
       "tag": "0008_aspiring_thunderbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1776614286032,
+      "tag": "0009_numerous_retro_girl",
+      "breakpoints": true
     }
   ]
 }

@@ -14,9 +14,11 @@ export async function createContext({ req, auth, db }: CreateContextParams) {
   const session = await auth.api.getSession({
     headers: req.headers,
   });
+  const ip = req.headers.get("cf-connecting-ip") ?? null;
   return {
     session,
     db,
+    ip,
   };
 }
 
