@@ -1,7 +1,9 @@
-import { eventIterator } from "@orpc/server";
+import { eventIterator, ORPCError } from "@orpc/server";
 import { z } from "zod";
 
-import { protectedProcedure, publicProcedure } from "../../index";
+import type { Context } from "../../context";
+import { publicProcedure } from "../../index";
+import { enforceGuestAskRateLimit } from "../../shared/guest-ask-rate-limit";
 import { checkRateLimit } from "../../shared/rate-limit";
 import { meetingsAskSchema, meetingsListSchema } from "./_schemas";
 import {
@@ -11,10 +13,20 @@ import {
   type AskMeetingsStreamEvent,
 } from "./meetings.service";
 
-const ASK_RATE_LIMIT = { windowMs: 10 * 60 * 1000, max: 5 } as const;
+const USER_ASK_RATE_LIMIT = { windowMs: 10 * 60 * 1000, max: 5 } as const;
+const GUEST_ASK_RATE_LIMIT = { windowMs: 24 * 60 * 60 * 1000, max: 5 } as const;
 
-function enforceAskRateLimit(userId: string): void {
-  checkRateLimit(`meetings.ask:${userId}`, ASK_RATE_LIMIT);
+async function enforceAskRateLimit(context: Context): Promise<void> {
+  if (context.session?.user) {
+    checkRateLimit(`meetings.ask:${context.session.user.id}`, USER_ASK_RATE_LIMIT);
+    return;
+  }
+  if (!context.ip) {
+    throw new ORPCError("TOO_MANY_REQUESTS", {
+      message: "送信元 IP を特定できないため、サインインしてから再試行してください。",
+    });
+  }
+  await enforceGuestAskRateLimit(context.db, context.ip, GUEST_ASK_RATE_LIMIT);
 }
 
 export const meetingsRouter = {
@@ -22,16 +34,16 @@ export const meetingsRouter = {
     .input(meetingsListSchema)
     .handler(({ input, context }) => listMeetings(context.db, input)),
 
-  ask: protectedProcedure.input(meetingsAskSchema).handler(({ input, context }) => {
-    enforceAskRateLimit(context.session.user.id);
+  ask: publicProcedure.input(meetingsAskSchema).handler(async ({ input, context }) => {
+    await enforceAskRateLimit(context);
     return askMeetings(context.db, input);
   }),
 
-  askStream: protectedProcedure
+  askStream: publicProcedure
     .input(meetingsAskSchema)
     .output(eventIterator(z.custom<AskMeetingsStreamEvent>()))
     .handler(async function* ({ input, context }) {
-      enforceAskRateLimit(context.session.user.id);
+      await enforceAskRateLimit(context);
       yield* askMeetingsStream(context.db, input);
     }),
 };

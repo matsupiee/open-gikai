@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AskRouteImport } from './routes/ask'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TopicsIndexRouteImport } from './routes/topics/index'
 import { Route as MeetingsIndexRouteImport } from './routes/meetings/index'
@@ -23,6 +24,11 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AdminLayoutAskRouteImport } from './routes/admin/_layout/ask'
 import { Route as authSignUpOtpIndexRouteImport } from './routes/(auth)/sign-up/otp/index'
 
+const AskRoute = AskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -91,6 +97,7 @@ const authSignUpOtpIndexRoute = authSignUpOtpIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ask': typeof AskRoute
   '/admin': typeof AdminLayoutRouteWithChildren
   '/topics/$topic': typeof TopicsTopicRoute
   '/topics/compare': typeof TopicsCompareRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ask': typeof AskRoute
   '/topics/$topic': typeof TopicsTopicRoute
   '/topics/compare': typeof TopicsCompareRoute
   '/meetings': typeof MeetingsIndexRoute
@@ -121,6 +129,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ask': typeof AskRoute
   '/admin/_layout': typeof AdminLayoutRouteWithChildren
   '/topics/$topic': typeof TopicsTopicRoute
   '/topics/compare': typeof TopicsCompareRoute
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ask'
     | '/admin'
     | '/topics/$topic'
     | '/topics/compare'
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ask'
     | '/topics/$topic'
     | '/topics/compare'
     | '/meetings'
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/ask'
     | '/admin/_layout'
     | '/topics/$topic'
     | '/topics/compare'
@@ -183,6 +195,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AskRoute: typeof AskRoute
   AdminLayoutRoute: typeof AdminLayoutRouteWithChildren
   TopicsTopicRoute: typeof TopicsTopicRoute
   TopicsCompareRoute: typeof TopicsCompareRoute
@@ -197,6 +210,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/ask': {
+      id: '/ask'
+      path: '/ask'
+      fullPath: '/ask'
+      preLoaderRoute: typeof AskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -307,6 +327,7 @@ const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AskRoute: AskRoute,
   AdminLayoutRoute: AdminLayoutRouteWithChildren,
   TopicsTopicRoute: TopicsTopicRoute,
   TopicsCompareRoute: TopicsCompareRoute,
@@ -321,3 +342,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
