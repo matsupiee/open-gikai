@@ -38,7 +38,7 @@ export default function SignInForm() {
         {
           onSuccess: () => {
             navigate({
-              to: "/search",
+              to: "/",
             });
             toast.success("ログインに成功しました");
           },

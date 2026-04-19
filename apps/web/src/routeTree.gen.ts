@@ -11,18 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TopicsIndexRouteImport } from './routes/topics/index'
+import { Route as MeetingsIndexRouteImport } from './routes/meetings/index'
 import { Route as TopicsCompareRouteImport } from './routes/topics/compare'
 import { Route as TopicsTopicRouteImport } from './routes/topics/$topic'
-import { Route as SearchIndexRouteImport } from './routes/search/index'
-import { Route as MeetingsIndexRouteImport } from './routes/meetings/index'
 import { Route as MeetingsMeetingIdRouteImport } from './routes/meetings/$meetingId'
 import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
 import { Route as AdminLayoutIndexRouteImport } from './routes/admin/_layout/index'
-import { Route as AdminLayoutAskRouteImport } from './routes/admin/_layout/ask'
 import { Route as authSignUpIndexRouteImport } from './routes/(auth)/sign-up/index'
 import { Route as authSignInIndexRouteImport } from './routes/(auth)/sign-in/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AdminLayoutAskRouteImport } from './routes/admin/_layout/ask'
 import { Route as authSignUpOtpIndexRouteImport } from './routes/(auth)/sign-up/otp/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +34,11 @@ const TopicsIndexRoute = TopicsIndexRouteImport.update({
   path: '/topics/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MeetingsIndexRoute = MeetingsIndexRouteImport.update({
+  id: '/meetings/',
+  path: '/meetings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TopicsCompareRoute = TopicsCompareRouteImport.update({
   id: '/topics/compare',
   path: '/topics/compare',
@@ -43,16 +47,6 @@ const TopicsCompareRoute = TopicsCompareRouteImport.update({
 const TopicsTopicRoute = TopicsTopicRouteImport.update({
   id: '/topics/$topic',
   path: '/topics/$topic',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SearchIndexRoute = SearchIndexRouteImport.update({
-  id: '/search/',
-  path: '/search/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MeetingsIndexRoute = MeetingsIndexRouteImport.update({
-  id: '/meetings/',
-  path: '/meetings/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeetingsMeetingIdRoute = MeetingsMeetingIdRouteImport.update({
@@ -68,11 +62,6 @@ const AdminLayoutRoute = AdminLayoutRouteImport.update({
 const AdminLayoutIndexRoute = AdminLayoutIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AdminLayoutRoute,
-} as any)
-const AdminLayoutAskRoute = AdminLayoutAskRouteImport.update({
-  id: '/ask',
-  path: '/ask',
   getParentRoute: () => AdminLayoutRoute,
 } as any)
 const authSignUpIndexRoute = authSignUpIndexRouteImport.update({
@@ -95,6 +84,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLayoutAskRoute = AdminLayoutAskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => AdminLayoutRoute,
+} as any)
 const authSignUpOtpIndexRoute = authSignUpOtpIndexRouteImport.update({
   id: '/(auth)/sign-up/otp/',
   path: '/sign-up/otp/',
@@ -105,33 +99,31 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminLayoutRouteWithChildren
   '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
-  '/meetings/': typeof MeetingsIndexRoute
-  '/search/': typeof SearchIndexRoute
-  '/topics/compare': typeof TopicsCompareRoute
   '/topics/$topic': typeof TopicsTopicRoute
+  '/topics/compare': typeof TopicsCompareRoute
+  '/meetings/': typeof MeetingsIndexRoute
   '/topics/': typeof TopicsIndexRoute
+  '/admin/ask': typeof AdminLayoutAskRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/sign-in/': typeof authSignInIndexRoute
   '/sign-up/': typeof authSignUpIndexRoute
   '/admin/': typeof AdminLayoutIndexRoute
-  '/admin/ask': typeof AdminLayoutAskRoute
   '/sign-up/otp/': typeof authSignUpOtpIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
-  '/meetings': typeof MeetingsIndexRoute
-  '/search': typeof SearchIndexRoute
-  '/topics/compare': typeof TopicsCompareRoute
   '/topics/$topic': typeof TopicsTopicRoute
+  '/topics/compare': typeof TopicsCompareRoute
+  '/meetings': typeof MeetingsIndexRoute
   '/topics': typeof TopicsIndexRoute
+  '/admin/ask': typeof AdminLayoutAskRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/sign-in': typeof authSignInIndexRoute
   '/sign-up': typeof authSignUpIndexRoute
   '/admin': typeof AdminLayoutIndexRoute
-  '/admin/ask': typeof AdminLayoutAskRoute
   '/sign-up/otp': typeof authSignUpOtpIndexRoute
 }
 export interface FileRoutesById {
@@ -139,17 +131,16 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin/_layout': typeof AdminLayoutRouteWithChildren
   '/meetings/$meetingId': typeof MeetingsMeetingIdRoute
-  '/meetings/': typeof MeetingsIndexRoute
-  '/search/': typeof SearchIndexRoute
-  '/topics/compare': typeof TopicsCompareRoute
   '/topics/$topic': typeof TopicsTopicRoute
+  '/topics/compare': typeof TopicsCompareRoute
+  '/meetings/': typeof MeetingsIndexRoute
   '/topics/': typeof TopicsIndexRoute
+  '/admin/_layout/ask': typeof AdminLayoutAskRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/(auth)/sign-in/': typeof authSignInIndexRoute
   '/(auth)/sign-up/': typeof authSignUpIndexRoute
   '/admin/_layout/': typeof AdminLayoutIndexRoute
-  '/admin/_layout/ask': typeof AdminLayoutAskRoute
   '/(auth)/sign-up/otp/': typeof authSignUpOtpIndexRoute
 }
 export interface FileRouteTypes {
@@ -158,50 +149,47 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/meetings/$meetingId'
-    | '/meetings/'
-    | '/search/'
-    | '/topics/compare'
     | '/topics/$topic'
+    | '/topics/compare'
+    | '/meetings/'
     | '/topics/'
+    | '/admin/ask'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/sign-in/'
     | '/sign-up/'
     | '/admin/'
-    | '/admin/ask'
     | '/sign-up/otp/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/meetings/$meetingId'
-    | '/meetings'
-    | '/search'
-    | '/topics/compare'
     | '/topics/$topic'
+    | '/topics/compare'
+    | '/meetings'
     | '/topics'
+    | '/admin/ask'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/sign-in'
     | '/sign-up'
     | '/admin'
-    | '/admin/ask'
     | '/sign-up/otp'
   id:
     | '__root__'
     | '/'
     | '/admin/_layout'
     | '/meetings/$meetingId'
-    | '/meetings/'
-    | '/search/'
-    | '/topics/compare'
     | '/topics/$topic'
+    | '/topics/compare'
+    | '/meetings/'
     | '/topics/'
+    | '/admin/_layout/ask'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/(auth)/sign-in/'
     | '/(auth)/sign-up/'
     | '/admin/_layout/'
-    | '/admin/_layout/ask'
     | '/(auth)/sign-up/otp/'
   fileRoutesById: FileRoutesById
 }
@@ -209,10 +197,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminLayoutRoute: typeof AdminLayoutRouteWithChildren
   MeetingsMeetingIdRoute: typeof MeetingsMeetingIdRoute
-  MeetingsIndexRoute: typeof MeetingsIndexRoute
-  SearchIndexRoute: typeof SearchIndexRoute
-  TopicsCompareRoute: typeof TopicsCompareRoute
   TopicsTopicRoute: typeof TopicsTopicRoute
+  TopicsCompareRoute: typeof TopicsCompareRoute
+  MeetingsIndexRoute: typeof MeetingsIndexRoute
   TopicsIndexRoute: typeof TopicsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
@@ -230,18 +217,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/search/': {
-      id: '/search/'
-      path: '/search'
-      fullPath: '/search/'
-      preLoaderRoute: typeof SearchIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/topics/': {
       id: '/topics/'
       path: '/topics'
       fullPath: '/topics/'
       preLoaderRoute: typeof TopicsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meetings/': {
+      id: '/meetings/'
+      path: '/meetings'
+      fullPath: '/meetings/'
+      preLoaderRoute: typeof MeetingsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/topics/compare': {
@@ -256,13 +243,6 @@ declare module '@tanstack/react-router' {
       path: '/topics/$topic'
       fullPath: '/topics/$topic'
       preLoaderRoute: typeof TopicsTopicRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/meetings/': {
-      id: '/meetings/'
-      path: '/meetings'
-      fullPath: '/meetings/'
-      preLoaderRoute: typeof MeetingsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/meetings/$meetingId': {
@@ -284,13 +264,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminLayoutIndexRouteImport
-      parentRoute: typeof AdminLayoutRoute
-    }
-    '/admin/_layout/ask': {
-      id: '/admin/_layout/ask'
-      path: '/ask'
-      fullPath: '/admin/ask'
-      preLoaderRoute: typeof AdminLayoutAskRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
     '/(auth)/sign-up/': {
@@ -321,6 +294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/_layout/ask': {
+      id: '/admin/_layout/ask'
+      path: '/ask'
+      fullPath: '/admin/ask'
+      preLoaderRoute: typeof AdminLayoutAskRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
     '/(auth)/sign-up/otp/': {
       id: '/(auth)/sign-up/otp/'
       path: '/sign-up/otp'
@@ -332,13 +312,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminLayoutRouteChildren {
-  AdminLayoutIndexRoute: typeof AdminLayoutIndexRoute
   AdminLayoutAskRoute: typeof AdminLayoutAskRoute
+  AdminLayoutIndexRoute: typeof AdminLayoutIndexRoute
 }
 
 const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
-  AdminLayoutIndexRoute: AdminLayoutIndexRoute,
   AdminLayoutAskRoute: AdminLayoutAskRoute,
+  AdminLayoutIndexRoute: AdminLayoutIndexRoute,
 }
 
 const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(
@@ -349,10 +329,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminLayoutRoute: AdminLayoutRouteWithChildren,
   MeetingsMeetingIdRoute: MeetingsMeetingIdRoute,
-  MeetingsIndexRoute: MeetingsIndexRoute,
-  SearchIndexRoute: SearchIndexRoute,
-  TopicsCompareRoute: TopicsCompareRoute,
   TopicsTopicRoute: TopicsTopicRoute,
+  TopicsCompareRoute: TopicsCompareRoute,
+  MeetingsIndexRoute: MeetingsIndexRoute,
   TopicsIndexRoute: TopicsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
@@ -363,12 +342,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

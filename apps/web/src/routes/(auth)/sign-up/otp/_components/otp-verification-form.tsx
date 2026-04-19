@@ -43,7 +43,7 @@ export default function OtpVerificationForm({
         toast.error(error.message || "確認コードが正しくありません");
         setOtp("");
       } else {
-        navigate({ to: "/search" });
+        navigate({ to: "/" });
         toast.success("アカウント登録に成功しました");
       }
     } finally {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { Button } from "@/shared/_components/ui/button";
 import { Card, CardContent } from "@/shared/_components/ui/card";
@@ -57,14 +57,6 @@ function LandingPage() {
             </form>
           </CardContent>
         </Card>
-
-        <div className="text-center text-xs text-muted-foreground">
-          発言単位で検索したい場合は{" "}
-          <Link to="/search" className="underline hover:text-foreground">
-            /search
-          </Link>
-          {" "}へ
-        </div>
       </div>
     </div>
   );

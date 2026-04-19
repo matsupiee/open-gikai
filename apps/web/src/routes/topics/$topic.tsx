@@ -296,13 +296,6 @@ function TopicDetailPage() {
             </ol>
           </div>
         )}
-
-        <div className="border-t border-border pt-4 text-center text-xs text-muted-foreground">
-          この議題の発言を全文検索する →{" "}
-          <Link to="/search" search={{ q: topic }} className="underline hover:text-foreground">
-            /search?q={topic}
-          </Link>
-        </div>
       </div>
     </div>
   );
