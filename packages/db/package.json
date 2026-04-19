@@ -23,6 +23,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:import": "bun run seeds/insert-to-pgsql.ts",
     "db:import:prd": "bun run seeds/insert-to-pgsql-prd.ts",
+    "db:import:summaries": "bun run seeds/insert-summaries-to-pgsql.ts",
+    "db:import:summaries:prd": "bun run seeds/insert-summaries-to-pgsql-prd.ts",
     "check-types": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
