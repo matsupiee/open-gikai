@@ -9,9 +9,7 @@ const isCloudflare = process.env.CF_PAGES === "1" || process.argv.includes("buil
 
 export default defineConfig({
   plugins: [
-    ...(isCloudflare
-      ? [cloudflare({ viteEnvironment: { name: "ssr" } })]
-      : []),
+    ...(isCloudflare ? [cloudflare({ viteEnvironment: { name: "ssr" } })] : []),
     tsconfigPaths(),
     tailwindcss(),
     tanstackStart({
@@ -23,5 +21,8 @@ export default defineConfig({
   ],
   server: {
     port: 4030,
+  },
+  ssr: {
+    noExternal: ["@llamaindex/chat-ui"],
   },
 });
