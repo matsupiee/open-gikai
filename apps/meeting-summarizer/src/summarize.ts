@@ -1,8 +1,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { eq, asc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { Db } from "@open-gikai/db";
-import { meetings, statements, type MeetingTopicDigest } from "@open-gikai/db/schema";
+import { meetings, type MeetingTopicDigest } from "@open-gikai/db/schema";
 import { SYSTEM_PROMPT } from "./prompt";
+import { readStatementsForMeeting } from "./read-statements-ndjson";
 import { callWithRetry } from "./retry";
 
 export const DEFAULT_MODEL = "gemini-2.5-flash";
@@ -44,12 +45,15 @@ const RESPONSE_SCHEMA = {
 
 /**
  * 指定 meeting の全発言を 1 回の LLM 呼び出しでサマリ化する。
+ * 発言本文はローカルの NDJSON (`{dataDir}/{year}/{municipalityCode}/statements.ndjson`)
+ * から読み込む（statements テーブルは参照しない）。
  * 戻り値を返すだけで DB 書き込みは呼び出し側の責務。
  */
 export async function summarizeMeeting(
   db: Db,
   meetingId: string,
   client: GoogleGenAI,
+  dataDir: string,
   model: string = DEFAULT_MODEL,
 ): Promise<SummarizeResult> {
   const meeting = await db.query.meetings.findFirst({
@@ -57,9 +61,11 @@ export async function summarizeMeeting(
   });
   if (!meeting) throw new Error(`meeting not found: ${meetingId}`);
 
-  const stmts = await db.query.statements.findMany({
-    where: eq(statements.meetingId, meetingId),
-    orderBy: [asc(statements.startOffset)],
+  const stmts = await readStatementsForMeeting({
+    dataDir,
+    municipalityCode: meeting.municipalityCode,
+    heldOn: meeting.heldOn,
+    meetingId,
   });
 
   const transcript = stmts

@@ -27,6 +27,8 @@ import { DEFAULT_MODEL, summarizeMeeting } from "./summarize";
 const root = resolve(fileURLToPath(import.meta.url), "../../../../");
 dotenv.config({ path: resolve(root, ".env.local"), override: true });
 
+const dataDir = resolve(root, "data/minutes");
+
 type Args = {
   municipality: string;
   concurrency: number;
@@ -49,7 +51,9 @@ async function main() {
 
   const targets = await loadTargets(db, args);
   console.error(`[batch] target meetings: ${targets.length}`);
-  console.error(`[batch] municipality=${args.municipality} concurrency=${args.concurrency} model=${args.model}`);
+  console.error(
+    `[batch] municipality=${args.municipality} concurrency=${args.concurrency} model=${args.model}`,
+  );
   if (args.dryRun) {
     console.error(`[batch] dry-run — no LLM calls, no writes`);
     return;
@@ -73,7 +77,7 @@ async function main() {
       const m = targets[idx]!;
       const label = `[${idx + 1}/${targets.length}] ${m.heldOn} ${m.title.slice(0, 40)}`;
       try {
-        const result = await summarizeMeeting(db, m.id, client, args.model);
+        const result = await summarizeMeeting(db, m.id, client, dataDir, args.model);
         await db
           .update(meetings)
           .set({
@@ -105,7 +109,9 @@ async function main() {
   console.error("");
   console.error(`[batch] finished in ${elapsed.toFixed(1)}s`);
   console.error(`  done=${stats.done}  failed=${stats.failed}`);
-  console.error(`  tokens: prompt=${stats.totalPromptTokens}  thoughts=${stats.totalThoughtsTokens}  output=${stats.totalOutputTokens}`);
+  console.error(
+    `  tokens: prompt=${stats.totalPromptTokens}  thoughts=${stats.totalThoughtsTokens}  output=${stats.totalOutputTokens}`,
+  );
 
   // Gemini 2.5 Flash 料金（2026-04 時点）: input $0.30/M, output+thoughts $2.50/M
   const inputCost = (stats.totalPromptTokens / 1_000_000) * 0.3;

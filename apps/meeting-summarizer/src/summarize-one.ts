@@ -27,6 +27,8 @@ import { DEFAULT_MODEL, summarizeMeeting } from "./summarize";
 const root = resolve(fileURLToPath(import.meta.url), "../../../../");
 dotenv.config({ path: resolve(root, ".env.local"), override: true });
 
+const dataDir = resolve(root, "data/minutes");
+
 const KAGOSHIMA = "462012";
 
 async function main() {
@@ -54,7 +56,7 @@ async function main() {
   console.error(`  model: ${model}`);
 
   const startedAt = Date.now();
-  const result = await summarizeMeeting(db, meetingId, client, model);
+  const result = await summarizeMeeting(db, meetingId, client, dataDir, model);
   const elapsed = Date.now() - startedAt;
 
   console.error("");
@@ -64,7 +66,9 @@ async function main() {
   console.error(`  candidate_tokens: ${result.usage.candidateTokens}`);
   console.error(`  total_tokens: ${result.usage.totalTokens}`);
 
-  console.log(JSON.stringify({ summary: result.summary, topic_digests: result.topicDigests }, null, 2));
+  console.log(
+    JSON.stringify({ summary: result.summary, topic_digests: result.topicDigests }, null, 2),
+  );
 
   if (args.write) {
     await db
